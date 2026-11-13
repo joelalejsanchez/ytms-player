@@ -59,7 +59,8 @@ export const App: React.FC = () => {
           {!workspace && activeTab !== "workspace" && (
             <div className="mb-4 flex items-center justify-between rounded-xl border border-amber-800/60 bg-amber-950/30 px-4 py-3 text-xs text-amber-200">
               <span>
-                No has seleccionado un directorio Workspace activo. Configura uno para almacenar tus pistas y base de datos SQLite.
+                No has seleccionado un directorio Workspace activo. Configura uno para
+                almacenar tus pistas y base de datos SQLite.
               </span>
               <Button
                 variant="secondary"

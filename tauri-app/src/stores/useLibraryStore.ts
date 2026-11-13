@@ -163,7 +163,9 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       const missingTracks = await tauriApi.getMissingTracks();
       set({ missingTracks });
     } catch (err) {
-      set({ error: extractErrorMessage(err, "Error al consultar archivos extraviados") });
+      set({
+        error: extractErrorMessage(err, "Error al consultar archivos extraviados"),
+      });
     }
   },
 
@@ -209,7 +211,9 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       const updated = await tauriApi.toggleTrackLike(youtubeId, liked);
       get().upsertTrackLocal(updated);
     } catch (err) {
-      set({ error: extractErrorMessage(err, "No se pudo actualizar el estado de like") });
+      set({
+        error: extractErrorMessage(err, "No se pudo actualizar el estado de like"),
+      });
     }
   },
 
@@ -282,7 +286,10 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       set({ isLoading: false });
       return result;
     } catch (err) {
-      const message = extractErrorMessage(err, "Error al sincronizar likes con YouTube");
+      const message = extractErrorMessage(
+        err,
+        "Error al sincronizar likes con YouTube",
+      );
       set({ isLoading: false, error: message });
       throw err;
     }

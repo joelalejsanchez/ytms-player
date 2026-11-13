@@ -1,19 +1,10 @@
 export type AudioFormat = "mp3" | "m4a" | "opus";
 
 export type DownloadStatus =
-  | "queued"
-  | "downloading"
-  | "processing"
-  | "completed"
-  | "skipped"
-  | "failed";
+  "queued" | "downloading" | "processing" | "completed" | "skipped" | "failed";
 
 export type NavigationTab =
-  | "library"
-  | "playlists"
-  | "downloads"
-  | "recovery"
-  | "workspace";
+  "library" | "playlists" | "downloads" | "recovery" | "workspace";
 
 export interface Track {
   id: number;

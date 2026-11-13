@@ -92,9 +92,7 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
           <Radio className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-base font-bold tracking-tight text-white">
-            ytms-player
-          </h1>
+          <h1 className="text-base font-bold tracking-tight text-white">ytms-player</h1>
           <p className="text-xs text-slate-400">YouTube Audio Desktop</p>
         </div>
       </div>
@@ -183,9 +181,7 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
               className="truncate text-[11px] text-slate-500"
               title={workspace?.root_path}
             >
-              {workspace
-                ? `WS: ${workspace.root_path}`
-                : "Sin Workspace seleccionado"}
+              {workspace ? `WS: ${workspace.root_path}` : "Sin Workspace seleccionado"}
             </p>
           )}
         </div>

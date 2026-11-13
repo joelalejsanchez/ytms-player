@@ -13,7 +13,10 @@ const ALLOWED_YOUTUBE_HOSTS = new Set([
 export const youtubeIdSchema = z
   .string()
   .trim()
-  .regex(/^[a-zA-Z0-9_-]{11}$/, "El YouTube ID debe tener exactamente 11 caracteres válidos");
+  .regex(
+    /^[a-zA-Z0-9_-]{11}$/,
+    "El YouTube ID debe tener exactamente 11 caracteres válidos",
+  );
 
 export const audioFormatSchema = z.enum(["mp3", "m4a", "opus"]);
 

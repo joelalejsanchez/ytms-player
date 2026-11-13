@@ -61,9 +61,7 @@ export const WorkspaceSettingsView = React.memo(() => {
       );
     } catch (err) {
       setFormError(
-        err instanceof Error
-          ? err.message
-          : "Error al importar el archivo cookies.txt",
+        err instanceof Error ? err.message : "Error al importar el archivo cookies.txt",
       );
     }
   }, [cookiesInput, importCookiesFile]);
@@ -80,9 +78,7 @@ export const WorkspaceSettingsView = React.memo(() => {
       });
 
       if (!parsed.success) {
-        setFormError(
-          parsed.error.issues[0]?.message ?? "Configuración inválida",
-        );
+        setFormError(parsed.error.issues[0]?.message ?? "Configuración inválida");
         return;
       }
 
@@ -95,9 +91,7 @@ export const WorkspaceSettingsView = React.memo(() => {
         );
       } catch (err) {
         setFormError(
-          err instanceof Error
-            ? err.message
-            : "Error al inicializar el Workspace",
+          err instanceof Error ? err.message : "Error al inicializar el Workspace",
         );
       }
     },
@@ -111,7 +105,12 @@ export const WorkspaceSettingsView = React.memo(() => {
           Configuración de Workspaces, Cookies y Microservicio
         </h2>
         <p className="text-xs text-slate-400">
-          Cada Workspace mantiene su propio <code className="text-slate-300">.ytms-player-workspace</code>, base de datos SQLite y carpetas <code className="text-slate-300">/tracks</code> y <code className="text-slate-300">/thumbnails</code>. La lista de Workspaces se guarda automáticamente en la carpeta de datos del usuario del sistema operativo.
+          Cada Workspace mantiene su propio{" "}
+          <code className="text-slate-300">.ytms-player-workspace</code>, base de datos
+          SQLite y carpetas <code className="text-slate-300">/tracks</code> y{" "}
+          <code className="text-slate-300">/thumbnails</code>. La lista de Workspaces se
+          guarda automáticamente en la carpeta de datos del usuario del sistema
+          operativo.
         </p>
       </header>
 
@@ -205,7 +204,8 @@ export const WorkspaceSettingsView = React.memo(() => {
 
         {!appSettings || appSettings.recent_workspaces.length === 0 ? (
           <p className="text-xs text-slate-500">
-            Aún no hay Workspaces guardados. Al inicializar cualquier carpeta quedará registrada aquí para cambiar con un clic.
+            Aún no hay Workspaces guardados. Al inicializar cualquier carpeta quedará
+            registrada aquí para cambiar con un clic.
           </p>
         ) : (
           <div className="space-y-2">
@@ -222,9 +222,7 @@ export const WorkspaceSettingsView = React.memo(() => {
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-slate-100">
-                        {saved.name}
-                      </span>
+                      <span className="font-semibold text-slate-100">{saved.name}</span>
                       {isCurrent && <Badge tone="info">Activo</Badge>}
                       {!saved.is_available && (
                         <Badge tone="warning">No encontrado en disco</Badge>
@@ -280,7 +278,12 @@ export const WorkspaceSettingsView = React.memo(() => {
         </div>
 
         <p className="text-xs text-slate-400">
-          Importa o actualiza tu archivo <code className="text-slate-300">cookies.txt</code> directamente desde aquí. Rust lo copia de forma segura con permisos restringidos (<code className="text-slate-300">0600</code>) a la ruta montada por Docker en modo solo lectura (<code className="text-slate-300">:ro</code>), surtiendo efecto de inmediato en la siguiente descarga sin recompilar.
+          Importa o actualiza tu archivo{" "}
+          <code className="text-slate-300">cookies.txt</code> directamente desde aquí.
+          Rust lo copia de forma segura con permisos restringidos (
+          <code className="text-slate-300">0600</code>) a la ruta montada por Docker en
+          modo solo lectura (<code className="text-slate-300">:ro</code>), surtiendo
+          efecto de inmediato en la siguiente descarga sin recompilar.
         </p>
 
         <div className="flex gap-2">
@@ -316,30 +319,22 @@ export const WorkspaceSettingsView = React.memo(() => {
               Estructura del Workspace Activo
             </h3>
             <Badge tone={workspace.is_valid ? "success" : "danger"}>
-              {workspace.is_valid
-                ? ".ytms-player-workspace Válido"
-                : "Inválido"}
+              {workspace.is_valid ? ".ytms-player-workspace Válido" : "Inválido"}
             </Badge>
           </div>
 
           <div className="grid grid-cols-1 gap-3 text-xs text-slate-300 md:grid-cols-2">
             <div className="rounded-lg bg-slate-950/70 p-3">
               <span className="text-slate-500">Workspace Root:</span>
-              <p className="mt-1 font-mono text-slate-200">
-                {workspace.root_path}
-              </p>
+              <p className="mt-1 font-mono text-slate-200">{workspace.root_path}</p>
             </div>
             <div className="rounded-lg bg-slate-950/70 p-3">
               <span className="text-slate-500">SQLite Database:</span>
-              <p className="mt-1 font-mono text-slate-200">
-                {workspace.database_path}
-              </p>
+              <p className="mt-1 font-mono text-slate-200">{workspace.database_path}</p>
             </div>
             <div className="rounded-lg bg-slate-950/70 p-3">
               <span className="text-slate-500">Carpeta de Audio (/tracks):</span>
-              <p className="mt-1 font-mono text-slate-200">
-                {workspace.tracks_dir}
-              </p>
+              <p className="mt-1 font-mono text-slate-200">{workspace.tracks_dir}</p>
             </div>
             <div className="rounded-lg bg-slate-950/70 p-3">
               <span className="text-slate-500">
@@ -368,8 +363,7 @@ export const WorkspaceSettingsView = React.memo(() => {
             <div className="flex gap-4 pt-2 text-slate-400">
               {Object.entries(health.dependencies).map(([dep, state]) => (
                 <span key={dep}>
-                  {dep}:{" "}
-                  <strong className="text-slate-200">{state}</strong>
+                  {dep}: <strong className="text-slate-200">{state}</strong>
                 </span>
               ))}
             </div>

@@ -77,14 +77,13 @@ export const DownloadsView = React.memo(() => {
             Gestor de Descargas & Stream SSE
           </h2>
           <p className="text-xs text-slate-400">
-            Descarga videos individuales o playlists completas con conversión FFmpeg e incrustación de tags ID3/Vorbis
+            Descarga videos individuales o playlists completas con conversión FFmpeg e
+            incrustación de tags ID3/Vorbis
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge
-            tone={connectionState === "connected" ? "success" : "warning"}
-          >
+          <Badge tone={connectionState === "connected" ? "success" : "warning"}>
             <Wifi className="h-3.5 w-3.5" />
             SSE: {connectionState}
           </Badge>
@@ -169,7 +168,9 @@ export const DownloadsView = React.memo(() => {
               No hay tareas de descarga activas
             </p>
             <p className="mt-1 text-xs">
-              Los eventos emitidos por <code className="text-slate-300">/api/progress/stream</code> aparecerán aquí en tiempo real.
+              Los eventos emitidos por{" "}
+              <code className="text-slate-300">/api/progress/stream</code> aparecerán
+              aquí en tiempo real.
             </p>
           </div>
         ) : (
@@ -220,9 +221,7 @@ export const DownloadsView = React.memo(() => {
 
                 <ProgressBar value={task.progress} />
 
-                {task.error && (
-                  <p className="text-xs text-rose-400">{task.error}</p>
-                )}
+                {task.error && <p className="text-xs text-rose-400">{task.error}</p>}
               </div>
             );
           })

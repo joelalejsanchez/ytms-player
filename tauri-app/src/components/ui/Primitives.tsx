@@ -10,8 +10,7 @@ export const Button = React.memo(
   React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, variant = "primary", size = "md", ...props }, ref) => {
       const variants: Record<NonNullable<ButtonProps["variant"]>, string> = {
-        primary:
-          "bg-red-600 text-white hover:bg-red-500 active:bg-red-700 shadow-sm",
+        primary: "bg-red-600 text-white hover:bg-red-500 active:bg-red-700 shadow-sm",
         secondary:
           "bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-700",
         ghost: "bg-transparent text-slate-300 hover:bg-slate-800/70 hover:text-white",
@@ -98,10 +97,7 @@ export const ProgressBar = React.memo(({ value, className }: ProgressBarProps) =
   const clamped = Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
   return (
     <div
-      className={cn(
-        "h-2 w-full overflow-hidden rounded-full bg-slate-800",
-        className,
-      )}
+      className={cn("h-2 w-full overflow-hidden rounded-full bg-slate-800", className)}
     >
       <div
         className="h-full bg-gradient-to-r from-red-600 to-rose-500 transition-all duration-200"

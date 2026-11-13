@@ -31,9 +31,7 @@ export const PlaylistsView = React.memo(() => {
       });
 
       if (!parsed.success) {
-        setFormError(
-          parsed.error.issues[0]?.message ?? "Datos de playlist inválidos",
-        );
+        setFormError(parsed.error.issues[0]?.message ?? "Datos de playlist inválidos");
         return;
       }
 
@@ -69,7 +67,9 @@ export const PlaylistsView = React.memo(() => {
       <header>
         <h2 className="text-xl font-bold text-white">Gestión de Playlists</h2>
         <p className="text-xs text-slate-400">
-          Relación muchos a muchos (<code className="text-slate-300">playlist_tracks</code>) con integridad referencial <code className="text-slate-300">ON DELETE CASCADE</code>
+          Relación muchos a muchos (
+          <code className="text-slate-300">playlist_tracks</code>) con integridad
+          referencial <code className="text-slate-300">ON DELETE CASCADE</code>
         </p>
       </header>
 
@@ -95,9 +95,7 @@ export const PlaylistsView = React.memo(() => {
           Crear Playlist
         </Button>
 
-        {formError && (
-          <p className="w-full text-xs text-rose-400">{formError}</p>
-        )}
+        {formError && <p className="w-full text-xs text-rose-400">{formError}</p>}
       </form>
 
       <div className="grid flex-1 grid-cols-1 gap-4 overflow-hidden lg:grid-cols-3">
@@ -186,7 +184,8 @@ export const PlaylistsView = React.memo(() => {
               <div className="flex-1 space-y-2 overflow-y-auto">
                 {activePlaylist.tracks.length === 0 ? (
                   <p className="py-12 text-center text-xs text-slate-500">
-                    Esta playlist aún no tiene pistas. Puedes agregarlas desde la Biblioteca.
+                    Esta playlist aún no tiene pistas. Puedes agregarlas desde la
+                    Biblioteca.
                   </p>
                 ) : (
                   activePlaylist.tracks.map((track) => (
@@ -209,9 +208,7 @@ export const PlaylistsView = React.memo(() => {
                           variant="ghost"
                           size="icon"
                           disabled={track.is_missing}
-                          onClick={() =>
-                            playTrack(track, activePlaylist.tracks)
-                          }
+                          onClick={() => playTrack(track, activePlaylist.tracks)}
                         >
                           <Play className="h-4 w-4" />
                         </Button>

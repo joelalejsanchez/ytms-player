@@ -16,9 +16,14 @@ import type {
   WorkspaceInfo,
 } from "@/types/models";
 
-async function safeInvoke<T>(command: string, args?: Record<string, unknown>): Promise<T> {
+async function safeInvoke<T>(
+  command: string,
+  args?: Record<string, unknown>,
+): Promise<T> {
   if (!isTauriEnvironment()) {
-    throw new Error(`Tauri IPC command '${command}' requires the Tauri desktop runtime.`);
+    throw new Error(
+      `Tauri IPC command '${command}' requires the Tauri desktop runtime.`,
+    );
   }
   return invoke<T>(command, args);
 }
@@ -132,10 +137,7 @@ export const tauriApi = {
     return safeInvoke<MicroserviceDownloadResponse>("start_download", { input });
   },
 
-  syncLikes(
-    youtubeIds?: string[],
-    accessToken?: string,
-  ): Promise<LikeSyncResponseDto> {
+  syncLikes(youtubeIds?: string[], accessToken?: string): Promise<LikeSyncResponseDto> {
     return safeInvoke<LikeSyncResponseDto>("sync_likes", {
       youtubeIds: youtubeIds ?? null,
       accessToken: accessToken ?? null,

@@ -42,7 +42,11 @@ export const MissingFilesView = React.memo(() => {
             Panel de Recuperación de Archivos Extraviados
           </h2>
           <p className="text-xs text-slate-400">
-            Reconciliación automática entre registros de SQLite y archivos físicos en <code className="text-slate-300">/tracks/&lt;youtube_id&gt;.&lt;ext&gt;</code> (SDD 3.5)
+            Reconciliación automática entre registros de SQLite y archivos físicos en{" "}
+            <code className="text-slate-300">
+              /tracks/&lt;youtube_id&gt;.&lt;ext&gt;
+            </code>{" "}
+            (SDD 3.5)
           </p>
         </div>
 
@@ -88,7 +92,8 @@ export const MissingFilesView = React.memo(() => {
               Integridad verificada: 0 archivos extraviados
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              Todos los registros en SQLite cuentan con su archivo físico correspondiente en <code className="text-slate-300">/tracks</code>.
+              Todos los registros en SQLite cuentan con su archivo físico
+              correspondiente en <code className="text-slate-300">/tracks</code>.
             </p>
           </div>
         ) : (
@@ -121,9 +126,7 @@ export const MissingFilesView = React.memo(() => {
                     onClick={() => void handleRecover(track.youtube_id)}
                   >
                     <DownloadCloud className="h-4 w-4" />
-                    {isRecoveringThis
-                      ? "Recuperando..."
-                      : "Re-descargar / Restaurar"}
+                    {isRecoveringThis ? "Recuperando..." : "Re-descargar / Restaurar"}
                   </Button>
 
                   <Button

@@ -6,11 +6,7 @@ import type {
   MicroserviceDownloadResponse,
 } from "@/types/models";
 
-export type SseConnectionState =
-  | "disconnected"
-  | "connecting"
-  | "connected"
-  | "error";
+export type SseConnectionState = "disconnected" | "connecting" | "connected" | "error";
 
 export interface DownloadStoreState {
   microserviceUrl: string;
@@ -76,7 +72,8 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
               task_id: response.task_id,
               youtube_id: item.youtube_id,
               status: item.status,
-              progress: item.status === "completed" || item.status === "skipped" ? 100 : 0,
+              progress:
+                item.status === "completed" || item.status === "skipped" ? 100 : 0,
               error: item.error,
               metadata: item.metadata,
             };

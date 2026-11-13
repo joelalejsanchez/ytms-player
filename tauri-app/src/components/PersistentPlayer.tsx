@@ -251,11 +251,7 @@ export const PersistentPlayer = React.memo(() => {
               disabled={!currentTrack}
               aria-label={isPlaying ? "Pausar" : "Reproducir"}
             >
-              {isPlaying ? (
-                <Pause className="h-4 w-4" />
-              ) : (
-                <Play className="h-4 w-4" />
-              )}
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </Button>
 
             <Button

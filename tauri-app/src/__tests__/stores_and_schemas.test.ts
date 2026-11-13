@@ -39,12 +39,11 @@ const missingTrack: Track = {
 describe("Zod Schemas Validation", () => {
   it("validates YouTube video and playlist URLs", () => {
     expect(
-      youtubeUrlSchema.safeParse("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-        .success,
+      youtubeUrlSchema.safeParse("https://www.youtube.com/watch?v=dQw4w9WgXcQ").success,
     ).toBe(true);
-    expect(
-      youtubeUrlSchema.safeParse("https://youtu.be/dQw4w9WgXcQ").success,
-    ).toBe(true);
+    expect(youtubeUrlSchema.safeParse("https://youtu.be/dQw4w9WgXcQ").success).toBe(
+      true,
+    );
     expect(
       youtubeUrlSchema.safeParse(
         "https://www.youtube.com/playlist?list=PL1234567890ABCDEF",

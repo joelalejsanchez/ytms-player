@@ -53,10 +53,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       (item) => item.youtube_id === track.youtube_id,
     );
 
-    const updatedQueue =
-      existingIndex >= 0 ? playableQueue : [...playableQueue, track];
-    const nextIndex =
-      existingIndex >= 0 ? existingIndex : updatedQueue.length - 1;
+    const updatedQueue = existingIndex >= 0 ? playableQueue : [...playableQueue, track];
+    const nextIndex = existingIndex >= 0 ? existingIndex : updatedQueue.length - 1;
 
     set({
       currentTrack: track,

@@ -1,12 +1,5 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import {
-  ArrowUpDown,
-  Heart,
-  Play,
-  RefreshCw,
-  Search,
-  ShieldCheck,
-} from "lucide-react";
+import { ArrowUpDown, Heart, Play, RefreshCw, Search, ShieldCheck } from "lucide-react";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { Badge, Button, Input } from "@/components/ui/Primitives";
 import { TrackRow } from "@/features/library/TrackRow";
@@ -141,7 +134,8 @@ export const LibraryView = React.memo(() => {
         <div>
           <h2 className="text-xl font-bold text-white">Biblioteca Multimedia</h2>
           <p className="text-xs text-slate-400">
-            Almacenamiento local indexado por <code className="text-slate-300">youtube_id</code> en SQLite
+            Almacenamiento local indexado por{" "}
+            <code className="text-slate-300">youtube_id</code> en SQLite
           </p>
         </div>
 
@@ -248,7 +242,8 @@ export const LibraryView = React.memo(() => {
               No se encontraron pistas en la biblioteca
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              Descarga contenido desde la pestaña Descargas o selecciona un Workspace existente.
+              Descarga contenido desde la pestaña Descargas o selecciona un Workspace
+              existente.
             </p>
           </div>
         ) : (
