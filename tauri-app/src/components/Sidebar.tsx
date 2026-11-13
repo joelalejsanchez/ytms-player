@@ -20,6 +20,8 @@ interface SidebarProps {
 
 export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => {
   const workspace = useLibraryStore((s) => s.workspace);
+  const appSettings = useLibraryStore((s) => s.appSettings);
+  const selectWorkspace = useLibraryStore((s) => s.selectWorkspace);
   const missingCount = useLibraryStore((s) => s.missingTracks.length);
   const trackCount = useLibraryStore((s) => s.tracks.length);
   const playlistCount = useLibraryStore((s) => s.playlists.length);
@@ -149,11 +151,43 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
         </div>
 
         <div className="pt-1">
-          <p className="truncate text-[11px] text-slate-500" title={workspace?.root_path}>
-            {workspace
-              ? `WS: ${workspace.root_path}`
-              : "Sin Workspace seleccionado"}
-          </p>
+          {appSettings && appSettings.recent_workspaces.length > 0 ? (
+            <div className="space-y-1">
+              <span className="text-[11px] font-medium text-slate-400">
+                Cambiar Workspace:
+              </span>
+              <select
+                aria-label="Cambiar Workspace activo"
+                value={workspace?.root_path ?? ""}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    void selectWorkspace(e.target.value);
+                  }
+                }}
+                className="h-8 w-full truncate rounded-lg border border-slate-700 bg-slate-950 px-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500"
+              >
+                {!workspace && (
+                  <option value="" disabled>
+                    Seleccionar Workspace...
+                  </option>
+                )}
+                {appSettings.recent_workspaces.map((ws) => (
+                  <option key={ws.path} value={ws.path}>
+                    {ws.name} ({ws.path})
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <p
+              className="truncate text-[11px] text-slate-500"
+              title={workspace?.root_path}
+            >
+              {workspace
+                ? `WS: ${workspace.root_path}`
+                : "Sin Workspace seleccionado"}
+            </p>
+          )}
         </div>
       </div>
     </aside>

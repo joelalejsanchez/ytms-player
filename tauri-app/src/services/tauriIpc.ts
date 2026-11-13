@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { isTauriEnvironment } from "@/lib/utils";
 import type {
+  AppSettings,
   DownloadCommandInput,
   HealthStatusDto,
   IntegrityReport,
@@ -33,6 +34,31 @@ export const tauriApi = {
       title: "Seleccionar directorio raíz del Workspace LocalStream",
     });
     return typeof selected === "string" ? selected : null;
+  },
+
+  async pickCookiesFile(): Promise<string | null> {
+    if (!isTauriEnvironment()) {
+      return null;
+    }
+    const selected = await open({
+      directory: false,
+      multiple: false,
+      title: "Seleccionar archivo cookies.txt (Netscape format)",
+      filters: [{ name: "Cookies File", extensions: ["txt"] }],
+    });
+    return typeof selected === "string" ? selected : null;
+  },
+
+  getAppSettings(): Promise<AppSettings> {
+    return safeInvoke<AppSettings>("get_app_settings");
+  },
+
+  removeSavedWorkspace(path: string): Promise<AppSettings> {
+    return safeInvoke<AppSettings>("remove_saved_workspace", { path });
+  },
+
+  importCookiesFile(sourcePath: string): Promise<AppSettings> {
+    return safeInvoke<AppSettings>("import_cookies_file", { sourcePath });
   },
 
   selectWorkspace(path: string): Promise<WorkspaceInfo> {

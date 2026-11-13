@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { tauriApi } from "@/services/tauriIpc";
 import type {
+  AppSettings,
   HealthStatusDto,
   IntegrityReport,
   LikeSyncResponseDto,
@@ -12,6 +13,7 @@ import type {
 
 export interface LibraryStoreState {
   workspace: WorkspaceInfo | null;
+  appSettings: AppSettings | null;
   tracks: Track[];
   missingTracks: Track[];
   playlists: Playlist[];
@@ -22,6 +24,8 @@ export interface LibraryStoreState {
   error: string | null;
 
   selectWorkspace: (path: string) => Promise<WorkspaceInfo>;
+  removeSavedWorkspace: (path: string) => Promise<void>;
+  importCookiesFile: (sourcePath: string) => Promise<AppSettings>;
   loadInitialState: () => Promise<void>;
   refreshTracks: () => Promise<void>;
   refreshMissingTracks: () => Promise<void>;
@@ -53,6 +57,7 @@ function extractErrorMessage(err: unknown, fallback: string): string {
 
 export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
   workspace: null,
+  appSettings: null,
   tracks: [],
   missingTracks: [],
   playlists: [],
@@ -66,13 +71,15 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const ws = await tauriApi.selectWorkspace(path);
-      const [tracks, missingTracks, playlists] = await Promise.all([
+      const [tracks, missingTracks, playlists, appSettings] = await Promise.all([
         tauriApi.getTracks(),
         tauriApi.getMissingTracks(),
         tauriApi.getPlaylists(),
+        tauriApi.getAppSettings(),
       ]);
       set({
         workspace: ws,
+        appSettings,
         tracks,
         missingTracks,
         playlists,
@@ -87,10 +94,35 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
     }
   },
 
+  removeSavedWorkspace: async (path) => {
+    try {
+      const appSettings = await tauriApi.removeSavedWorkspace(path);
+      set({ appSettings });
+    } catch (err) {
+      set({ error: extractErrorMessage(err, "No se pudo olvidar el Workspace") });
+    }
+  },
+
+  importCookiesFile: async (sourcePath) => {
+    set({ isLoading: true, error: null });
+    try {
+      const appSettings = await tauriApi.importCookiesFile(sourcePath);
+      set({ appSettings, isLoading: false });
+      return appSettings;
+    } catch (err) {
+      const message = extractErrorMessage(err, "No se pudo importar cookies.txt");
+      set({ isLoading: false, error: message });
+      throw err;
+    }
+  },
+
   loadInitialState: async () => {
     set({ isLoading: true, error: null });
     try {
-      const ws = await tauriApi.getWorkspaceInfo();
+      const [ws, appSettings] = await Promise.all([
+        tauriApi.getWorkspaceInfo(),
+        tauriApi.getAppSettings(),
+      ]);
       if (ws) {
         const [tracks, missingTracks, playlists] = await Promise.all([
           tauriApi.getTracks(),
@@ -99,13 +131,14 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
         ]);
         set({
           workspace: ws,
+          appSettings,
           tracks,
           missingTracks,
           playlists,
           isLoading: false,
         });
       } else {
-        set({ isLoading: false });
+        set({ appSettings, isLoading: false });
       }
     } catch {
       set({ isLoading: false });

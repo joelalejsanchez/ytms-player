@@ -69,6 +69,21 @@ export interface WorkspaceInfo {
   missing_tracks: number;
 }
 
+export interface SavedWorkspaceEntry {
+  path: string;
+  name: string;
+  last_opened_at: string;
+  is_available: boolean;
+}
+
+export interface AppSettings {
+  config_file_path: string;
+  active_workspace: string | null;
+  recent_workspaces: SavedWorkspaceEntry[];
+  microservice_url: string;
+  cookies_file_path: string | null;
+}
+
 export interface IntegrityReport {
   checked_count: number;
   newly_missing_ids: string[];
