@@ -7,7 +7,7 @@ use crate::application::{
     download_sync_usecases, playlist_usecases, track_usecases, workspace_usecases,
 };
 use crate::domain::entities::{
-    DownloadCommandInput, HealthStatusDto, IntegrityReport, LikeSyncResponseDto,
+    AppSettings, DownloadCommandInput, HealthStatusDto, IntegrityReport, LikeSyncResponseDto,
     MicroserviceDownloadItem, MicroserviceDownloadResponse, NewTrack, Playlist, PlaylistWithTracks,
     Track, WorkspaceInfo,
 };
@@ -35,7 +35,18 @@ pub fn select_workspace(path: String, state: State<'_, AppState>) -> DomainResul
         .write()
         .map_err(|e| DomainError::PersistenceError(format!("Workspace write lock error: {e}")))?;
 
-    *guard = Some(ActiveWorkspaceContext { root_path, store });
+    *guard = Some(ActiveWorkspaceContext {
+        root_path: root_path.clone(),
+        store,
+    });
+
+    let current_url = state
+        .microservice_client()
+        .map(|c| c.base_url().to_string())
+        .unwrap_or_else(|_| "http://127.0.0.1:8080".to_string());
+    let _ = state
+        .settings_store
+        .record_workspace_opened(&root_path, &current_url);
 
     Ok(info)
 }
@@ -269,5 +280,35 @@ pub fn set_microservice_url(url: String, state: State<'_, AppState>) -> DomainRe
     })?;
 
     *guard = new_client;
+    let _ = state.settings_store.update_microservice_url(&base, &base);
     Ok(base)
+}
+
+/// Obtiene la configuración persistente de la aplicación (Workspaces recordados, ruta de `settings.json`, cookies, etc.).
+#[tauri::command]
+pub fn get_app_settings(state: State<'_, AppState>) -> DomainResult<AppSettings> {
+    let current_url = state.microservice_client()?.base_url().to_string();
+    Ok(state.settings_store.load(&current_url))
+}
+
+/// Elimina un Workspace de la lista de Workspaces recordados en `settings.json` (sin borrar sus archivos del disco).
+#[tauri::command]
+pub fn remove_saved_workspace(
+    path: String,
+    state: State<'_, AppState>,
+) -> DomainResult<AppSettings> {
+    let current_url = state.microservice_client()?.base_url().to_string();
+    state.settings_store.remove_workspace(&path, &current_url)
+}
+
+/// Importa un archivo `cookies.txt` desde la interfaz gráfica hacia la carpeta compartida con el contenedor Docker (SDD 8.1).
+#[tauri::command]
+pub fn import_cookies_file(
+    source_path: String,
+    state: State<'_, AppState>,
+) -> DomainResult<AppSettings> {
+    let current_url = state.microservice_client()?.base_url().to_string();
+    state
+        .settings_store
+        .import_cookies_file(&PathBuf::from(source_path.trim()), &current_url)
 }

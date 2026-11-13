@@ -64,6 +64,26 @@ pub struct WorkspaceInfo {
     pub missing_tracks: usize,
 }
 
+/// Entrada de un Workspace guardado en la memoria persistente de la aplicación (`settings.json`).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct SavedWorkspaceEntry {
+    pub path: String,
+    pub name: String,
+    pub last_opened_at: String,
+    pub is_available: bool,
+}
+
+/// Configuración persistente de la aplicación almacenada en el directorio de datos del SO
+/// (`~/.config/com.localstream.desktop` en Linux, `%APPDATA%\com.localstream.desktop` en Windows).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AppSettings {
+    pub config_file_path: String,
+    pub active_workspace: Option<String>,
+    pub recent_workspaces: Vec<SavedWorkspaceEntry>,
+    pub microservice_url: String,
+    pub cookies_file_path: Option<String>,
+}
+
 /// Reporte de verificación de integridad entre SQLite y el sistema de archivos físico (SDD 3.5).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IntegrityReport {
