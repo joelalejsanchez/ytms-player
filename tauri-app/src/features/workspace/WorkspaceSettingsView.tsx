@@ -91,7 +91,7 @@ export const WorkspaceSettingsView = React.memo(() => {
         await selectWorkspace(parsed.data.rootPath);
         await checkHealth();
         setStatusMessage(
-          "Workspace inicializado, validado (.localstream-workspace) y guardado en la memoria de la app.",
+          "Workspace inicializado, validado (.ytms-player-workspace) y guardado en la memoria de la app.",
         );
       } catch (err) {
         setFormError(
@@ -111,7 +111,7 @@ export const WorkspaceSettingsView = React.memo(() => {
           Configuración de Workspaces, Cookies y Microservicio
         </h2>
         <p className="text-xs text-slate-400">
-          Cada Workspace mantiene su propio <code className="text-slate-300">.localstream-workspace</code>, base de datos SQLite y carpetas <code className="text-slate-300">/tracks</code> y <code className="text-slate-300">/thumbnails</code>. La lista de Workspaces se guarda automáticamente en la carpeta de datos del usuario del sistema operativo.
+          Cada Workspace mantiene su propio <code className="text-slate-300">.ytms-player-workspace</code>, base de datos SQLite y carpetas <code className="text-slate-300">/tracks</code> y <code className="text-slate-300">/thumbnails</code>. La lista de Workspaces se guarda automáticamente en la carpeta de datos del usuario del sistema operativo.
         </p>
       </header>
 
@@ -127,7 +127,7 @@ export const WorkspaceSettingsView = React.memo(() => {
             <Input
               value={pathInput}
               onChange={(e) => setPathInput(e.target.value)}
-              placeholder="/home/usuario/Music/LocalStream-Workspace"
+              placeholder="/home/usuario/Music/ytms-player-Workspace"
               aria-label="Ruta del Workspace"
             />
             <Button
@@ -317,7 +317,7 @@ export const WorkspaceSettingsView = React.memo(() => {
             </h3>
             <Badge tone={workspace.is_valid ? "success" : "danger"}>
               {workspace.is_valid
-                ? ".localstream-workspace Válido"
+                ? ".ytms-player-workspace Válido"
                 : "Inválido"}
             </Badge>
           </div>

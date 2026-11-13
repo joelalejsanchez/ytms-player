@@ -10,10 +10,10 @@ import (
 	"strconv"
 	"strings"
 
-	"localstream/go-microservice/src/domain"
+	"ytms-player/go-microservice/src/domain"
 )
 
-const progressPrefix = "LOCALSTREAM_PROGRESS|"
+const progressPrefix = "YTMS_PLAYER_PROGRESS|"
 
 // YtDlpAdapter implementa domain.DownloaderPort invocando yt-dlp de forma segura (SDD 5.3, 6.1 y 8.1).
 type YtDlpAdapter struct {

@@ -56,9 +56,9 @@ pub struct SqliteWorkspaceStore {
 }
 
 impl SqliteWorkspaceStore {
-    /// Abre o inicializa la base de datos SQLite en `<workspace_root>/localstream.db`.
+    /// Abre o inicializa la base de datos SQLite en `<workspace_root>/ytms-player.db`.
     pub fn open(workspace_root: &Path) -> DomainResult<Self> {
-        let db_path = workspace_root.join("localstream.db");
+        let db_path = workspace_root.join("ytms-player.db");
         let conn = Connection::open(&db_path)
             .map_err(|e| DomainError::PersistenceError(format!("Failed to open SQLite: {e}")))?;
 

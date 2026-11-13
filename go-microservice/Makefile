@@ -1,4 +1,4 @@
-BINARY_NAME=localstream-go
+BINARY_NAME=ytms-player-go
 BIN_DIR=bin
 GO=go
 GOFMT=gofmt

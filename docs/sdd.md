@@ -1,8 +1,8 @@
-# SOFTWARE DESIGN DOCUMENT (SDD): LOCALSTREAM COMPLETE ARCHITECTURE
+# SOFTWARE DESIGN DOCUMENT (SDD): YTMS-PLAYER COMPLETE ARCHITECTURE
 
 ## 1. VISIÓN GENERAL Y PROPÓSITO
 
-LocalStream es una aplicación de escritorio nativa orientada al alto rendimiento, construida con **Tauri (Frontend en React/TypeScript y Backend en Rust)** y complementada con un microservicio backend autohospedado en **Docker (Go)**.
+ytms-player es una aplicación de escritorio nativa orientada al alto rendimiento, construida con **Tauri (Frontend en React/TypeScript y Backend en Rust)** y complementada con un microservicio backend autohospedado en **Docker (Go)**.
 
 Su propósito es gestionar, descargar, reproducir y sincronizar contenido multimedia de YouTube de forma local, garantizando:
 
@@ -21,7 +21,7 @@ Su propósito es gestionar, descargar, reproducir y sincronizar contenido multim
 La arquitectura del proyecto estará organizada en un único monorepo:
 
 ```
-/local-stream-root
+/ytms-player-root
 │
 ├── /docs
 │   └── sdd.md
@@ -82,17 +82,17 @@ La arquitectura del proyecto estará organizada en un único monorepo:
 
 El usuario podrá seleccionar un directorio local desde la interfaz de configuración de Tauri.
 
-Este directorio funcionará como raíz independiente de almacenamiento de LocalStream.
+Este directorio funcionará como raíz independiente de almacenamiento de ytms-player.
 
 ### 3.2. Archivo de control
 
 Al seleccionar un workspace, la aplicación deberá crear o validar un archivo de control denominado:
 
 ```
-.localstream-workspace
+.ytms-player-workspace
 ```
 
-Este archivo permitirá identificar y validar que un directorio corresponde a un workspace de LocalStream.
+Este archivo permitirá identificar y validar que un directorio corresponde a un workspace de ytms-player.
 
 ### 3.3. Estructura automática del workspace
 
@@ -101,7 +101,7 @@ Una vez inicializado, el directorio tendrá la siguiente estructura:
 ```
 /Workspace-Root
 │
-├── .localstream-workspace
+├── .ytms-player-workspace
 │
 ├── /tracks
 │   ├── dQw4w9WgXcQ.mp3
@@ -433,7 +433,7 @@ data: {
 ```
 {
   "status": "healthy",
-  "service": "localstream-go",
+  "service": "ytms-player-go",
   "version": "1.0.0"
 }
 ```
@@ -566,7 +566,7 @@ Los tokens deberán almacenarse de forma segura y nunca exponerse directamente a
 
 ## 9. PRINCIPIOS GENERALES DE DISEÑO
 
-LocalStream deberá cumplir los siguientes principios durante su implementación:
+ytms-player deberá cumplir los siguientes principios durante su implementación:
 
 1. **Single Source of Truth:** SQLite será la fuente de verdad para los metadatos y estados locales.
 2. **Identidad única:** `youtube_id` será la clave de identificación externa de cada contenido multimedia.
@@ -583,7 +583,7 @@ LocalStream deberá cumplir los siguientes principios durante su implementación
 
 ## 10. RESULTADO ARQUITECTÓNICO ESPERADO
 
-LocalStream tendrá tres componentes principales:
+ytms-player tendrá tres componentes principales:
 
 | Componente       | Tecnología            | Responsabilidad                                      |
 | ---------------- | --------------------- | ---------------------------------------------------- |
@@ -595,7 +595,7 @@ La comunicación seguirá este esquema general:
 
 ```
 ┌───────────────────────────────────────────────┐
-│                 LOCALSTREAM APP                │
+│                 YTMS-PLAYER APP               │
 │                                               │
 │  ┌─────────────────────────────────────────┐  │
 │  │          FRONTEND (React / TS)           │  │

@@ -52,7 +52,7 @@ pub struct PlaylistWithTracks {
     pub tracks: Vec<Track>,
 }
 
-/// Información del Workspace activo de LocalStream (SDD Sección 3).
+/// Información del Workspace activo de ytms-player (SDD Sección 3).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkspaceInfo {
     pub root_path: String,
@@ -74,7 +74,7 @@ pub struct SavedWorkspaceEntry {
 }
 
 /// Configuración persistente de la aplicación almacenada en el directorio de datos del SO
-/// (`~/.config/com.localstream.desktop` en Linux, `%APPDATA%\com.localstream.desktop` en Windows).
+/// (`~/.config/com.ytms-player.desktop` en Linux, `%APPDATA%\com.ytms-player.desktop` en Windows).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppSettings {
     pub config_file_path: String,

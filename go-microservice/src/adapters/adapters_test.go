@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"localstream/go-microservice/src/domain"
+	"ytms-player/go-microservice/src/domain"
 )
 
 type fakeCommandExecutor struct {
@@ -91,8 +91,8 @@ func TestYtDlpAdapter_ProgressAndMetadata(t *testing.T) {
 	execMock := &fakeCommandExecutor{
 		runOutput: []byte(`{"id":"dQw4w9WgXcQ","title":"Never Gonna Give You Up","artist":"Rick Astley","duration":213,"upload_date":"20091025"}` + "\n"),
 		streamingLines: []string{
-			"LOCALSTREAM_PROGRESS| 42.5%| 2.10MiB/s| 00:00:12| 1.50MiB",
-			"LOCALSTREAM_PROGRESS| 100.0%| 3.00MiB/s| 00:00:00| 3.50MiB",
+			"YTMS_PLAYER_PROGRESS| 42.5%| 2.10MiB/s| 00:00:12| 1.50MiB",
+			"YTMS_PLAYER_PROGRESS| 100.0%| 3.00MiB/s| 00:00:00| 3.50MiB",
 		},
 		onRun: func(name string, _ []string) {
 			if name == "yt-dlp" {

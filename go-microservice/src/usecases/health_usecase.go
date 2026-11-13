@@ -3,11 +3,11 @@ package usecases
 import (
 	"context"
 
-	"localstream/go-microservice/src/domain"
+	"ytms-player/go-microservice/src/domain"
 )
 
 const (
-	ServiceName    = "localstream-go"
+	ServiceName    = "ytms-player-go"
 	ServiceVersion = "1.0.0"
 )
 

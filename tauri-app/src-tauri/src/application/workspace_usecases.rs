@@ -4,7 +4,7 @@ use crate::domain::entities::{IntegrityReport, WorkspaceInfo};
 use crate::domain::errors::DomainResult;
 use crate::domain::ports::{TrackRepository, WorkspaceManagerPort};
 
-/// Inicializa o valida un directorio como Workspace de LocalStream (`.localstream-workspace`, `/tracks`, `/thumbnails`)
+/// Inicializa o valida un directorio como Workspace de ytms-player (`.ytms-player-workspace`, `/tracks`, `/thumbnails`)
 /// y ejecuta la reconciliación de integridad inicial con SQLite (SDD 3.1 - 3.5).
 pub fn initialize_workspace(
     workspace_path: &Path,

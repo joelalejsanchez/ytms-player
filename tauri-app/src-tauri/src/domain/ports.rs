@@ -43,7 +43,7 @@ pub trait PlaylistRepository: Send + Sync {
     fn delete_playlist(&self, playlist_id: i64) -> DomainResult<()>;
 }
 
-/// Puerto para la administración física del directorio Workspace y archivo `.localstream-workspace` (SDD Sección 3).
+/// Puerto para la administración física del directorio Workspace y archivo `.ytms-player-workspace` (SDD Sección 3).
 pub trait WorkspaceManagerPort: Send + Sync {
     fn initialize_or_validate(&self, root_path: &Path) -> DomainResult<WorkspaceInfo>;
     fn track_file_status(

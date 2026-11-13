@@ -93,7 +93,7 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
         </div>
         <div>
           <h1 className="text-base font-bold tracking-tight text-white">
-            LocalStream
+            ytms-player
           </h1>
           <p className="text-xs text-slate-400">YouTube Audio Desktop</p>
         </div>

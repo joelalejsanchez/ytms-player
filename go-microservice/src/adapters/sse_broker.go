@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"localstream/go-microservice/src/domain"
+	"ytms-player/go-microservice/src/domain"
 )
 
 // SSEBroker gestiona las suscripciones de clientes SSE y difunde eventos de progreso sin polling en reposo (SDD 6.2).

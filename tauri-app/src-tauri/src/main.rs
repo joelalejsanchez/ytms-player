@@ -16,10 +16,10 @@ use interfaces::state::AppState;
 
 fn main() {
     let default_go_url =
-        std::env::var("LOCALSTREAM_GO_URL").unwrap_or_else(|_| "http://127.0.0.1:8080".to_string());
+        std::env::var("YTMS_PLAYER_GO_URL").unwrap_or_else(|_| "http://127.0.0.1:8080".to_string());
 
     let app_state =
-        AppState::new(&default_go_url).expect("Failed to initialize LocalStream application state");
+        AppState::new(&default_go_url).expect("Failed to initialize ytms-player application state");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -51,7 +51,7 @@ fn main() {
             import_cookies_file,
         ])
         .run(tauri::generate_context!())
-        .expect("Error while running LocalStream Tauri application");
+        .expect("Error while running ytms-player Tauri application");
 }
 
 #[cfg(test)]
@@ -61,13 +61,13 @@ mod tests {
 
     use crate::application::{playlist_usecases, track_usecases, workspace_usecases};
     use crate::domain::entities::{LikeSyncItemDto, NewTrack};
-    use crate::domain::ports::{PlaylistRepository, TrackRepository, WorkspaceManagerPort};
+    use crate::domain::ports::{TrackRepository, WorkspaceManagerPort};
     use crate::infrastructure::sqlite_repository::SqliteWorkspaceStore;
     use crate::infrastructure::workspace_fs::LocalWorkspaceManager;
 
     fn temp_workspace_dir(label: &str) -> PathBuf {
         let dir =
-            std::env::temp_dir().join(format!("localstream-test-{label}-{}", std::process::id()));
+            std::env::temp_dir().join(format!("ytms-player-test-{label}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).expect("create temp workspace");
         dir
@@ -83,7 +83,7 @@ mod tests {
             .expect("initialize workspace");
 
         assert!(info.is_valid);
-        assert!(ws_dir.join(".localstream-workspace").is_file());
+        assert!(ws_dir.join(".ytms-player-workspace").is_file());
         assert!(ws_dir.join("tracks").is_dir());
         assert!(ws_dir.join("thumbnails").is_dir());
 

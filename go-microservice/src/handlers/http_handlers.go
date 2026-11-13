@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"localstream/go-microservice/src/domain"
-	"localstream/go-microservice/src/usecases"
+	"ytms-player/go-microservice/src/domain"
+	"ytms-player/go-microservice/src/usecases"
 )
 
 // APIHandler encapsula los controladores HTTP y SSE del microservicio Go (SDD 5.4 y 6).

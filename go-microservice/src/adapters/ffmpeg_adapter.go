@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"localstream/go-microservice/src/domain"
+	"ytms-player/go-microservice/src/domain"
 )
 
 // FFmpegAdapter implementa domain.AudioProcessorPort para procesar el audio e incrustar tags ID3/Vorbis y miniaturas (SDD 6.1 pasos 6-10).

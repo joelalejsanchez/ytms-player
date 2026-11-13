@@ -1,6 +1,6 @@
 # Checklist de Insumos y Requisitos para Pruebas End-to-End y Producción (`docs/todo.md`)
 
-Este documento lista exactamente lo que necesitas tener a mano o proporcionarme para completar la integración real con servicios externos (Google OAuth 2.0 / YouTube Data API v3), probar descargas reales y preparar el empaquetado final de **LocalStream** para producción (Linux y Windows).
+Este documento lista exactamente lo que necesitas tener a mano o proporcionarme para completar la integración real con servicios externos (Google OAuth 2.0 / YouTube Data API v3), probar descargas reales y preparar el empaquetado final de **ytms-player** para producción (Linux y Windows).
 
 ---
 
@@ -50,11 +50,11 @@ Actualmente el adaptador `YouTubeLikesAdapter` tiene soporte tanto para modo sim
 
 ## 4. Definición de Rutas de Volumen Docker ↔ Host para Producción
 
-- [ ] Confirmar cuál será tu **directorio raíz padre** donde guardarás tus Workspaces en tu máquina (ej. `/home/joelsanchz/Music/LocalStreamWorkspaces` en Linux o `C:/Users/TuUsuario/Music/LocalStreamWorkspaces` en Windows).
+- [ ] Confirmar cuál será tu **directorio raíz padre** donde guardarás tus Workspaces en tu máquina (ej. `/home/joelsanchz/Music/YtmsPlayerWorkspaces` en Linux o `C:/Users/TuUsuario/Music/YtmsPlayerWorkspaces` en Windows).
 - [ ] Configurar esa ruta en el archivo `.env` en la raíz del proyecto:
   ```env
-  LOCALSTREAM_WORKSPACE_HOST=/home/joelsanchz/Music/LocalStreamWorkspaces
-  HOST_WORKSPACE_PREFIX=/home/joelsanchz/Music/LocalStreamWorkspaces
+  YTMS_PLAYER_WORKSPACE_HOST=/home/joelsanchz/Music/YtmsPlayerWorkspaces
+  HOST_WORKSPACE_PREFIX=/home/joelsanchz/Music/YtmsPlayerWorkspaces
   CONTAINER_WORKSPACE_PREFIX=/app/workspace
   ```
   *(Así cualquier sub-carpeta de Workspace que crees o selecciones en Tauri dentro de ese directorio será accesible tanto por Rust como por el contenedor Docker de Go).*
@@ -73,4 +73,4 @@ Para la sesión de pruebas funcionales completas, ten a mano:
 ## 6. Identidad de Empaquetado y Firma para Producción (Opcional)
 
 - [ ] Icono definitivo de la aplicación en alta resolución (`1024x1024 PNG`) para generar automáticamente los `.icns`, `.ico` y `.png` con `npx tauri icon`.
-- [ ] Identificador de bundle definitivo en `tauri.conf.json` (actualmente `com.localstream.desktop`).
+- [ ] Identificador de bundle definitivo en `tauri.conf.json` (actualmente `com.ytms-player.desktop`).

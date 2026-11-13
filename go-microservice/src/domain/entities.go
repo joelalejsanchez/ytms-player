@@ -18,7 +18,7 @@ var (
 	ErrProcessingFailed     = errors.New("audio processing failed")
 )
 
-// AudioFormat define los formatos de audio soportados por LocalStream.
+// AudioFormat define los formatos de audio soportados por ytms-player.
 type AudioFormat string
 
 const (

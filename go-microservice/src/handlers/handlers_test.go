@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
-	"localstream/go-microservice/src/adapters"
-	"localstream/go-microservice/src/domain"
-	"localstream/go-microservice/src/usecases"
+	"ytms-player/go-microservice/src/adapters"
+	"ytms-player/go-microservice/src/domain"
+	"ytms-player/go-microservice/src/usecases"
 )
 
 type stubDownloader struct{}
@@ -120,7 +120,7 @@ func TestHandleHealth(t *testing.T) {
 	if err := json.NewDecoder(resp.Body).Decode(&status); err != nil {
 		t.Fatalf("failed to decode health response: %v", err)
 	}
-	if status.Status != "healthy" || status.Service != "localstream-go" || status.Version != "1.0.0" {
+	if status.Status != "healthy" || status.Service != "ytms-player-go" || status.Version != "1.0.0" {
 		t.Errorf("unexpected health response: %+v", status)
 	}
 }

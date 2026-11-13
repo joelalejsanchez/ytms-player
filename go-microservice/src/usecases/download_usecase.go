@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"localstream/go-microservice/src/domain"
+	"ytms-player/go-microservice/src/domain"
 )
 
 type downloadJob struct {

@@ -5,9 +5,9 @@ use crate::domain::entities::WorkspaceInfo;
 use crate::domain::errors::{DomainError, DomainResult};
 use crate::domain::ports::WorkspaceManagerPort;
 
-pub const WORKSPACE_CONTROL_FILENAME: &str = ".localstream-workspace";
+pub const WORKSPACE_CONTROL_FILENAME: &str = ".ytms-player-workspace";
 
-/// Implementación del gestor de sistema de archivos para Workspaces de LocalStream (SDD Sección 3).
+/// Implementación del gestor de sistema de archivos para Workspaces de ytms-player (SDD Sección 3).
 #[derive(Debug, Default, Clone)]
 pub struct LocalWorkspaceManager;
 
@@ -35,7 +35,7 @@ impl WorkspaceManagerPort for LocalWorkspaceManager {
         let tracks_dir = root_path.join("tracks");
         let thumbnails_dir = root_path.join("thumbnails");
         let control_file = root_path.join(WORKSPACE_CONTROL_FILENAME);
-        let db_path = root_path.join("localstream.db");
+        let db_path = root_path.join("ytms-player.db");
 
         fs::create_dir_all(&tracks_dir).map_err(|e| {
             DomainError::FilesystemError(format!("Failed to create /tracks directory: {e}"))
@@ -47,7 +47,7 @@ impl WorkspaceManagerPort for LocalWorkspaceManager {
 
         if !control_file.exists() {
             let control_payload =
-                r#"{"app":"localstream","schema_version":1,"workspace_type":"local"}"#;
+                r#"{"app":"ytms-player","schema_version":1,"workspace_type":"local"}"#;
             fs::write(&control_file, format!("{control_payload}\n")).map_err(|e| {
                 DomainError::FilesystemError(format!(
                     "Failed to create {WORKSPACE_CONTROL_FILENAME}: {e}"

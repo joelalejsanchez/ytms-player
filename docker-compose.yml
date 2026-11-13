@@ -1,11 +1,11 @@
 version: "3.8"
 
 services:
-  localstream-backend:
+  ytms-player-backend:
     build:
       context: ./go-microservice
       dockerfile: Dockerfile
-    container_name: localstream-backend
+    container_name: ytms-player-backend
     ports:
       - "127.0.0.1:8080:8080"
     environment:
@@ -16,7 +16,7 @@ services:
       - CONTAINER_WORKSPACE_PREFIX=/app/workspace
       - OAUTH_MOCK_MODE=${OAUTH_MOCK_MODE:-true}
     volumes:
-      - ${LOCALSTREAM_WORKSPACE_HOST:-./workspace}:/app/workspace
+      - ${YTMS_PLAYER_WORKSPACE_HOST:-./workspace}:/app/workspace
       - ./config/cookies.txt:/app/config/cookies.txt:ro
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/api/health"]

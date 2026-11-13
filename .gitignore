@@ -30,7 +30,7 @@ go-microservice/bin/
 go-microservice/dist/
 go-microservice/coverage.out
 go-microservice/coverage.html
-go-microservice/localstream-go
+go-microservice/ytms-player-go
 
 # Tauri / Node Frontend
 tauri-app/node_modules/

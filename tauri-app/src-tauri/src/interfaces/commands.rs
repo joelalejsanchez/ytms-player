@@ -12,12 +12,12 @@ use crate::domain::entities::{
     Track, WorkspaceInfo,
 };
 use crate::domain::errors::{DomainError, DomainResult};
-use crate::domain::ports::{MicroserviceClientPort, TrackRepository};
+use crate::domain::ports::{MicroserviceClientPort, TrackRepository, WorkspaceManagerPort};
 use crate::infrastructure::go_microservice_client::GoMicroserviceClient;
 use crate::infrastructure::sqlite_repository::SqliteWorkspaceStore;
 use crate::interfaces::state::{ActiveWorkspaceContext, AppState};
 
-/// Selecciona, inicializa o valida un directorio como Workspace de LocalStream (SDD 3.1 - 3.3).
+/// Selecciona, inicializa o valida un directorio como Workspace de ytms-player (SDD 3.1 - 3.3).
 #[tauri::command]
 pub fn select_workspace(path: String, state: State<'_, AppState>) -> DomainResult<WorkspaceInfo> {
     let root_path = PathBuf::from(path.trim());

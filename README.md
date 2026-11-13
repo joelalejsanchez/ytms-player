@@ -1,4 +1,4 @@
-# LocalStream Monorepo
+# ytms-player Monorepo
 
 Aplicación de escritorio nativa de alto rendimiento construida con **Tauri v2 (React/TypeScript + Rust/SQLite)** y un microservicio backend autohospedado en **Docker (Go + yt-dlp + FFmpeg)**, siguiendo **Clean Architecture** de 4 capas.
 
@@ -33,7 +33,7 @@ make fmt-check    # Verifica que el formato sea válido
 make vet          # Ejecuta análisis estático oficial go vet
 make lint         # Ejecuta fmt-check + go vet + golangci-lint
 make test         # Ejecuta pruebas unitarias y de handlers HTTP/SSE
-make build        # Compila el binario estático en bin/localstream-go
+make build        # Compila el binario estático en bin/ytms-player-go
 ```
 
 ### 2. Backend Rust de Tauri (`/tauri-app/src-tauri`)

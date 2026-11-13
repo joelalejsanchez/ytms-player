@@ -1,7 +1,7 @@
-.PHONY: help fmt lint test check docker-up docker-down
+.PHONY: help fmt fmt-check lint test check docker-up docker-down
 
 help: ## Muestra los comandos disponibles en la raíz del monorepo
-	@echo "Comandos disponibles en LocalStream Monorepo:"
+	@echo "Comandos disponibles en ytms-player Monorepo:"
 	@echo "  make fmt          - Formatea Go, Rust y Frontend (React/TS)"
 	@echo "  make fmt-check    - Verifica el formato en Go, Rust y Frontend"
 	@echo "  make lint         - Ejecuta linters en Go, Rust (Clippy) y Frontend (ESLint)"

@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"localstream/go-microservice/src/domain"
+	"ytms-player/go-microservice/src/domain"
 )
 
-const WorkspaceControlFile = ".localstream-workspace"
+const WorkspaceControlFile = ".ytms-player-workspace"
 
 // WorkspacePathResolver gestiona la traducción de rutas entre el Host (Tauri) y el contenedor Docker,
 // garantizando la estructura del workspace y previniendo escrituras fuera de directorios autorizados (SDD 3.2, 3.3 y 8.3).
@@ -72,10 +72,10 @@ func (r *WorkspacePathResolver) ResolveWorkspaceDirs(
 		return "", "", "", domain.ErrInvalidWorkspacePath
 	}
 
-	// Asegurar archivo de control .localstream-workspace (SDD 3.2)
+	// Asegurar archivo de control .ytms-player-workspace (SDD 3.2)
 	controlFile := filepath.Join(resolvedWorkspace, WorkspaceControlFile)
 	if _, err := os.Stat(controlFile); os.IsNotExist(err) {
-		_ = os.WriteFile(controlFile, []byte(`{"version":"1.0.0","app":"localstream"}`+"\n"), 0o644)
+		_ = os.WriteFile(controlFile, []byte(`{"version":"1.0.0","app":"ytms-player"}`+"\n"), 0o644)
 	}
 
 	return resolvedWorkspace, resolvedTracks, resolvedThumbs, nil

@@ -1,5 +1,5 @@
 {
-  "name": "localstream-tauri-app",
+  "name": "ytms-player-tauri-app",
   "private": true,
   "version": "1.0.0",
   "type": "module",

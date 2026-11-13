@@ -3,7 +3,7 @@ package usecases
 import (
 	"context"
 
-	"localstream/go-microservice/src/domain"
+	"ytms-player/go-microservice/src/domain"
 )
 
 const maxYouTubeBatchSize = 50

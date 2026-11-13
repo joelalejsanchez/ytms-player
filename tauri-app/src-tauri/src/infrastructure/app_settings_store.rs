@@ -6,14 +6,14 @@ use chrono::Utc;
 use crate::domain::entities::{AppSettings, SavedWorkspaceEntry};
 use crate::domain::errors::{DomainError, DomainResult};
 
-const APP_IDENTIFIER: &str = "com.localstream.desktop";
+const APP_IDENTIFIER: &str = "com.ytms-player.desktop";
 const SETTINGS_FILENAME: &str = "settings.json";
 
 /// Gestiona la persistencia de configuración de la aplicación (Workspaces recordados, último activo,
 /// URL del microservicio y ruta de `cookies.txt`) en la carpeta estándar del sistema operativo:
-/// - **Linux:** `$XDG_CONFIG_HOME/com.localstream.desktop/settings.json` o `~/.config/com.localstream.desktop/settings.json`
-/// - **Windows:** `%APPDATA%\com.localstream.desktop\settings.json` (`C:\Users\<User>\AppData\Roaming\...`)
-/// - **macOS:** `~/Library/Application Support/com.localstream.desktop/settings.json`
+/// - **Linux:** `$XDG_CONFIG_HOME/com.ytms-player.desktop/settings.json` o `~/.config/com.ytms-player.desktop/settings.json`
+/// - **Windows:** `%APPDATA%\com.ytms-player.desktop\settings.json` (`C:\Users\<User>\AppData\Roaming\...`)
+/// - **macOS:** `~/Library/Application Support/com.ytms-player.desktop/settings.json`
 #[derive(Debug, Clone)]
 pub struct AppSettingsStore {
     settings_path: PathBuf,
@@ -43,7 +43,7 @@ impl AppSettingsStore {
 
     /// Determina el directorio nativo de configuración según el sistema operativo (Linux XDG / Windows AppData / macOS).
     pub fn resolve_os_app_config_dir() -> PathBuf {
-        if let Ok(custom) = std::env::var("LOCALSTREAM_CONFIG_DIR") {
+        if let Ok(custom) = std::env::var("YTMS_PLAYER_CONFIG_DIR") {
             let trimmed = custom.trim();
             if !trimmed.is_empty() {
                 return PathBuf::from(trimmed);
@@ -82,7 +82,7 @@ impl AppSettingsStore {
     }
 
     fn resolve_default_cookies_target(config_dir: &Path) -> PathBuf {
-        if let Ok(env_path) = std::env::var("LOCALSTREAM_COOKIES_HOST_PATH") {
+        if let Ok(env_path) = std::env::var("YTMS_PLAYER_COOKIES_HOST_PATH") {
             let trimmed = env_path.trim();
             if !trimmed.is_empty() {
                 return PathBuf::from(trimmed);

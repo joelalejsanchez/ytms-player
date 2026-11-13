@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"localstream/go-microservice/src/domain"
+	"ytms-player/go-microservice/src/domain"
 )
 
 type mockDownloader struct {
@@ -249,7 +249,7 @@ func TestSyncLikesUseCase_DeduplicationAndValidation(t *testing.T) {
 func TestHealthUseCase(t *testing.T) {
 	uc := NewHealthUseCase(nil)
 	status := uc.Execute(context.Background())
-	if status.Status != "healthy" || status.Service != "localstream-go" || status.Version != "1.0.0" {
+	if status.Status != "healthy" || status.Service != "ytms-player-go" || status.Version != "1.0.0" {
 		t.Errorf("unexpected health status: %+v", status)
 	}
 }

@@ -31,7 +31,7 @@ export const tauriApi = {
     const selected = await open({
       directory: true,
       multiple: false,
-      title: "Seleccionar directorio raíz del Workspace LocalStream",
+      title: "Seleccionar directorio raíz del Workspace ytms-player",
     });
     return typeof selected === "string" ? selected : null;
   },

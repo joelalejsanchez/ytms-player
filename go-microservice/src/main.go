@@ -12,9 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	"localstream/go-microservice/src/adapters"
-	"localstream/go-microservice/src/handlers"
-	"localstream/go-microservice/src/usecases"
+	"ytms-player/go-microservice/src/adapters"
+	"ytms-player/go-microservice/src/handlers"
+	"ytms-player/go-microservice/src/usecases"
 )
 
 func main() {
@@ -63,21 +63,21 @@ func main() {
 	defer stop()
 
 	go func() {
-		log.Printf("[localstream-go] starting server on :%s (workers=%d, oauth_mock=%v)", port, maxWorkers, oauthMockMode)
+		log.Printf("[ytms-player-go] starting server on :%s (workers=%d, oauth_mock=%v)", port, maxWorkers, oauthMockMode)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("[localstream-go] server error: %v", err)
+			log.Fatalf("[ytms-player-go] server error: %v", err)
 		}
 	}()
 
 	<-stopCtx.Done()
-	log.Println("[localstream-go] shutting down gracefully...")
+	log.Println("[ytms-player-go] shutting down gracefully...")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	_ = server.Shutdown(shutdownCtx)
 	downloadUC.Shutdown()
-	log.Println("[localstream-go] shutdown complete")
+	log.Println("[ytms-player-go] shutdown complete")
 }
 
 func getEnv(key, fallback string) string {

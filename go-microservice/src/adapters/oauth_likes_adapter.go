@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"localstream/go-microservice/src/domain"
+	"ytms-player/go-microservice/src/domain"
 )
 
 // YouTubeLikesAdapter implementa domain.LikesSyncPort soportando modo Mock inicial e integración con YouTube Data API v3 (SDD 6.3 y 8.2).

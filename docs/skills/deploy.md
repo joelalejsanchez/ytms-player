@@ -13,9 +13,9 @@ description: Guía de contenedorización con Docker, configuración de Docker Co
   ```yaml
   version: "3.8"
   services:
-    localstream-backend:
+    ytms-player-backend:
       build: .
-      container_name: localstream-backend
+      container_name: ytms-player-backend
       ports:
         - "8080:8080"
       volumes:

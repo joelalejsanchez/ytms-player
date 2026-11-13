@@ -296,7 +296,7 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       set({
         health: {
           status: "offline",
-          service: "localstream-go",
+          service: "ytms-player-go",
           version: "1.0.0",
         },
       });
