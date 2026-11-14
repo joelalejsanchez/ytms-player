@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html"
 	"net/http"
 	"strings"
 	"time"
@@ -262,6 +263,8 @@ func renderOAuthCallbackHTML(w http.ResponseWriter, status int, success bool, me
 		badgeColor = "#f43f5e"
 		title = "Error de Autorización OAuth 2.0"
 	}
+	safeTitle := html.EscapeString(title)
+	safeMessage := html.EscapeString(message)
 	_, _ = fmt.Fprintf(w, `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -285,7 +288,7 @@ func renderOAuthCallbackHTML(w http.ResponseWriter, status int, success bool, me
   </div>
   <script>if (%v) { setTimeout(function(){ window.close(); }, 2500); }</script>
 </body>
-</html>`, badgeColor, title, message, success)
+</html>`, badgeColor, safeTitle, safeMessage, success)
 }
 
 // HandleHealth procesa GET /api/health (SDD 6.4).

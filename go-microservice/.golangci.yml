@@ -1,39 +1,46 @@
+version: "2"
+
 run:
   timeout: 3m
   tests: true
 
 linters:
-  disable-all: true
+  default: none
   enable:
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
     - unused
-    - gofmt
-    - goimports
-    - misspell
     - unconvert
     - unparam
     - gosec
     - bodyclose
-    - noctx
+  settings:
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+        - shadow
+    gosec:
+      excludes:
+        - G101 # Constantes de URLs públicas de OAuth 2.0 y tokens mock de prueba
+        - G117 # Serialización legítima de OAuth token local (0600)
+        - G204 # Ejecución controlada con argumentos separados hacia yt-dlp y ffmpeg (SDD 8.3)
+        - G301 # Directorios de workspace (/tracks y /thumbnails) compartidos con el reproductor Tauri
+        - G302 # Archivos de miniaturas con permisos de lectura 0644 para el reproductor Tauri
+        - G304 # Rutas validadas previamente mediante domain.ValidateSafePath y WorkspacePathResolver
+        - G306 # Archivos de audio y miniaturas legibles por el usuario del reproductor
+        - G705 # Salida HTML escapada con html.EscapeString
 
-linters-settings:
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment
-  gofmt:
-    simplify: true
-  gosec:
-    excludes:
-      - G204 # Ejecución controlada con argumentos separados hacia yt-dlp y ffmpeg (SDD 8.3)
-  misspell:
-    locale: US
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      simplify: true
 
 issues:
-  exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0

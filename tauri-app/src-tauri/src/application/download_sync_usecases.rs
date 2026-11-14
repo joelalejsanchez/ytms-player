@@ -112,15 +112,15 @@ fn persist_downloaded_items(
     playlist_repo: &dyn PlaylistRepository,
 ) -> DomainResult<Vec<Track>> {
     let maybe_playlist = if let Some(pl_id) = &response.playlist_id {
-        if !pl_id.trim().is_empty() {
+        if pl_id.trim().is_empty() {
+            None
+        } else {
             let title = response
                 .playlist_title
                 .as_deref()
                 .filter(|t| !t.trim().is_empty())
                 .unwrap_or(pl_id.as_str());
             Some(playlist_repo.create_playlist(title, Some(pl_id.as_str()))?)
-        } else {
-            None
         }
     } else {
         None
@@ -146,7 +146,7 @@ fn persist_downloaded_items(
     Ok(saved_tracks)
 }
 
-/// Recupera un archivo extraviado (`is_missing = 1`) re-descargándolo desde YouTube y restaurando `is_missing = 0` (SDD 3.5).
+/// Recupera un archivo extraviado (`is_missing = 1`) re-descargándolo desde `YouTube` y restaurando `is_missing = 0` (SDD 3.5).
 pub fn recover_missing_track(
     workspace_path: &Path,
     youtube_id: &str,

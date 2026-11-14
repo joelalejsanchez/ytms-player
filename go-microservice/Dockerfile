@@ -22,7 +22,7 @@ RUN apk add --no-cache \
     tzdata \
     wget \
     && pip3 install --no-cache-dir --break-system-packages yt-dlp \
-    && adduser -D -u 10001 ytmsplayer
+    && adduser -D -u 1000 ytmsplayer
 
 WORKDIR /app
 

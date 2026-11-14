@@ -41,7 +41,7 @@ impl AppSettingsStore {
         }
     }
 
-    /// Determina el directorio nativo de configuración según el sistema operativo (Linux XDG / Windows AppData / macOS).
+    /// Determina el directorio nativo de configuración según el sistema operativo (Linux XDG / Windows `AppData` / macOS).
     pub fn resolve_os_app_config_dir() -> PathBuf {
         if let Ok(custom) = std::env::var("YTMS_PLAYER_CONFIG_DIR") {
             let trimmed = custom.trim();

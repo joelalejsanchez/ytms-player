@@ -6,6 +6,7 @@ services:
       context: ./go-microservice
       dockerfile: Dockerfile
     container_name: ytms-player-backend
+    user: "${UID:-1000}:${GID:-1000}"
     ports:
       - "127.0.0.1:8080:8080"
     environment:

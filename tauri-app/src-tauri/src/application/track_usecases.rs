@@ -60,7 +60,7 @@ pub fn list_missing_tracks(track_repo: &dyn TrackRepository) -> DomainResult<Vec
     track_repo.get_missing_tracks()
 }
 
-/// Actualiza el estado de `liked` de un track y marca `synced = false` hasta la próxima sincronización con YouTube.
+/// Actualiza el estado de `liked` de un track y marca `synced = false` hasta la próxima sincronización con `YouTube`.
 pub fn set_track_like_state(
     youtube_id: &str,
     liked: Option<bool>,

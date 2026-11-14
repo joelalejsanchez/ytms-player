@@ -42,8 +42,7 @@ pub fn select_workspace(path: String, state: State<'_, AppState>) -> DomainResul
 
     let current_url = state
         .microservice_client()
-        .map(|c| c.base_url().to_string())
-        .unwrap_or_else(|_| "http://127.0.0.1:8080".to_string());
+        .map_or_else(|_| "http://127.0.0.1:8080".to_string(), |c| c.base_url().to_string());
     let _ = state
         .settings_store
         .record_workspace_opened(&root_path, &current_url);
