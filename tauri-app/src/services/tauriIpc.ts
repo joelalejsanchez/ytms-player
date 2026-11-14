@@ -160,4 +160,8 @@ export const tauriApi = {
   openOAuthLogin(): Promise<string> {
     return safeInvoke<string>("open_oauth_login");
   },
+
+  readAudioDataUrl(filePath: string): Promise<string> {
+    return safeInvoke<string>("read_audio_data_url", { filePath });
+  },
 };

@@ -14,6 +14,7 @@ import {
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Primitives";
 import { formatDuration, toAssetUrl } from "@/lib/utils";
+import { tauriApi } from "@/services/tauriIpc";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 
 /**
@@ -51,6 +52,7 @@ export const PersistentPlayer = React.memo(() => {
 
   // Sincronizar fuente de audio cuando cambia el track activo
   useEffect(() => {
+    let isCancelled = false;
     const audio = audioRef.current;
     if (!audio) {
       return;
@@ -61,17 +63,38 @@ export const PersistentPlayer = React.memo(() => {
       return;
     }
 
-    const assetSrc = toAssetUrl(currentTrack.audio_path);
-    if (audio.src !== assetSrc) {
-      audio.src = assetSrc;
-      audio.load();
-    }
+    // Usar Tauri IPC nativo para leer el audio como Data URL o convertir por Asset Protocol
+    const loadAudioSrc = async () => {
+      let src = toAssetUrl(currentTrack.audio_path);
+      try {
+        const dataUrl = await tauriApi.readAudioDataUrl(currentTrack.audio_path);
+        if (dataUrl) {
+          src = dataUrl;
+        }
+      } catch {
+        // Fallback a toAssetUrl
+      }
 
-    if (isPlaying) {
-      void audio.play().catch(() => {
-        setPlaying(false);
-      });
-    }
+      if (isCancelled || !audio) {
+        return;
+      }
+      if (audio.src !== src) {
+        audio.src = src;
+        audio.load();
+      }
+
+      if (isPlaying) {
+        void audio.play().catch(() => {
+          setPlaying(false);
+        });
+      }
+    };
+
+    void loadAudioSrc();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [currentTrack, isPlaying, setPlaying]);
 
   // Sincronizar play / pause

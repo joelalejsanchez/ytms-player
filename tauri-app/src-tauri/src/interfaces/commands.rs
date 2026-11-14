@@ -290,6 +290,71 @@ pub fn check_microservice_health(state: State<'_, AppState>) -> DomainResult<Hea
     client.check_health()
 }
 
+/// Lee el contenido binario de un archivo de audio local como Base64 Data URL para reproducción HTML5 sin restricciones de protocolo.
+#[tauri::command]
+pub async fn read_audio_data_url(file_path: String) -> DomainResult<String> {
+    tokio::task::spawn_blocking(move || {
+        let path = std::path::Path::new(file_path.trim());
+        if !path.is_file() {
+            return Err(DomainError::ValidationError(format!(
+                "Audio file does not exist: {file_path}"
+            )));
+        }
+
+        let bytes = std::fs::read(path).map_err(|e| {
+            DomainError::PersistenceError(format!("Failed to read audio file: {e}"))
+        })?;
+
+        let ext = path
+            .extension()
+            .and_then(|s| s.to_str())
+            .unwrap_or("mp3")
+            .to_lowercase();
+
+        let mime = match ext.as_str() {
+            "m4a" => "audio/mp4",
+            "opus" => "audio/ogg",
+            "wav" => "audio/wav",
+            _ => "audio/mpeg",
+        };
+
+        let mut base64_str = String::with_capacity(bytes.len() * 4 / 3 + 64);
+        base64_str.push_str("data:");
+        base64_str.push_str(mime);
+        base64_str.push_str(";base64,");
+
+        // Codificación Base64 estándar
+        const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        for chunk in bytes.chunks(3) {
+            let b0 = chunk[0];
+            let b1 = if chunk.len() > 1 { chunk[1] } else { 0 };
+            let b2 = if chunk.len() > 2 { chunk[2] } else { 0 };
+
+            let idx0 = (b0 >> 2) as usize;
+            let idx1 = (((b0 & 0x03) << 4) | (b1 >> 4)) as usize;
+            let idx2 = (((b1 & 0x0f) << 2) | (b2 >> 6)) as usize;
+            let idx3 = (b2 & 0x3f) as usize;
+
+            base64_str.push(CHARS[idx0] as char);
+            base64_str.push(CHARS[idx1] as char);
+            if chunk.len() > 1 {
+                base64_str.push(CHARS[idx2] as char);
+            } else {
+                base64_str.push('=');
+            }
+            if chunk.len() > 2 {
+                base64_str.push(CHARS[idx3] as char);
+            } else {
+                base64_str.push('=');
+            }
+        }
+
+        Ok(base64_str)
+    })
+    .await
+    .map_err(|e| DomainError::MicroserviceError(format!("Failed to read audio task: {e}")))?
+}
+
 /// Permite actualizar la URL base del microservicio Go en tiempo de ejecución.
 #[tauri::command]
 pub fn set_microservice_url(url: String, state: State<'_, AppState>) -> DomainResult<String> {
