@@ -156,17 +156,25 @@ pub fn delete_track(
 
 /// Recupera un archivo extraviado re-descargándolo o re-validándolo en `/tracks` (SDD 3.5).
 #[tauri::command]
-pub fn recover_track(youtube_id: String, state: State<'_, AppState>) -> DomainResult<Track> {
+pub async fn recover_track(youtube_id: String, state: State<'_, AppState>) -> DomainResult<Track> {
     let ctx = state.active_workspace()?;
     let client = state.microservice_client()?;
-    download_sync_usecases::recover_missing_track(
-        &ctx.root_path,
-        &youtube_id,
-        &state.workspace_manager,
-        ctx.store.as_ref(),
-        ctx.store.as_ref(),
-        client.as_ref(),
-    )
+    let root_path = ctx.root_path.clone();
+    let manager = state.workspace_manager.clone();
+    let store = ctx.store.clone();
+
+    tokio::task::spawn_blocking(move || {
+        download_sync_usecases::recover_missing_track(
+            &root_path,
+            &youtube_id,
+            &manager,
+            store.as_ref(),
+            store.as_ref(),
+            client.as_ref(),
+        )
+    })
+    .await
+    .map_err(|e| DomainError::MicroserviceError(format!("Recover track execution failed: {e}")))?
 }
 
 /// Crea una nueva playlist en el Workspace activo (SDD 4.2).
@@ -228,37 +236,51 @@ pub fn delete_playlist(playlist_id: i64, state: State<'_, AppState>) -> DomainRe
 
 /// Inicia una descarga de video o playlist delegando en `POST /api/download` del microservicio Go (SDD 6.1).
 #[tauri::command]
-pub fn start_download(
+pub async fn start_download(
     input: DownloadCommandInput,
     state: State<'_, AppState>,
 ) -> DomainResult<MicroserviceDownloadResponse> {
     let ctx = state.active_workspace()?;
     let client = state.microservice_client()?;
-    download_sync_usecases::execute_download_and_persist(
-        &ctx.root_path,
-        &input,
-        &state.workspace_manager,
-        ctx.store.as_ref(),
-        ctx.store.as_ref(),
-        client.as_ref(),
-    )
+    let root_path = ctx.root_path.clone();
+    let manager = state.workspace_manager.clone();
+    let store = ctx.store.clone();
+
+    tokio::task::spawn_blocking(move || {
+        download_sync_usecases::execute_download_and_persist(
+            &root_path,
+            &input,
+            &manager,
+            store.as_ref(),
+            store.as_ref(),
+            client.as_ref(),
+        )
+    })
+    .await
+    .map_err(|e| DomainError::MicroserviceError(format!("Download task execution failed: {e}")))?
 }
 
 /// Sincroniza los estados de likes mediante `POST /api/sync-likes` en Go y actualiza SQLite transaccionalmente (SDD 6.3).
 #[tauri::command]
-pub fn sync_likes(
+pub async fn sync_likes(
     youtube_ids: Option<Vec<String>>,
     access_token: Option<String>,
     state: State<'_, AppState>,
 ) -> DomainResult<LikeSyncResponseDto> {
     let ctx = state.active_workspace()?;
     let client = state.microservice_client()?;
-    download_sync_usecases::sync_likes_with_youtube(
-        youtube_ids,
-        access_token,
-        ctx.store.as_ref(),
-        client.as_ref(),
-    )
+    let store = ctx.store.clone();
+
+    tokio::task::spawn_blocking(move || {
+        download_sync_usecases::sync_likes_with_youtube(
+            youtube_ids,
+            access_token,
+            store.as_ref(),
+            client.as_ref(),
+        )
+    })
+    .await
+    .map_err(|e| DomainError::MicroserviceError(format!("Sync likes execution failed: {e}")))?
 }
 
 /// Consulta `GET /api/health` del microservicio Go (SDD 6.4).
