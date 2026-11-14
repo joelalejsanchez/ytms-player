@@ -10,6 +10,7 @@ import type {
   MicroserviceDownloadItem,
   MicroserviceDownloadResponse,
   NewTrack,
+  OAuthStatusDto,
   Playlist,
   PlaylistWithTracks,
   Track,
@@ -150,5 +151,13 @@ export const tauriApi = {
 
   setMicroserviceUrl(url: string): Promise<string> {
     return safeInvoke<string>("set_microservice_url", { url });
+  },
+
+  getOAuthStatus(): Promise<OAuthStatusDto> {
+    return safeInvoke<OAuthStatusDto>("get_oauth_status");
+  },
+
+  openOAuthLogin(): Promise<string> {
+    return safeInvoke<string>("open_oauth_login");
   },
 };

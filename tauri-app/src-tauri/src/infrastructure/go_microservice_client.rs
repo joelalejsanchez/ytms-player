@@ -3,7 +3,8 @@ use std::time::Duration;
 use serde::Serialize;
 
 use crate::domain::entities::{
-    HealthStatusDto, LikeSyncResponseDto, MicroserviceDownloadRequest, MicroserviceDownloadResponse,
+    HealthStatusDto, LikeSyncResponseDto, MicroserviceDownloadRequest,
+    MicroserviceDownloadResponse, OAuthStatusDto,
 };
 use crate::domain::errors::{DomainError, DomainResult};
 use crate::domain::ports::MicroserviceClientPort;
@@ -143,6 +144,30 @@ impl MicroserviceClientPort for GoMicroserviceClient {
             resp.json::<HealthStatusDto>().await.map_err(|e| {
                 DomainError::MicroserviceError(format!(
                     "Failed to deserialize /api/health response: {e}"
+                ))
+            })
+        })
+    }
+
+    fn get_oauth_status(&self) -> DomainResult<OAuthStatusDto> {
+        let url = format!("{}/api/oauth/status", self.base_url);
+        let client = self.http_client.clone();
+
+        Self::block_on(async move {
+            let resp = client.get(&url).send().await.map_err(|e| {
+                DomainError::MicroserviceError(format!("GET /api/oauth/status failed: {e}"))
+            })?;
+
+            if !resp.status().is_success() {
+                return Err(DomainError::MicroserviceError(format!(
+                    "OAuth status check failed with status {}",
+                    resp.status()
+                )));
+            }
+
+            resp.json::<OAuthStatusDto>().await.map_err(|e| {
+                DomainError::MicroserviceError(format!(
+                    "Failed to deserialize /api/oauth/status response: {e}"
                 ))
             })
         })

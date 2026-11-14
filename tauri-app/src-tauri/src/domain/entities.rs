@@ -184,3 +184,13 @@ pub struct HealthStatusDto {
     pub version: String,
     pub dependencies: Option<std::collections::HashMap<String, String>>,
 }
+
+/// Estado de autenticación OAuth 2.0 en `GET /api/oauth/status` (SDD 6.3 y 8.2).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OAuthStatusDto {
+    pub authenticated: bool,
+    pub mock_mode: bool,
+    pub client_configured: bool,
+    pub redirect_uri: Option<String>,
+    pub expires_at: Option<String>,
+}

@@ -25,6 +25,12 @@ func main() {
 	containerPrefix := getEnv("CONTAINER_WORKSPACE_PREFIX", "")
 	oauthMockMode := getEnvBool("OAUTH_MOCK_MODE", true)
 	youtubeAPIURL := getEnv("YOUTUBE_API_URL", "https://www.googleapis.com/youtube/v3/videos/getRating")
+	oauthCfg := adapters.OAuthConfig{
+		ClientID:     getEnv("OAUTH_CLIENT_ID", ""),
+		ClientSecret: getEnv("OAUTH_CLIENT_SECRET", ""),
+		RedirectURI:  getEnv("OAUTH_REDIRECT_URI", "http://127.0.0.1:8080/api/oauth/callback"),
+		TokenFile:    getEnv("OAUTH_TOKEN_FILE", "/app/config/oauth_token.json"),
+	}
 
 	// Inicialización de Adaptadores (Clean Architecture Capa 3)
 	cmdExecutor := adapters.NewOSCommandExecutor()
@@ -33,7 +39,7 @@ func main() {
 	pathResolver := adapters.NewWorkspacePathResolver(hostPrefix, containerPrefix)
 	ytdlpAdapter := adapters.NewYtDlpAdapter(cmdExecutor, cookiesFile)
 	ffmpegAdapter := adapters.NewFFmpegAdapter(cmdExecutor)
-	likesAdapter := adapters.NewYouTubeLikesAdapter(oauthMockMode, youtubeAPIURL)
+	likesAdapter := adapters.NewYouTubeLikesAdapterWithOAuth(oauthMockMode, youtubeAPIURL, oauthCfg)
 
 	// Inicialización de Casos de Uso (Clean Architecture Capa 2)
 	downloadUC := usecases.NewDownloadUseCase(
@@ -48,7 +54,7 @@ func main() {
 	healthUC := usecases.NewHealthUseCase(depChecker)
 
 	// Inicialización de Handlers HTTP y SSE (Clean Architecture Capa 4)
-	apiHandler := handlers.NewAPIHandler(downloadUC, syncLikesUC, healthUC, sseBroker)
+	apiHandler := handlers.NewAPIHandler(downloadUC, syncLikesUC, healthUC, sseBroker, likesAdapter)
 	mux := http.NewServeMux()
 	apiHandler.RegisterRoutes(mux)
 

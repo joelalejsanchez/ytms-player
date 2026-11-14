@@ -2,7 +2,8 @@ use std::path::{Path, PathBuf};
 
 use crate::domain::entities::{
     HealthStatusDto, LikeSyncItemDto, LikeSyncResponseDto, MicroserviceDownloadRequest,
-    MicroserviceDownloadResponse, NewTrack, Playlist, PlaylistWithTracks, Track, WorkspaceInfo,
+    MicroserviceDownloadResponse, NewTrack, OAuthStatusDto, Playlist, PlaylistWithTracks, Track,
+    WorkspaceInfo,
 };
 use crate::domain::errors::DomainResult;
 
@@ -73,4 +74,5 @@ pub trait MicroserviceClientPort: Send + Sync {
         access_token: Option<&str>,
     ) -> DomainResult<LikeSyncResponseDto>;
     fn check_health(&self) -> DomainResult<HealthStatusDto>;
+    fn get_oauth_status(&self) -> DomainResult<OAuthStatusDto>;
 }

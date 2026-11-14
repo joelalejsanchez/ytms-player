@@ -12,12 +12,16 @@ services:
       - PORT=8080
       - MAX_WORKERS=${MAX_WORKERS:-3}
       - COOKIES_FILE=/app/config/cookies.txt
-      - HOST_WORKSPACE_PREFIX=${HOST_WORKSPACE_PREFIX:-}
+      - HOST_WORKSPACE_PREFIX=${HOST_WORKSPACE_PREFIX:-${YTMS_PLAYER_WORKSPACE_HOST:-${HOME:-${USERPROFILE}}/Music/ytms-player}}
       - CONTAINER_WORKSPACE_PREFIX=/app/workspace
       - OAUTH_MOCK_MODE=${OAUTH_MOCK_MODE:-true}
+      - OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID:-}
+      - OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET:-}
+      - OAUTH_REDIRECT_URI=${OAUTH_REDIRECT_URI:-http://127.0.0.1:8080/api/oauth/callback}
+      - OAUTH_TOKEN_FILE=/app/config/oauth_token.json
     volumes:
-      - ${YTMS_PLAYER_WORKSPACE_HOST:-./workspace}:/app/workspace
-      - ./config/cookies.txt:/app/config/cookies.txt:ro
+      - ${YTMS_PLAYER_WORKSPACE_HOST:-${HOME:-${USERPROFILE}}/Music/ytms-player}:/app/workspace
+      - ./config:/app/config
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/api/health"]
       interval: 15s

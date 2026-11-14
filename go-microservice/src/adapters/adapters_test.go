@@ -192,4 +192,18 @@ func TestWorkspacePathResolver(t *testing.T) {
 	if hostAudio != "/host/workspaces/rock/tracks/dQw4w9WgXcQ.mp3" {
 		t.Errorf("unexpected mapped host path: %s", hostAudio)
 	}
+
+	// Verificar soporte multiplataforma Windows (C:\Users\...)
+	winResolver := NewWorkspacePathResolver(`C:\Users\Developer\Music\ytms-player`, tmpContainerRoot)
+	winWS, winTracks, _, err := winResolver.ResolveWorkspaceDirs(`C:\Users\Developer\Music\ytms-player\Electronic`, "", "")
+	if err != nil {
+		t.Fatalf("Windows ResolveWorkspaceDirs failed: %v", err)
+	}
+	if winWS != filepath.Join(tmpContainerRoot, "Electronic") {
+		t.Errorf("unexpected resolved Windows workspace: %s", winWS)
+	}
+	winHostAudio := winResolver.ToHostPath(filepath.Join(winTracks, "dQw4w9WgXcQ.mp3"), `C:\Users\Developer\Music\ytms-player\Electronic`)
+	if winHostAudio != "C:/Users/Developer/Music/ytms-player/Electronic/tracks/dQw4w9WgXcQ.mp3" {
+		t.Errorf("unexpected Windows mapped host path: %s", winHostAudio)
+	}
 }

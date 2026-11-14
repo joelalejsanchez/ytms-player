@@ -1,0 +1,2 @@
+# Este directorio se monta en /app/config dentro del contenedor Docker.
+# Los archivos sensibles (cookies.txt y oauth_token.json) están excluidos por .gitignore.

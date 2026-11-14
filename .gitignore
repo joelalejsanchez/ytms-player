@@ -13,6 +13,7 @@ Thumbs.db
 .env.local
 .env.*.local
 config/cookies.txt
+config/oauth_token.json
 *.pem
 *.key
 oauth_tokens.json

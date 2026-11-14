@@ -18,6 +18,7 @@ type APIHandler struct {
 	syncLikesUC *usecases.SyncLikesUseCase
 	healthUC    *usecases.HealthUseCase
 	broker      domain.ProgressBrokerPort
+	oauthFlow   domain.OAuthFlowPort
 }
 
 // NewAPIHandler crea una nueva instancia de APIHandler.
@@ -26,20 +27,29 @@ func NewAPIHandler(
 	syncLikesUC *usecases.SyncLikesUseCase,
 	healthUC *usecases.HealthUseCase,
 	broker domain.ProgressBrokerPort,
+	oauthFlow ...domain.OAuthFlowPort,
 ) *APIHandler {
+	var flow domain.OAuthFlowPort
+	if len(oauthFlow) > 0 {
+		flow = oauthFlow[0]
+	}
 	return &APIHandler{
 		downloadUC:  downloadUC,
 		syncLikesUC: syncLikesUC,
 		healthUC:    healthUC,
 		broker:      broker,
+		oauthFlow:   flow,
 	}
 }
 
-// RegisterRoutes registra los endpoints especificados en SDD Sección 6.
+// RegisterRoutes registra los endpoints especificados en SDD Sección 6 y el flujo OAuth 2.0 en navegador.
 func (h *APIHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/download", h.HandleDownload)
 	mux.HandleFunc("/api/progress/stream", h.HandleProgressStream)
 	mux.HandleFunc("/api/sync-likes", h.HandleSyncLikes)
+	mux.HandleFunc("/api/oauth/status", h.HandleOAuthStatus)
+	mux.HandleFunc("/api/oauth/login", h.HandleOAuthLogin)
+	mux.HandleFunc("/api/oauth/callback", h.HandleOAuthCallback)
 	mux.HandleFunc("/api/health", h.HandleHealth)
 }
 
@@ -177,6 +187,105 @@ func (h *APIHandler) HandleSyncLikes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, resp)
+}
+
+// HandleOAuthStatus procesa GET /api/oauth/status informando si la sesión OAuth 2.0 está activa.
+func (h *APIHandler) HandleOAuthStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method_not_allowed", "only GET is supported")
+		return
+	}
+	if h.oauthFlow == nil {
+		writeJSON(w, http.StatusOK, domain.OAuthStatus{MockMode: true})
+		return
+	}
+	writeJSON(w, http.StatusOK, h.oauthFlow.GetOAuthStatus())
+}
+
+// HandleOAuthLogin procesa GET /api/oauth/login redirigiendo al navegador hacia la pantalla de consentimiento de Google.
+func (h *APIHandler) HandleOAuthLogin(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method_not_allowed", "only GET is supported")
+		return
+	}
+	if h.oauthFlow == nil {
+		writeJSONError(w, http.StatusServiceUnavailable, "oauth_unavailable", "oauth flow adapter is not initialized")
+		return
+	}
+
+	authURL, err := h.oauthFlow.BuildAuthorizationURL()
+	if err != nil {
+		writeJSONError(w, http.StatusBadRequest, "oauth_not_configured", err.Error())
+		return
+	}
+
+	if r.URL.Query().Get("format") == "json" {
+		writeJSON(w, http.StatusOK, map[string]string{"auth_url": authURL})
+		return
+	}
+
+	http.Redirect(w, r, authURL, http.StatusFound)
+}
+
+// HandleOAuthCallback recibe la redirección del navegador tras la pantalla de consentimiento de Google (GET /api/oauth/callback).
+func (h *APIHandler) HandleOAuthCallback(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method_not_allowed", "only GET is supported")
+		return
+	}
+	if h.oauthFlow == nil {
+		writeJSONError(w, http.StatusServiceUnavailable, "oauth_unavailable", "oauth flow adapter is not initialized")
+		return
+	}
+
+	if oauthErr := strings.TrimSpace(r.URL.Query().Get("error")); oauthErr != "" {
+		renderOAuthCallbackHTML(w, http.StatusBadRequest, false, "Autorización cancelada o rechazada por Google ("+oauthErr+").")
+		return
+	}
+
+	code := strings.TrimSpace(r.URL.Query().Get("code"))
+	state := strings.TrimSpace(r.URL.Query().Get("state"))
+	if err := h.oauthFlow.ExchangeAuthorizationCode(r.Context(), code, state); err != nil {
+		renderOAuthCallbackHTML(w, http.StatusUnauthorized, false, "No se pudo validar el código de autorización OAuth 2.0. Verifica OAUTH_CLIENT_ID y OAUTH_CLIENT_SECRET en tu archivo .env.")
+		return
+	}
+
+	renderOAuthCallbackHTML(w, http.StatusOK, true, "¡Tu cuenta de YouTube ha sido conectada con éxito! Ya puedes volver a la ventana de ytms-player.")
+}
+
+func renderOAuthCallbackHTML(w http.ResponseWriter, status int, success bool, message string) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
+	badgeColor := "#10b981"
+	title := "Conexión OAuth 2.0 Completada"
+	if !success {
+		badgeColor = "#f43f5e"
+		title = "Error de Autorización OAuth 2.0"
+	}
+	_, _ = fmt.Fprintf(w, `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>ytms-player - OAuth 2.0</title>
+  <style>
+    body { background:#090d16; color:#f8fafc; font-family:system-ui,-apple-system,sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
+    .card { max-width:440px; padding:32px; border-radius:16px; background:#111827; border:1px solid #1f2937; text-align:center; box-shadow:0 20px 25px -5px rgba(0,0,0,.5); }
+    .dot { width:14px; height:14px; border-radius:9999px; background:%s; display:inline-block; margin-bottom:12px; }
+    h1 { font-size:20px; margin:0 0 12px; }
+    p { font-size:14px; color:#94a3b8; line-height:1.5; margin:0 0 24px; }
+    button { background:#ef4444; color:#fff; border:none; border-radius:8px; padding:10px 20px; font-weight:600; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="dot"></div>
+    <h1>%s</h1>
+    <p>%s</p>
+    <button onclick="window.close()">Volver a ytms-player</button>
+  </div>
+  <script>if (%v) { setTimeout(function(){ window.close(); }, 2500); }</script>
+</body>
+</html>`, badgeColor, title, message, success)
 }
 
 // HandleHealth procesa GET /api/health (SDD 6.4).

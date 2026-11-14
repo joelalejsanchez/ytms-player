@@ -7,15 +7,16 @@ import (
 
 // Errores de dominio independientes de infraestructura (SDD 5.1)
 var (
-	ErrInvalidYouTubeURL    = errors.New("invalid or unsupported youtube url")
-	ErrInvalidYouTubeID     = errors.New("invalid youtube id format")
-	ErrInvalidAudioFormat   = errors.New("unsupported audio format: must be mp3, m4a or opus")
-	ErrInvalidWorkspacePath = errors.New("invalid or unauthorized workspace directory path")
-	ErrEmptyYouTubeIDList   = errors.New("youtube_ids list cannot be empty")
-	ErrUnauthorizedOAuth    = errors.New("invalid or expired oauth 2.0 credentials")
-	ErrQueueFull            = errors.New("download worker queue is full, try again shortly")
-	ErrDownloadFailed       = errors.New("media download failed")
-	ErrProcessingFailed     = errors.New("audio processing failed")
+	ErrInvalidYouTubeURL        = errors.New("invalid or unsupported youtube url")
+	ErrInvalidYouTubeID         = errors.New("invalid youtube id format")
+	ErrInvalidAudioFormat       = errors.New("unsupported audio format: must be mp3, m4a or opus")
+	ErrInvalidWorkspacePath     = errors.New("invalid or unauthorized workspace directory path")
+	ErrEmptyYouTubeIDList       = errors.New("youtube_ids list cannot be empty")
+	ErrUnauthorizedOAuth        = errors.New("invalid or expired oauth 2.0 credentials")
+	ErrOAuthClientNotConfigured = errors.New("oauth 2.0 client_id and client_secret are not configured in environment")
+	ErrQueueFull                = errors.New("download worker queue is full, try again shortly")
+	ErrDownloadFailed           = errors.New("media download failed")
+	ErrProcessingFailed         = errors.New("audio processing failed")
 )
 
 // AudioFormat define los formatos de audio soportados por ytms-player.
@@ -138,4 +139,13 @@ type HealthStatus struct {
 	Service      string            `json:"service"`
 	Version      string            `json:"version"`
 	Dependencies map[string]string `json:"dependencies,omitempty"`
+}
+
+// OAuthStatus informa a la aplicación Tauri el estado de autenticación OAuth 2.0 sin exponer tokens en texto plano (SDD 8.2).
+type OAuthStatus struct {
+	Authenticated    bool   `json:"authenticated"`
+	MockMode         bool   `json:"mock_mode"`
+	ClientConfigured bool   `json:"client_configured"`
+	RedirectURI      string `json:"redirect_uri,omitempty"`
+	ExpiresAt        string `json:"expires_at,omitempty"`
 }

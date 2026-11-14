@@ -20,9 +20,14 @@ type WorkspacePathResolver struct {
 // NewWorkspacePathResolver crea una nueva instancia de WorkspacePathResolver.
 func NewWorkspacePathResolver(hostPrefix, containerPrefix string) *WorkspacePathResolver {
 	return &WorkspacePathResolver{
-		hostPrefix:      strings.TrimRight(filepath.ToSlash(strings.TrimSpace(hostPrefix)), "/"),
-		containerPrefix: strings.TrimRight(filepath.ToSlash(strings.TrimSpace(containerPrefix)), "/"),
+		hostPrefix:      normalizeCrossPlatformPath(hostPrefix),
+		containerPrefix: normalizeCrossPlatformPath(containerPrefix),
 	}
+}
+
+func normalizeCrossPlatformPath(p string) string {
+	replaced := strings.ReplaceAll(strings.TrimSpace(p), "\\", "/")
+	return strings.TrimRight(filepath.ToSlash(replaced), "/")
 }
 
 // ResolveWorkspaceDirs traduce las rutas al entorno del contenedor, verifica su seguridad y garantiza la estructura de carpetas.
@@ -82,26 +87,52 @@ func (r *WorkspacePathResolver) ResolveWorkspaceDirs(
 }
 
 func (r *WorkspacePathResolver) toContainerPath(p string) string {
-	slashPath := filepath.ToSlash(filepath.Clean(p))
-	if r.hostPrefix != "" && r.containerPrefix != "" && strings.HasPrefix(slashPath, r.hostPrefix) {
-		rel := strings.TrimPrefix(slashPath, r.hostPrefix)
-		return filepath.Clean(r.containerPrefix + "/" + strings.TrimLeft(rel, "/"))
+	slashPath := normalizeCrossPlatformPath(p)
+	if r.hostPrefix != "" && r.containerPrefix != "" {
+		if hasCrossPlatformPrefix(slashPath, r.hostPrefix) {
+			rel := slashPath[len(r.hostPrefix):]
+			return filepath.Clean(r.containerPrefix + "/" + strings.TrimLeft(rel, "/"))
+		}
 	}
-	return filepath.Clean(p)
+	return filepath.Clean(slashPath)
 }
 
-// ToHostPath convierte una ruta dentro del contenedor a la ruta equivalente en el Host de Tauri.
+// ToHostPath convierte una ruta dentro del contenedor a la ruta equivalente en el Host de Tauri (soportando Linux y Windows).
 func (r *WorkspacePathResolver) ToHostPath(containerPath string, originalWorkspacePath string) string {
-	slashPath := filepath.ToSlash(filepath.Clean(containerPath))
-	if r.hostPrefix != "" && r.containerPrefix != "" && strings.HasPrefix(slashPath, r.containerPrefix) {
-		rel := strings.TrimPrefix(slashPath, r.containerPrefix)
-		return filepath.Clean(r.hostPrefix + "/" + strings.TrimLeft(rel, "/"))
+	slashPath := normalizeCrossPlatformPath(containerPath)
+	if originalWorkspacePath != "" && r.containerPrefix != "" {
+		origNorm := normalizeCrossPlatformPath(originalWorkspacePath)
+		resolvedOrig := normalizeCrossPlatformPath(r.toContainerPath(originalWorkspacePath))
+		if hasCrossPlatformPrefix(slashPath, resolvedOrig) {
+			rel := strings.TrimLeft(slashPath[len(resolvedOrig):], "/")
+			if rel == "" {
+				return origNorm
+			}
+			return origNorm + "/" + rel
+		}
 	}
-	if originalWorkspacePath != "" && r.containerPrefix != "" && strings.HasPrefix(slashPath, r.containerPrefix) {
-		rel := strings.TrimPrefix(slashPath, r.containerPrefix)
-		return filepath.Clean(filepath.ToSlash(originalWorkspacePath) + "/" + strings.TrimLeft(rel, "/"))
+	if r.hostPrefix != "" && r.containerPrefix != "" && hasCrossPlatformPrefix(slashPath, r.containerPrefix) {
+		rel := strings.TrimLeft(slashPath[len(r.containerPrefix):], "/")
+		if rel == "" {
+			return r.hostPrefix
+		}
+		return r.hostPrefix + "/" + rel
 	}
 	return filepath.Clean(containerPath)
+}
+
+func hasCrossPlatformPrefix(target, prefix string) bool {
+	if prefix == "" {
+		return false
+	}
+	if strings.HasPrefix(target, prefix) {
+		return len(target) == len(prefix) || target[len(prefix)] == '/'
+	}
+	// Soporte para letras de unidad en Windows con distinta capitalización (ej. C:/Users vs c:/Users)
+	if len(target) >= len(prefix) && strings.EqualFold(target[:len(prefix)], prefix) {
+		return len(target) == len(prefix) || target[len(prefix)] == '/'
+	}
+	return false
 }
 
 // FileExists verifica si un archivo existe y devuelve su tamaño en bytes.

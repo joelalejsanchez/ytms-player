@@ -130,13 +130,14 @@ func ParseYouTubeURL(rawURL string) (ContentType, string, error) {
 	return "", "", ErrInvalidYouTubeURL
 }
 
-// ValidateSafePath comprueba que una ruta no sea vacía ni contenga secuencias de escape inseguras.
+// ValidateSafePath comprueba que una ruta no sea vacía ni contenga secuencias de escape inseguras (multiplataforma Linux/Windows).
 func ValidateSafePath(p string) error {
 	trimmed := strings.TrimSpace(p)
 	if trimmed == "" {
 		return ErrInvalidWorkspacePath
 	}
-	for _, part := range strings.Split(filepath.ToSlash(trimmed), "/") {
+	normalized := strings.ReplaceAll(filepath.ToSlash(trimmed), "\\", "/")
+	for _, part := range strings.Split(normalized, "/") {
 		if part == ".." {
 			return ErrInvalidWorkspacePath
 		}

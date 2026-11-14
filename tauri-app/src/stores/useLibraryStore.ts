@@ -5,6 +5,7 @@ import type {
   HealthStatusDto,
   IntegrityReport,
   LikeSyncResponseDto,
+  OAuthStatusDto,
   Playlist,
   PlaylistWithTracks,
   Track,
@@ -20,6 +21,7 @@ export interface LibraryStoreState {
   activePlaylist: PlaylistWithTracks | null;
   lastIntegrityReport: IntegrityReport | null;
   health: HealthStatusDto | null;
+  oauthStatus: OAuthStatusDto | null;
   isLoading: boolean;
   error: string | null;
 
@@ -41,6 +43,8 @@ export interface LibraryStoreState {
   deletePlaylist: (playlistId: number) => Promise<void>;
   syncLikes: (accessToken?: string) => Promise<LikeSyncResponseDto>;
   checkHealth: () => Promise<void>;
+  checkOAuthStatus: () => Promise<void>;
+  openOAuthLogin: () => Promise<string>;
   upsertTrackLocal: (track: Track) => void;
   clearError: () => void;
 }
@@ -64,6 +68,7 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
   activePlaylist: null,
   lastIntegrityReport: null,
   health: null,
+  oauthStatus: null,
   isLoading: false,
   error: null,
 
@@ -297,8 +302,11 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
 
   checkHealth: async () => {
     try {
-      const status = await tauriApi.checkMicroserviceHealth();
-      set({ health: status });
+      const [status, oauthStatus] = await Promise.all([
+        tauriApi.checkMicroserviceHealth(),
+        tauriApi.getOAuthStatus().catch(() => null),
+      ]);
+      set({ health: status, oauthStatus });
     } catch {
       set({
         health: {
@@ -307,6 +315,29 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
           version: "1.0.0",
         },
       });
+    }
+  },
+
+  checkOAuthStatus: async () => {
+    try {
+      const oauthStatus = await tauriApi.getOAuthStatus();
+      set({ oauthStatus });
+    } catch {
+      // Ignore if microservice is offline
+    }
+  },
+
+  openOAuthLogin: async () => {
+    set({ error: null });
+    try {
+      return await tauriApi.openOAuthLogin();
+    } catch (err) {
+      const message = extractErrorMessage(
+        err,
+        "No se pudo abrir la pantalla de consentimiento OAuth 2.0 en el navegador",
+      );
+      set({ error: message });
+      throw err;
     }
   },
 

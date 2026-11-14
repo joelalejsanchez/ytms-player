@@ -8,8 +8,8 @@ use crate::application::{
 };
 use crate::domain::entities::{
     AppSettings, DownloadCommandInput, HealthStatusDto, IntegrityReport, LikeSyncResponseDto,
-    MicroserviceDownloadItem, MicroserviceDownloadResponse, NewTrack, Playlist, PlaylistWithTracks,
-    Track, WorkspaceInfo,
+    MicroserviceDownloadItem, MicroserviceDownloadResponse, NewTrack, OAuthStatusDto, Playlist,
+    PlaylistWithTracks, Track, WorkspaceInfo,
 };
 use crate::domain::errors::{DomainError, DomainResult};
 use crate::domain::ports::{MicroserviceClientPort, TrackRepository, WorkspaceManagerPort};
@@ -311,4 +311,38 @@ pub fn import_cookies_file(
     state
         .settings_store
         .import_cookies_file(&PathBuf::from(source_path.trim()), &current_url)
+}
+
+/// Consulta el estado de conexión OAuth 2.0 en `GET /api/oauth/status`.
+#[tauri::command]
+pub fn get_oauth_status(state: State<'_, AppState>) -> DomainResult<OAuthStatusDto> {
+    let client = state.microservice_client()?;
+    client.get_oauth_status()
+}
+
+/// Abre la pantalla de consentimiento de Google OAuth 2.0 en el navegador predeterminado del sistema operativo.
+#[tauri::command]
+pub fn open_oauth_login(state: State<'_, AppState>) -> DomainResult<String> {
+    let base_url = state.microservice_client()?.base_url().to_string();
+    let login_url = format!("{base_url}/api/oauth/login");
+
+    open_url_in_system_browser(&login_url)?;
+    Ok(login_url)
+}
+
+fn open_url_in_system_browser(url: &str) -> DomainResult<()> {
+    #[cfg(target_os = "linux")]
+    let status = std::process::Command::new("xdg-open").arg(url).spawn();
+
+    #[cfg(target_os = "windows")]
+    let status = std::process::Command::new("cmd")
+        .args(["/C", "start", "", url])
+        .spawn();
+
+    #[cfg(target_os = "macos")]
+    let status = std::process::Command::new("open").arg(url).spawn();
+
+    status
+        .map(|_| ())
+        .map_err(|e| DomainError::MicroserviceError(format!("Failed to open browser: {e}")))
 }

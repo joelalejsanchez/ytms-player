@@ -157,3 +157,11 @@ export interface HealthStatusDto {
   version: string;
   dependencies?: Record<string, string>;
 }
+
+export interface OAuthStatusDto {
+  authenticated: boolean;
+  mock_mode: boolean;
+  client_configured: boolean;
+  redirect_uri?: string;
+  expires_at?: string;
+}

@@ -90,7 +90,7 @@ func setupTestServer(t *testing.T) (*httptest.Server, *adapters.SSEBroker, func(
 	syncLikesUC := usecases.NewSyncLikesUseCase(likesAdapter)
 	healthUC := usecases.NewHealthUseCase(nil)
 
-	handler := NewAPIHandler(downloadUC, syncLikesUC, healthUC, broker)
+	handler := NewAPIHandler(downloadUC, syncLikesUC, healthUC, broker, likesAdapter)
 	mux := http.NewServeMux()
 	handler.RegisterRoutes(mux)
 
@@ -223,5 +223,33 @@ func TestHandleProgressStream_SSE(t *testing.T) {
 
 	if !foundProgressEvent {
 		t.Errorf("did not receive expected download_progress SSE event")
+	}
+}
+
+func TestHandleOAuthBrowserFlow(t *testing.T) {
+	srv, _, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	loginResp, err := http.Get(srv.URL + "/api/oauth/login?format=json")
+	if err != nil {
+		t.Fatalf("GET /api/oauth/login failed: %v", err)
+	}
+	defer func() { _ = loginResp.Body.Close() }()
+
+	if loginResp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200 from /api/oauth/login?format=json, got %d", loginResp.StatusCode)
+	}
+	var payload map[string]string
+	if err := json.NewDecoder(loginResp.Body).Decode(&payload); err != nil || payload["auth_url"] == "" {
+		t.Fatalf("expected auth_url in response, got %+v", payload)
+	}
+
+	statusResp, err := http.Get(srv.URL + "/api/oauth/status")
+	if err != nil {
+		t.Fatalf("GET /api/oauth/status failed: %v", err)
+	}
+	defer func() { _ = statusResp.Body.Close() }()
+	if statusResp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200 from /api/oauth/status, got %d", statusResp.StatusCode)
 	}
 }

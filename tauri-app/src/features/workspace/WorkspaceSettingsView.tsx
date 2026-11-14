@@ -1,13 +1,16 @@
 import {
   CheckCircle2,
   Cookie,
+  ExternalLink,
   FolderOpen,
   HardDrive,
   History,
+  KeyRound,
+  RefreshCw,
   Server,
   Trash2,
 } from "lucide-react";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Badge, Button, Input } from "@/components/ui/Primitives";
 import { workspaceConfigSchema } from "@/schemas/validation";
 import { tauriApi } from "@/services/tauriIpc";
@@ -18,10 +21,13 @@ export const WorkspaceSettingsView = React.memo(() => {
   const workspace = useLibraryStore((s) => s.workspace);
   const appSettings = useLibraryStore((s) => s.appSettings);
   const health = useLibraryStore((s) => s.health);
+  const oauthStatus = useLibraryStore((s) => s.oauthStatus);
   const selectWorkspace = useLibraryStore((s) => s.selectWorkspace);
   const removeSavedWorkspace = useLibraryStore((s) => s.removeSavedWorkspace);
   const importCookiesFile = useLibraryStore((s) => s.importCookiesFile);
   const checkHealth = useLibraryStore((s) => s.checkHealth);
+  const checkOAuthStatus = useLibraryStore((s) => s.checkOAuthStatus);
+  const openOAuthLogin = useLibraryStore((s) => s.openOAuthLogin);
 
   const microserviceUrl = useDownloadStore((s) => s.microserviceUrl);
   const setMicroserviceUrl = useDownloadStore((s) => s.setMicroserviceUrl);
@@ -31,6 +37,33 @@ export const WorkspaceSettingsView = React.memo(() => {
   const [cookiesInput, setCookiesInput] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Actualizar estado OAuth automáticamente al volver del navegador a la ventana de la app
+  useEffect(() => {
+    void checkOAuthStatus();
+    const onFocus = () => {
+      void checkOAuthStatus();
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [checkOAuthStatus]);
+
+  const handleConnectOAuth = useCallback(async () => {
+    setFormError(null);
+    setStatusMessage(null);
+    try {
+      await openOAuthLogin();
+      setStatusMessage(
+        "Se abrió la pantalla de consentimiento de Google en tu navegador. Autoriza el acceso y vuelve a ytms-player.",
+      );
+    } catch (err) {
+      setFormError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo iniciar la autenticación OAuth 2.0",
+      );
+    }
+  }, [openOAuthLogin]);
 
   const handleBrowseFolder = useCallback(async () => {
     const picked = await tauriApi.pickWorkspaceFolder();
@@ -307,6 +340,60 @@ export const WorkspaceSettingsView = React.memo(() => {
             onClick={() => void handleImportCookies()}
           >
             Actualizar Cookies
+          </Button>
+        </div>
+      </div>
+
+      {/* Conexión OAuth 2.0 con Google / YouTube (Redirección Navegador <-> App) */}
+      <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <KeyRound className="h-4 w-4 text-sky-400" />
+            <h3 className="text-sm font-semibold text-white">
+              Cuenta de YouTube OAuth 2.0 (Sincronización de Likes)
+            </h3>
+          </div>
+          <div className="flex items-center gap-2">
+            {oauthStatus?.mock_mode && (
+              <Badge tone="warning">Modo Simulado (OAUTH_MOCK_MODE=true)</Badge>
+            )}
+            <Badge tone={oauthStatus?.authenticated ? "success" : "default"}>
+              {oauthStatus?.authenticated
+                ? "Conectado con Google"
+                : "Sin autorizar"}
+            </Badge>
+          </div>
+        </div>
+
+        <p className="text-xs text-slate-400">
+          Al pulsar <strong>Conectar con Google</strong>, se abrirá la pantalla de
+          consentimiento oficial de Google en tu navegador y, tras autorizar el acceso
+          de solo lectura (<code className="text-slate-300">youtube.readonly</code>),
+          redirigirá automáticamente de vuelta al callback local (
+          <code className="text-slate-300">
+            {oauthStatus?.redirect_uri ?? "http://127.0.0.1:8080/api/oauth/callback"}
+          </code>
+          ) guardando el token de forma segura en el microservicio.
+        </p>
+
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => void handleConnectOAuth()}
+          >
+            <ExternalLink className="h-4 w-4" />
+            {oauthStatus?.authenticated
+              ? "Reconectar cuenta de Google en Navegador"
+              : "Conectar con Google (OAuth 2.0)"}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => void checkOAuthStatus()}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Verificar Estado OAuth
           </Button>
         </div>
       </div>

@@ -55,6 +55,13 @@ type LikesSyncPort interface {
 	SyncLikes(ctx context.Context, youtubeIDs []string, accessToken string) ([]LikeSyncItem, error)
 }
 
+// OAuthFlowPort define el contrato para el flujo de autorización OAuth 2.0 con redirección desde la app al navegador (SDD 6.3 y 8.2).
+type OAuthFlowPort interface {
+	GetOAuthStatus() OAuthStatus
+	BuildAuthorizationURL() (string, error)
+	ExchangeAuthorizationCode(ctx context.Context, code string, state string) error
+}
+
 // PathResolverPort gestiona la resolución segura de rutas entre el Host (Tauri) y el Contenedor Docker (SDD 3.3 y 8.3).
 type PathResolverPort interface {
 	ResolveWorkspaceDirs(workspacePath, tracksDir, thumbnailsDir string) (resolvedWorkspace, resolvedTracks, resolvedThumbs string, err error)
