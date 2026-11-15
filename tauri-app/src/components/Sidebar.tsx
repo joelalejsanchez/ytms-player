@@ -227,19 +227,18 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
-              <Icon className="h-4 w-4 shrink-0" />
-              {!isCollapsed && (
+              {isCollapsed ? (
+                <Icon className="h-4 w-4 shrink-0" />
+              ) : (
                 <>
-                  <span className="truncate">{item.label}</span>
+                  <span className="flex items-center gap-3 min-w-0">
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                  </span>
                   {item.badge !== undefined && (
                     <Badge tone={item.badgeTone}>{item.badge}</Badge>
                   )}
                 </>
-              )}
-              {isCollapsed && item.badge !== undefined && item.badge > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground shadow-xs">
-                  {item.badge > 99 ? "99+" : item.badge}
-                </span>
               )}
             </button>
           );
@@ -247,9 +246,16 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
       </nav>
 
       {/* Funcionalidad Secundaria (Totalmente Abajo): Tema, Recuperación, Configuración */}
-      <div className={cn("mt-auto border-t border-border space-y-2", isCollapsed ? "p-2" : "p-3")}>
+      <div
+        className={cn(
+          "mt-auto border-t border-border space-y-2",
+          isCollapsed ? "p-2" : "p-3",
+        )}
+      >
         {/* Selector rápido de Tema y Modo */}
-        <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-2")}>
+        <div
+          className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-2")}
+        >
           {!isCollapsed && (
             <CustomSelect<ColorFamily>
               value={colorFamily}
@@ -292,17 +298,16 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
-            <AlertTriangle className="h-4 w-4 shrink-0 text-foreground" />
-            {!isCollapsed && (
+            {isCollapsed ? (
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+            ) : (
               <>
-                <span className="truncate">Recuperación</span>
+                <span className="flex items-center gap-3 min-w-0">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Recuperación</span>
+                </span>
                 {missingCount > 0 && <Badge tone="warning">{missingCount}</Badge>}
               </>
-            )}
-            {isCollapsed && missingCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-white shadow-xs">
-                {missingCount}
-              </span>
             )}
           </button>
 
@@ -314,7 +319,7 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
               "flex items-center rounded-lg transition-colors",
               isCollapsed
                 ? "h-10 w-10 mx-auto justify-center p-0"
-                : "w-full justify-between px-3 py-2 text-sm font-medium",
+                : "w-full justify-start gap-3 px-3 py-2 text-sm font-medium",
               activeTab === "workspace"
                 ? "bg-primary/15 text-primary ring-1 ring-primary"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
