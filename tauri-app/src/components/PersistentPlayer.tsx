@@ -130,8 +130,10 @@ export const PersistentPlayer = React.memo(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
+    // Pausar de inmediato la reproducción previa para silenciarla y detener el contador de tiempo
+    audio.pause();
+
     if (!currentTrack || currentTrack.is_missing) {
-      audio.pause();
       audio.removeAttribute("src");
       currentTrackIdRef.current = null;
       isChangingTrackRef.current = false;
@@ -142,6 +144,7 @@ export const PersistentPlayer = React.memo(() => {
     currentTrackIdRef.current = currentTrack.youtube_id;
     isChangingTrackRef.current = true;
     setIsLoadingTrack(true);
+    setCurrentTime(0);
 
     const loadAndPlayTrack = async () => {
       try {
@@ -208,6 +211,7 @@ export const PersistentPlayer = React.memo(() => {
     preloadNextTrack,
     setPlaying,
     setIsLoadingTrack,
+    setCurrentTime,
   ]);
 
   // Sincronizar manual play / pause con respuesta inmediata sin interferir con el cambio de pista
@@ -266,7 +270,7 @@ export const PersistentPlayer = React.memo(() => {
   }, [seekTarget, isLoadingTrack, clearSeekTarget]);
 
   const handleTimeUpdate = useCallback(() => {
-    if (audioRef.current) {
+    if (audioRef.current && !isChangingTrackRef.current) {
       setCurrentTime(audioRef.current.currentTime);
     }
   }, [setCurrentTime]);
