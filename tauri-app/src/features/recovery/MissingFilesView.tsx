@@ -10,6 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import React, { useCallback, useState } from "react";
+import { ActionMenu } from "@/components/ui/ActionMenu";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Badge, Button } from "@/components/ui/Primitives";
 import { formatBytes, toAssetUrl } from "@/lib/utils";
@@ -259,31 +260,30 @@ export const MissingFilesView = React.memo(() => {
                     {isRecoveringThis ? "Recuperando..." : "Re-descargar / Restaurar"}
                   </Button>
 
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    disabled={deletingTrackId === track.youtube_id || isLoading}
-                    onClick={() => {
-                      setConfirmModal({
-                        isOpen: true,
-                        title: "¿Estás seguro de eliminar este registro?",
-                        description: `Se eliminará el registro de "${track.title}" de la base de datos local. Esto no afectará archivos físicos.`,
-                        confirmLabel: "Sí, eliminar registro",
-                        tone: "danger",
-                        onConfirm: async () => {
-                          await handleDeleteTrack(track.youtube_id);
-                          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+                  <ActionMenu
+                    isLoading={deletingTrackId === track.youtube_id}
+                    title="Opciones de archivo extraviado"
+                    items={[
+                      {
+                        label: "Eliminar registro de la base de datos",
+                        icon: <Trash2 className="h-3.5 w-3.5" />,
+                        variant: "danger",
+                        onClick: () => {
+                          setConfirmModal({
+                            isOpen: true,
+                            title: "¿Estás seguro de eliminar este registro?",
+                            description: `Se eliminará el registro de "${track.title}" de la base de datos local. Esto no afectará archivos físicos.`,
+                            confirmLabel: "Sí, eliminar registro",
+                            tone: "danger",
+                            onConfirm: async () => {
+                              await handleDeleteTrack(track.youtube_id);
+                              setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+                            },
+                          });
                         },
-                      });
-                    }}
-                  >
-                    {deletingTrackId === track.youtube_id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-4 w-4" />
-                    )}
-                    {deletingTrackId === track.youtube_id ? "Eliminando..." : "Eliminar Registro"}
-                  </Button>
+                      },
+                    ]}
+                  />
                 </div>
               </div>
             );
@@ -390,37 +390,30 @@ export const MissingFilesView = React.memo(() => {
                       ? "Integrando..."
                       : "Adoptar en Biblioteca"}
                   </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    disabled={
-                      adoptingId === file.youtube_id ||
-                      deletingOrphanId === file.youtube_id ||
-                      isLoading
-                    }
-                    onClick={() => {
-                      setConfirmModal({
-                        isOpen: true,
-                        title: "¿Estás seguro de borrar este archivo?",
-                        description: `El archivo "${file.file_name}" (${formatBytes(file.file_size)}) será eliminado permanentemente del disco. Esta acción no se puede deshacer.`,
-                        confirmLabel: "Sí, borrar de disco",
-                        tone: "danger",
-                        onConfirm: async () => {
-                          await handleDeleteOrphan(file.youtube_id, file.file_extension);
-                          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+                  <ActionMenu
+                    isLoading={deletingOrphanId === file.youtube_id}
+                    title="Opciones de archivo huérfano"
+                    items={[
+                      {
+                        label: "Borrar permanentemente de disco",
+                        icon: <Trash2 className="h-3.5 w-3.5" />,
+                        variant: "danger",
+                        onClick: () => {
+                          setConfirmModal({
+                            isOpen: true,
+                            title: "¿Estás seguro de borrar este archivo?",
+                            description: `El archivo "${file.file_name}" (${formatBytes(file.file_size)}) será eliminado permanentemente del disco. Esta acción no se puede deshacer.`,
+                            confirmLabel: "Sí, borrar de disco",
+                            tone: "danger",
+                            onConfirm: async () => {
+                              await handleDeleteOrphan(file.youtube_id, file.file_extension);
+                              setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+                            },
+                          });
                         },
-                      });
-                    }}
-                  >
-                    {deletingOrphanId === file.youtube_id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-3.5 w-3.5" />
-                    )}
-                    {deletingOrphanId === file.youtube_id
-                      ? "Borrando..."
-                      : "Borrar de Disco"}
-                  </Button>
+                      },
+                    ]}
+                  />
                 </div>
               </div>
             );

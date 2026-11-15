@@ -1,5 +1,6 @@
 import { ListMusic, Loader2, Music, Play, Plus, Trash2 } from "lucide-react";
 import React, { useCallback, useState } from "react";
+import { ActionMenu } from "@/components/ui/ActionMenu";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Badge, Button, Input } from "@/components/ui/Primitives";
 import { formatDuration, toAssetUrl } from "@/lib/utils";
@@ -226,31 +227,30 @@ export const PlaylistsView = React.memo(() => {
                     </div>
                   </button>
 
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    disabled={deletingId === pl.id}
-                    onClick={() => {
-                      setConfirmModal({
-                        isOpen: true,
-                        title: "¿Estás seguro de eliminar esta playlist?",
-                        description: `La playlist "${pl.title}" será eliminada de tu base de datos. Las canciones individuales seguirán en tu biblioteca.`,
-                        confirmLabel: "Sí, eliminar playlist",
-                        tone: "danger",
-                        onConfirm: async () => {
-                          await handleDeletePlaylist(pl.id);
-                          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+                  <ActionMenu
+                    isLoading={deletingId === pl.id}
+                    title="Opciones de la playlist"
+                    items={[
+                      {
+                        label: "Eliminar playlist",
+                        icon: <Trash2 className="h-3.5 w-3.5" />,
+                        variant: "danger",
+                        onClick: () => {
+                          setConfirmModal({
+                            isOpen: true,
+                            title: "¿Estás seguro de eliminar esta playlist?",
+                            description: `La playlist "${pl.title}" será eliminada de tu base de datos. Las canciones individuales seguirán en tu biblioteca.`,
+                            confirmLabel: "Sí, eliminar playlist",
+                            tone: "danger",
+                            onConfirm: async () => {
+                              await handleDeletePlaylist(pl.id);
+                              setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+                            },
+                          });
                         },
-                      });
-                    }}
-                    title="Eliminar playlist"
-                  >
-                    {deletingId === pl.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-rose-400" />
-                    ) : (
-                      <Trash2 className="h-4 w-4 text-slate-400 hover:text-rose-400" />
-                    )}
-                  </Button>
+                      },
+                    ]}
+                  />
                 </div>
               );
             })
@@ -356,34 +356,33 @@ export const PlaylistsView = React.memo(() => {
 
                       <div className="flex items-center gap-2">
                         <Badge tone="default">{track.file_extension}</Badge>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          disabled={removingTrackId === track.id}
-                          onClick={() => {
-                            setConfirmModal({
-                              isOpen: true,
-                              title: "¿Estás seguro de quitar esta canción?",
-                              description: `Se desvinculará "${track.title}" de la playlist "${activePlaylist.playlist.title}". Seguirá disponible en tu biblioteca.`,
-                              confirmLabel: "Sí, quitar de playlist",
-                              tone: "warning",
-                              onConfirm: async () => {
-                                await handleRemoveTrack(
-                                  activePlaylist.playlist.id,
-                                  track.id,
-                                );
-                                setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+                        <ActionMenu
+                          isLoading={removingTrackId === track.id}
+                          title="Opciones de la pista"
+                          items={[
+                            {
+                              label: "Quitar de la playlist",
+                              icon: <Trash2 className="h-3.5 w-3.5" />,
+                              variant: "danger",
+                              onClick: () => {
+                                setConfirmModal({
+                                  isOpen: true,
+                                  title: "¿Estás seguro de quitar esta canción?",
+                                  description: `Se desvinculará "${track.title}" de la playlist "${activePlaylist.playlist.title}". Seguirá disponible en tu biblioteca.`,
+                                  confirmLabel: "Sí, quitar de playlist",
+                                  tone: "warning",
+                                  onConfirm: async () => {
+                                    await handleRemoveTrack(
+                                      activePlaylist.playlist.id,
+                                      track.id,
+                                    );
+                                    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+                                  },
+                                });
                               },
-                            });
-                          }}
-                          title="Quitar de la playlist"
-                        >
-                          {removingTrackId === track.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-rose-400" />
-                          ) : (
-                            <Trash2 className="h-4 w-4 text-rose-400" />
-                          )}
-                        </Button>
+                            },
+                          ]}
+                        />
                       </div>
                     </div>
                   );

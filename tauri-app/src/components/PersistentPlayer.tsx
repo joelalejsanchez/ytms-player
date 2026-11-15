@@ -13,6 +13,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { ActionMenu } from "@/components/ui/ActionMenu";
 import { Button } from "@/components/ui/Primitives";
 import { formatDuration, toAssetUrl } from "@/lib/utils";
 import { tauriApi } from "@/services/tauriIpc";
@@ -383,14 +384,19 @@ export const PersistentPlayer = React.memo(() => {
                       <span className="font-medium">{item.title}</span>
                       <span className="ml-2 text-slate-500">{item.artist}</span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => removeFromQueue(item.youtube_id)}
-                      className="ml-2 text-slate-500 hover:text-rose-400"
-                      title="Quitar de la cola"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <ActionMenu
+                      title="Opciones de la cola"
+                      direction="down"
+                      triggerClassName="h-6 w-6 ml-2 text-slate-500 hover:text-white"
+                      items={[
+                        {
+                          label: "Quitar de la cola",
+                          icon: <Trash2 className="h-3.5 w-3.5" />,
+                          variant: "danger",
+                          onClick: () => removeFromQueue(item.youtube_id),
+                        },
+                      ]}
+                    />
                   </div>
                 );
               })

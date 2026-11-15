@@ -12,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
+import { ActionMenu } from "@/components/ui/ActionMenu";
 import { Badge, Button, Input } from "@/components/ui/Primitives";
 import { workspaceConfigSchema } from "@/schemas/validation";
 import { tauriApi } from "@/services/tauriIpc";
@@ -344,26 +345,25 @@ export const WorkspaceSettingsView = React.memo(() => {
                         {switchingWorkspace === saved.path ? "Activando..." : "Activar"}
                       </Button>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      disabled={removingWorkspace === saved.path}
-                      onClick={async () => {
-                        setRemovingWorkspace(saved.path);
-                        try {
-                          await removeSavedWorkspace(saved.path);
-                        } finally {
-                          setRemovingWorkspace(null);
-                        }
-                      }}
-                      title="Olvidar de la lista (no borra archivos)"
-                    >
-                      {removingWorkspace === saved.path ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-rose-400" />
-                      ) : (
-                        <Trash2 className="h-4 w-4 text-slate-400 hover:text-rose-400" />
-                      )}
-                    </Button>
+                    <ActionMenu
+                      isLoading={removingWorkspace === saved.path}
+                      title="Opciones de workspace"
+                      items={[
+                        {
+                          label: "Olvidar de la lista",
+                          icon: <Trash2 className="h-3.5 w-3.5" />,
+                          variant: "danger",
+                          onClick: async () => {
+                            setRemovingWorkspace(saved.path);
+                            try {
+                              await removeSavedWorkspace(saved.path);
+                            } finally {
+                              setRemovingWorkspace(null);
+                            }
+                          },
+                        },
+                      ]}
+                    />
                   </div>
                 </div>
               );

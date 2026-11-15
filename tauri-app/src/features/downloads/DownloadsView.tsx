@@ -19,6 +19,7 @@ import { downloadFormSchema } from "@/schemas/validation";
 import { useDownloadStore } from "@/stores/useDownloadStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import type { AudioFormat, DownloadProgressEvent } from "@/types/models";
+import { ActionMenu } from "@/components/ui/ActionMenu";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { PlaylistImportModal } from "./PlaylistImportModal";
 
@@ -575,18 +576,17 @@ export const DownloadsView = React.memo(() => {
                       <span className="font-mono text-xs text-slate-400">
                         {overallProgress.toFixed(0)}%
                       </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removePlaylistGroup(groupKey);
-                        }}
-                        className="rounded p-1 text-slate-400 transition hover:bg-slate-800 hover:text-rose-400"
-                        title="Eliminar esta lista de descargas"
-                        aria-label="Eliminar lista de descargas"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <ActionMenu
+                        title="Opciones de la lista"
+                        items={[
+                          {
+                            label: "Descartar lista de descargas",
+                            icon: <Trash2 className="h-3.5 w-3.5" />,
+                            variant: "danger",
+                            onClick: () => removePlaylistGroup(groupKey),
+                          },
+                        ]}
+                      />
                       <button
                         type="button"
                         className="rounded p-1 text-slate-400 hover:text-white"
@@ -659,17 +659,18 @@ export const DownloadsView = React.memo(() => {
                                       </span>
                                     </>
                                   )}
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      removeTask(taskKey);
-                                    }}
-                                    className="text-slate-500 hover:text-rose-400"
-                                    title="Quitar de la lista"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
+                                  <ActionMenu
+                                    title="Opciones de descarga"
+                                    triggerClassName="h-5 w-5"
+                                    items={[
+                                      {
+                                        label: "Quitar de la lista",
+                                        icon: <Trash2 className="h-3.5 w-3.5" />,
+                                        variant: "danger",
+                                        onClick: () => removeTask(taskKey),
+                                      },
+                                    ]}
+                                  />
                                 </div>
                               </div>
                               <ProgressBar value={task.progress} />
@@ -744,14 +745,18 @@ export const DownloadsView = React.memo(() => {
                             </span>
                           </>
                         )}
-                        <button
-                          type="button"
-                          onClick={() => removeTask(taskKey)}
-                          className="text-slate-500 hover:text-rose-400"
-                          title="Quitar de la lista"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        <ActionMenu
+                          title="Opciones de descarga"
+                          triggerClassName="h-5 w-5"
+                          items={[
+                            {
+                              label: "Quitar de la lista",
+                              icon: <Trash2 className="h-3.5 w-3.5" />,
+                              variant: "danger",
+                              onClick: () => removeTask(taskKey),
+                            },
+                          ]}
+                        />
                       </div>
                     </div>
 
@@ -773,16 +778,17 @@ export const DownloadsView = React.memo(() => {
                 Historial de Descargas ({downloadHistory.length})
               </h3>
               {downloadHistory.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsClearHistoryModalOpen(true)}
-                  className="h-6 gap-1.5 px-2 text-[11px] text-slate-400 hover:bg-rose-500/10 hover:text-rose-400"
-                  title="Limpiar todo el historial de descargas"
-                >
-                  <Trash2 className="h-3 w-3" />
-                  Limpiar historial
-                </Button>
+                <ActionMenu
+                  title="Opciones del historial"
+                  items={[
+                    {
+                      label: "Limpiar historial de descargas",
+                      icon: <Trash2 className="h-3.5 w-3.5" />,
+                      variant: "danger",
+                      onClick: () => setIsClearHistoryModalOpen(true),
+                    },
+                  ]}
+                />
               )}
             </div>
             {hasActiveDownloads && (

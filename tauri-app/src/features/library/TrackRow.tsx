@@ -10,6 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import React from "react";
+import { ActionMenu } from "@/components/ui/ActionMenu";
 import { Badge, Button } from "@/components/ui/Primitives";
 import { formatBytes, formatDuration, toAssetUrl } from "@/lib/utils";
 import type { TrackSyncInfo } from "@/stores/useLibraryStore";
@@ -218,20 +219,18 @@ export const TrackRow = React.memo(
             </div>
           )}
 
-          <Button
-            variant="ghost"
-            size="icon"
-            disabled={isDeleting}
-            onClick={() => onDelete(track.youtube_id)}
-            title="Eliminar track"
-            className="hover:text-rose-400"
-          >
-            {isDeleting ? (
-              <Loader2 className="h-4 w-4 animate-spin text-rose-400" />
-            ) : (
-              <Trash2 className="h-4 w-4" />
-            )}
-          </Button>
+          <ActionMenu
+            isLoading={isDeleting}
+            title="Opciones de la canción"
+            items={[
+              {
+                label: "Eliminar canción",
+                icon: <Trash2 className="h-3.5 w-3.5" />,
+                variant: "danger",
+                onClick: () => onDelete(track.youtube_id),
+              },
+            ]}
+          />
         </div>
       </div>
     );
