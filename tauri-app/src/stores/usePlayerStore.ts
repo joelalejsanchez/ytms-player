@@ -34,18 +34,52 @@ export interface PlayerState {
   toggleShuffle: () => void;
 }
 
+const STORAGE_KEY = "ytms_player_preferences";
+
+interface PersistedPlayerPreferences {
+  volume: number;
+  isMuted: boolean;
+  repeatMode: RepeatMode;
+  isShuffle: boolean;
+  currentTrack: Track | null;
+  currentTime: number;
+}
+
+function loadPersistedPreferences(): Partial<PersistedPlayerPreferences> {
+  if (typeof window === "undefined" || !window.localStorage) return {};
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+function savePersistedPreferences(data: Partial<PersistedPlayerPreferences>) {
+  if (typeof window === "undefined" || !window.localStorage) return;
+  try {
+    const current = loadPersistedPreferences();
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...current, ...data }));
+  } catch {
+    // Ignorar excepciones de cuota de storage
+  }
+}
+
+const savedPrefs = loadPersistedPreferences();
+
 export const usePlayerStore = create<PlayerState>((set, get) => ({
-  currentTrack: null,
+  currentTrack: savedPrefs.currentTrack ?? null,
   isPlaying: false,
-  volume: 0.85,
-  isMuted: false,
-  duration: 0,
-  currentTime: 0,
+  volume: typeof savedPrefs.volume === "number" ? savedPrefs.volume : 0.85,
+  isMuted: Boolean(savedPrefs.isMuted),
+  duration: savedPrefs.currentTrack?.duration || 0,
+  currentTime: savedPrefs.currentTime || 0,
   seekTarget: null,
-  queue: [],
-  currentIndex: -1,
-  repeatMode: "off",
-  isShuffle: false,
+  queue: savedPrefs.currentTrack ? [savedPrefs.currentTrack] : [],
+  currentIndex: savedPrefs.currentTrack ? 0 : -1,
+  repeatMode: savedPrefs.repeatMode ?? "off",
+  isShuffle: Boolean(savedPrefs.isShuffle),
 
   playTrack: (track, newQueue) => {
     if (track.is_missing) {
@@ -58,6 +92,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
     const updatedQueue = existingIndex >= 0 ? playableQueue : [...playableQueue, track];
     const nextIndex = existingIndex >= 0 ? existingIndex : updatedQueue.length - 1;
+
+    savePersistedPreferences({ currentTrack: track, currentTime: 0 });
 
     set({
       currentTrack: track,
@@ -81,6 +117,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   seekTo: (seconds) => {
     const clamped = Math.max(0, Math.min(seconds, get().duration || seconds));
+    savePersistedPreferences({ currentTime: clamped });
     set({ currentTime: clamped, seekTarget: clamped });
   },
 
@@ -92,10 +129,16 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   setVolume: (volume) => {
     const clamped = Math.max(0, Math.min(1, volume));
+    savePersistedPreferences({ volume: clamped, isMuted: clamped === 0 });
     set({ volume: clamped, isMuted: clamped === 0 });
   },
 
-  toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
+  toggleMute: () =>
+    set((state) => {
+      const nextMuted = !state.isMuted;
+      savePersistedPreferences({ isMuted: nextMuted });
+      return { isMuted: nextMuted };
+    }),
 
   playNext: () => {
     const { queue, currentIndex, repeatMode, currentTrack } = get();
@@ -209,13 +252,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   cycleRepeatMode: () => {
     const modes: RepeatMode[] = ["off", "all", "one"];
-    const next = modes[(modes.indexOf(get().repeatMode) + 1) % modes.length];
+    const next = modes[(modes.indexOf(get().repeatMode) + 1) % modes.length] ?? "off";
+    savePersistedPreferences({ repeatMode: next });
     set({ repeatMode: next });
   },
 
   toggleShuffle: () => {
     const { isShuffle, queue, currentTrack } = get();
     const nextShuffle = !isShuffle;
+    savePersistedPreferences({ isShuffle: nextShuffle });
     if (nextShuffle && queue.length > 1) {
       const rest = queue.filter((t) => t.youtube_id !== currentTrack?.youtube_id);
       // Algoritmo Fisher-Yates

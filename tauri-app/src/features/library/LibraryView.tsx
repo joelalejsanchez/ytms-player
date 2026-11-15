@@ -1,7 +1,8 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowUpDown, Heart, Play, RefreshCw, Search, ShieldCheck } from "lucide-react";
+import { ArrowUpDown, Heart, Play, RefreshCw, Search, ShieldCheck, Sparkles } from "lucide-react";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { Badge, Button, Input } from "@/components/ui/Primitives";
+import { MetadataSyncModal } from "@/features/library/MetadataSyncModal";
 import { TrackRow } from "@/features/library/TrackRow";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
@@ -17,6 +18,7 @@ export const LibraryView = React.memo(() => {
   const [formatFilter, setFormatFilter] = useState<string>("all");
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortAsc, setSortAsc] = useState(false);
+  const [isMetadataModalOpen, setIsMetadataModalOpen] = useState(false);
 
   const tracks = useLibraryStore((s) => s.tracks);
   const playlists = useLibraryStore((s) => s.playlists);
@@ -140,6 +142,16 @@ export const LibraryView = React.memo(() => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsMetadataModalOpen(true)}
+            disabled={tracks.length === 0}
+          >
+            <Sparkles className="h-4 w-4 text-amber-400" />
+            Actualizar Metadatos
+          </Button>
+
           <Button
             variant="secondary"
             size="sm"
@@ -286,6 +298,11 @@ export const LibraryView = React.memo(() => {
           </div>
         )}
       </div>
+
+      <MetadataSyncModal
+        isOpen={isMetadataModalOpen}
+        onClose={() => setIsMetadataModalOpen(false)}
+      />
     </section>
   );
 });

@@ -117,6 +117,28 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
         await tauriApi.syncPlaylistTracks(targetId, allIds, unlinkRemoved);
       }
 
+      // Precargar todos los ítems en la UI en estado encolado con su título y artista real
+      for (const item of previewData.items) {
+        useDownloadStore.getState().upsertProgressEvent({
+          task_id: previewData.target_id,
+          youtube_id: item.youtube_id,
+          status: "queued",
+          progress: 0,
+          metadata: {
+            youtube_id: item.youtube_id,
+            title: item.title,
+            artist: item.artist,
+            duration: item.duration,
+            file_extension: audioFormat,
+            thumbnail_path: "",
+            audio_path: "",
+            file_size: 0,
+            playlist_id: previewData.target_id,
+            playlist_title: previewData.playlist_title || "Playlist",
+          },
+        });
+      }
+
       // Iniciar descarga asíncrona de los archivos de audio
       await startDownloadTask({
         url: url.trim(),

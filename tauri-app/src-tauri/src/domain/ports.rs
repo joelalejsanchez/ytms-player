@@ -97,5 +97,7 @@ pub trait MicroserviceClientPort: Send + Sync {
     ) -> DomainResult<LikeSyncResponseDto>;
     fn check_health(&self) -> DomainResult<HealthStatusDto>;
     fn get_oauth_status(&self) -> DomainResult<OAuthStatusDto>;
+    fn logout_oauth(&self) -> DomainResult<()>;
+    fn rate_video(&self, youtube_id: &str, rating: &str) -> DomainResult<()>;
     fn preview_url(&self, url: &str) -> DomainResult<crate::domain::entities::PlaylistPreviewDto>;
 }

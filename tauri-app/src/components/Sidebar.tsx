@@ -1,10 +1,10 @@
 import {
   AlertTriangle,
   Download,
-  FolderCog,
   Library,
   ListMusic,
   Radio,
+  Settings,
 } from "lucide-react";
 import React, { useMemo } from "react";
 import { Badge } from "@/components/ui/Primitives";
@@ -76,11 +76,6 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
       badge: missingCount > 0 ? missingCount : undefined,
       badgeTone: "warning",
     },
-    {
-      id: "workspace",
-      label: "Workspace",
-      icon: FolderCog,
-    },
   ];
 
   const isGoOnline = health?.status === "healthy";
@@ -123,6 +118,24 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
             </button>
           );
         })}
+
+        <div className="pt-4">
+          <button
+            type="button"
+            onClick={() => onSelectTab("workspace")}
+            className={cn(
+              "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+              activeTab === "workspace"
+                ? "bg-red-600/15 text-red-400 ring-1 ring-red-500/30"
+                : "text-slate-300 hover:bg-slate-800/70 hover:text-white",
+            )}
+          >
+            <span className="flex items-center gap-3">
+              <Settings className="h-4 w-4" />
+              Configuración
+            </span>
+          </button>
+        </div>
       </nav>
 
       <div className="space-y-2 border-t border-slate-800 p-4 text-xs">

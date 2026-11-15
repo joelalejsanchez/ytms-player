@@ -252,4 +252,28 @@ func TestHandleOAuthBrowserFlow(t *testing.T) {
 	if statusResp.StatusCode != http.StatusOK {
 		t.Fatalf("expected 200 from /api/oauth/status, got %d", statusResp.StatusCode)
 	}
+
+	// Probar POST /api/rate-video
+	rateBody, _ := json.Marshal(map[string]string{
+		"youtube_id": "dQw4w9WgXcQ",
+		"rating":     "like",
+	})
+	rateResp, err := http.Post(srv.URL+"/api/rate-video", "application/json", bytes.NewReader(rateBody))
+	if err != nil {
+		t.Fatalf("POST /api/rate-video failed: %v", err)
+	}
+	defer func() { _ = rateResp.Body.Close() }()
+	if rateResp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200 from /api/rate-video, got %d", rateResp.StatusCode)
+	}
+
+	// Probar POST /api/oauth/logout
+	logoutResp, err := http.Post(srv.URL+"/api/oauth/logout", "application/json", nil)
+	if err != nil {
+		t.Fatalf("POST /api/oauth/logout failed: %v", err)
+	}
+	defer func() { _ = logoutResp.Body.Close() }()
+	if logoutResp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200 from /api/oauth/logout, got %d", logoutResp.StatusCode)
+	}
 }

@@ -65,6 +65,18 @@ export const WorkspaceSettingsView = React.memo(() => {
     }
   }, [openOAuthLogin]);
 
+  const handleLogoutOAuth = useCallback(async () => {
+    setFormError(null);
+    setStatusMessage(null);
+    try {
+      await tauriApi.logoutOAuth();
+      await checkOAuthStatus();
+      setStatusMessage("Has cerrado la sesión de Google OAuth. Tu token local ha sido eliminado.");
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Error al cerrar sesión OAuth");
+    }
+  }, [checkOAuthStatus]);
+
   const handleBrowseFolder = useCallback(async () => {
     const picked = await tauriApi.pickWorkspaceFolder();
     if (picked) {
@@ -135,15 +147,10 @@ export const WorkspaceSettingsView = React.memo(() => {
     <section className="flex h-full flex-col gap-5 overflow-y-auto pr-1">
       <header>
         <h2 className="text-xl font-bold text-white">
-          Configuración de Workspaces, Cookies y Microservicio
+          Configuración General & Workspaces
         </h2>
         <p className="text-xs text-slate-400">
-          Cada Workspace mantiene su propio{" "}
-          <code className="text-slate-300">.ytms-player-workspace</code>, base de datos
-          SQLite y carpetas <code className="text-slate-300">/tracks</code> y{" "}
-          <code className="text-slate-300">/thumbnails</code>. La lista de Workspaces se
-          guarda automáticamente en la carpeta de datos del usuario del sistema
-          operativo.
+          Ajustes del sistema, autenticación de YouTube OAuth, cookies y gestión de directorios de música.
         </p>
       </header>
 
@@ -387,6 +394,15 @@ export const WorkspaceSettingsView = React.memo(() => {
               ? "Reconectar cuenta de Google en Navegador"
               : "Conectar con Google (OAuth 2.0)"}
           </Button>
+          {oauthStatus?.authenticated && (
+            <Button
+              type="button"
+              variant="danger"
+              onClick={() => void handleLogoutOAuth()}
+            >
+              Cerrar Sesión OAuth
+            </Button>
+          )}
           <Button
             type="button"
             variant="secondary"

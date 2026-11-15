@@ -19,10 +19,11 @@ import (
 
 const (
 	defaultYouTubeRatingURL = "https://www.googleapis.com/youtube/v3/videos/getRating"
+	defaultYouTubeRateURL   = "https://www.googleapis.com/youtube/v3/videos/rate"
 	defaultGoogleAuthURL    = "https://accounts.google.com/o/oauth2/v2/auth"
 	defaultGoogleTokenURL   = "https://oauth2.googleapis.com/token"
 	defaultOAuthRedirectURI = "http://127.0.0.1:8080/api/oauth/callback"
-	youtubeReadonlyScope    = "https://www.googleapis.com/auth/youtube.readonly"
+	youtubeScope            = "https://www.googleapis.com/auth/youtube.force-ssl"
 )
 
 // OAuthConfig agrupa la configuración de credenciales OAuth 2.0 para el flujo de redirección en navegador.
@@ -147,7 +148,7 @@ func (a *YouTubeLikesAdapter) BuildAuthorizationURL() (string, error) {
 	q.Set("client_id", a.oauthCfg.ClientID)
 	q.Set("redirect_uri", a.oauthCfg.RedirectURI)
 	q.Set("response_type", "code")
-	q.Set("scope", youtubeReadonlyScope)
+	q.Set("scope", youtubeScope)
 	q.Set("access_type", "offline")
 	q.Set("prompt", "consent")
 	q.Set("state", state)
@@ -429,4 +430,58 @@ func (a *YouTubeLikesAdapter) SyncLikes(
 	}
 
 	return results, nil
+}
+
+// Logout revoca la sesión OAuth local eliminando el token de memoria y del disco.
+func (a *YouTubeLikesAdapter) Logout(ctx context.Context) error {
+	a.mu.Lock()
+	a.token = nil
+	tokenFile := a.oauthCfg.TokenFile
+	a.mu.Unlock()
+
+	if tokenFile != "" {
+		_ = os.Remove(tokenFile)
+	}
+	return nil
+}
+
+// RateVideo envía la calificación del video a YouTube ("like", "none", "dislike").
+func (a *YouTubeLikesAdapter) RateVideo(ctx context.Context, youtubeID string, rating string) error {
+	if a.mockMode {
+		return nil
+	}
+
+	token, err := a.refreshAccessTokenIfNeeded(ctx)
+	if err != nil || token == "" {
+		return domain.ErrUnauthorizedOAuth
+	}
+
+	rateURL, err := url.Parse(defaultYouTubeRateURL)
+	if err != nil {
+		return fmt.Errorf("invalid rate url: %w", err)
+	}
+	q := rateURL.Query()
+	q.Set("id", youtubeID)
+	q.Set("rating", rating)
+	rateURL.RawQuery = q.Encode()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, rateURL.String(), nil)
+	if err != nil {
+		return fmt.Errorf("failed to create rate request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := a.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("rate video request failed: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+		return domain.ErrUnauthorizedOAuth
+	}
+	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("youtube rate failed with status %d", resp.StatusCode)
+	}
+	return nil
 }

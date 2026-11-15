@@ -50,9 +50,10 @@ type ProgressBrokerPort interface {
 	ClientCount() int
 }
 
-// LikesSyncPort define el contrato para la sincronización de likes mediante OAuth 2.0 y YouTube Data API v3 (SDD 6.3).
+// LikesSyncPort define el contrato para la sincronización y calificación de likes mediante OAuth 2.0 y YouTube Data API v3 (SDD 6.3).
 type LikesSyncPort interface {
 	SyncLikes(ctx context.Context, youtubeIDs []string, accessToken string) ([]LikeSyncItem, error)
+	RateVideo(ctx context.Context, youtubeID string, rating string) error
 }
 
 // OAuthFlowPort define el contrato para el flujo de autorización OAuth 2.0 con redirección desde la app al navegador (SDD 6.3 y 8.2).
@@ -60,6 +61,7 @@ type OAuthFlowPort interface {
 	GetOAuthStatus() OAuthStatus
 	BuildAuthorizationURL() (string, error)
 	ExchangeAuthorizationCode(ctx context.Context, code string, state string) error
+	Logout(ctx context.Context) error
 }
 
 // PathResolverPort gestiona la resolución segura de rutas entre el Host (Tauri) y el Contenedor Docker (SDD 3.3 y 8.3).

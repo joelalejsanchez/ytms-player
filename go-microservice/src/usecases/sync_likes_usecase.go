@@ -2,6 +2,8 @@ package usecases
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"ytms-player/go-microservice/src/domain"
 )
@@ -16,6 +18,18 @@ type SyncLikesUseCase struct {
 // NewSyncLikesUseCase crea una nueva instancia de SyncLikesUseCase.
 func NewSyncLikesUseCase(likesPort domain.LikesSyncPort) *SyncLikesUseCase {
 	return &SyncLikesUseCase{likesPort: likesPort}
+}
+
+// RateVideo califica ("like", "none", "dislike") un video en YouTube a través del puerto OAuth.
+func (uc *SyncLikesUseCase) RateVideo(ctx context.Context, youtubeID string, rating string) error {
+	if err := domain.ValidateYouTubeID(youtubeID); err != nil {
+		return err
+	}
+	trimmed := strings.ToLower(strings.TrimSpace(rating))
+	if trimmed != "like" && trimmed != "none" && trimmed != "dislike" {
+		return fmt.Errorf("invalid rating: %s (must be like, none or dislike)", rating)
+	}
+	return uc.likesPort.RateVideo(ctx, youtubeID, trimmed)
 }
 
 // Execute valida los identificadores recibidos, los agrupa por lotes y consulta el estado de likes.

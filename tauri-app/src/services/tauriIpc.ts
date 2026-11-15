@@ -187,6 +187,18 @@ export const tauriApi = {
     return safeInvoke<string>("open_oauth_login");
   },
 
+  logoutOAuth(): Promise<void> {
+    return safeInvoke<void>("logout_oauth");
+  },
+
+  rateVideo(youtubeId: string, rating: string): Promise<void> {
+    return safeInvoke<void>("rate_video", { youtubeId, rating });
+  },
+
+  refreshTrackMetadata(youtubeId: string): Promise<Track> {
+    return safeInvoke<Track>("refresh_track_metadata", { youtubeId });
+  },
+
   readAudioDataUrl(filePath: string): Promise<string> {
     return safeInvoke<string>("read_audio_data_url", { filePath });
   },

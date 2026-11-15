@@ -227,6 +227,10 @@ func (m *mockLikesSyncPort) SyncLikes(_ context.Context, ids []string, token str
 	return out, nil
 }
 
+func (m *mockLikesSyncPort) RateVideo(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
 func TestSyncLikesUseCase_DeduplicationAndValidation(t *testing.T) {
 	port := &mockLikesSyncPort{}
 	uc := NewSyncLikesUseCase(port)

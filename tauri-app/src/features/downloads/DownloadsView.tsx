@@ -1,4 +1,16 @@
-import { AlertCircle, Download, History, List, ListMusic, Loader2, Music2, Trash2, Wifi } from "lucide-react";
+import {
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  Download,
+  History,
+  List,
+  ListMusic,
+  Loader2,
+  Music2,
+  Trash2,
+  Wifi,
+} from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge, Button, Input, ProgressBar } from "@/components/ui/Primitives";
 import { downloadFormSchema } from "@/schemas/validation";
@@ -18,11 +30,12 @@ export const DownloadsView = React.memo(() => {
   const [url, setUrl] = useState("");
   const [audioFormat, setAudioFormat] = useState<AudioFormat>(initialFormat);
   const [forceOverwrite, setForceOverwrite] = useState(false);
-  const [asyncMode, setAsyncMode] = useState(false);
+  const [asyncMode] = useState(true);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [mixOption, setMixOption] = useState<"track" | "mix">("track");
   const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
+  const [collapsedPlaylists, setCollapsedPlaylists] = useState<Record<string, boolean>>({});
 
   const connectionState = useDownloadStore((s) => s.connectionState);
   const tasks = useDownloadStore((s) => s.tasks);
@@ -65,6 +78,48 @@ export const DownloadsView = React.memo(() => {
   }, [isPlaylistUrl, isMixUrl, mixOption]);
 
   const taskEntries = useMemo(() => Object.entries(tasks).reverse(), [tasks]);
+
+  const { playlistGroups, individualTasks } = useMemo(() => {
+    const plMap: Record<
+      string,
+      {
+        title: string;
+        tasks: Array<{ key: string; task: (typeof tasks)[string] }>;
+      }
+    > = {};
+    const singles: Array<{ key: string; task: (typeof tasks)[string] }> = [];
+
+    for (const [key, task] of taskEntries) {
+      // Ignorar tarea padre cruda de playlist si sus hijos ya están presentes
+      if (task.youtube_id.startsWith("PL") || task.youtube_id.startsWith("RD") || task.youtube_id.startsWith("UL")) {
+        continue;
+      }
+
+      const plId = task.metadata?.playlist_id;
+      const plTitle = task.metadata?.playlist_title;
+      if (plId || plTitle) {
+        const groupKey = plId || plTitle || "playlist";
+        if (!plMap[groupKey]) {
+          plMap[groupKey] = {
+            title: plTitle || plId || "Playlist",
+            tasks: [],
+          };
+        }
+        plMap[groupKey].tasks.push({ key, task });
+      } else {
+        singles.push({ key, task });
+      }
+    }
+
+    return { playlistGroups: Object.entries(plMap), individualTasks: singles };
+  }, [taskEntries]);
+
+  const togglePlaylistCollapse = useCallback((groupKey: string) => {
+    setCollapsedPlaylists((prev) => ({
+      ...prev,
+      [groupKey]: !prev[groupKey],
+    }));
+  }, []);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -319,17 +374,7 @@ export const DownloadsView = React.memo(() => {
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-6 text-xs text-slate-300">
-          <label className="flex cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              checked={asyncMode}
-              onChange={(e) => setAsyncMode(e.target.checked)}
-              className="rounded border-slate-700 bg-slate-900 accent-red-500"
-            />
-            <span>Encolar en Worker Pool asíncrono (SSE en segundo plano)</span>
-          </label>
-
+        <div className="flex flex-wrap items-center justify-between gap-4 text-xs text-slate-300">
           <label className="flex cursor-pointer items-center gap-2">
             <input
               type="checkbox"
@@ -339,6 +384,9 @@ export const DownloadsView = React.memo(() => {
             />
             <span>Forzar re-descarga si el archivo ya existe en el Workspace</span>
           </label>
+          <span className="text-[11px] text-slate-500">
+            Descarga asíncrona mediante streaming SSE y transcodificación FFmpeg activa
+          </span>
         </div>
 
         {(validationError || lastError) && (
@@ -348,9 +396,9 @@ export const DownloadsView = React.memo(() => {
         )}
       </form>
 
-      {/* Cola de progreso en tiempo real */}
-      <div className="flex-1 space-y-2.5 overflow-y-auto rounded-xl border border-slate-800/80 bg-slate-950/60 p-4">
-        {taskEntries.length === 0 ? (
+      {/* Cola de progreso en tiempo real (Con soporte para Playlists agrupadas) */}
+      <div className="flex-1 space-y-3 overflow-y-auto rounded-xl border border-slate-800/80 bg-slate-950/60 p-4">
+        {playlistGroups.length === 0 && individualTasks.length === 0 ? (
           <div className="flex h-48 flex-col items-center justify-center text-center text-slate-500">
             <p className="text-sm font-medium text-slate-400">
               No hay tareas de descarga activas
@@ -362,57 +410,185 @@ export const DownloadsView = React.memo(() => {
             </p>
           </div>
         ) : (
-          taskEntries.map(([taskKey, task]) => {
-            const tone =
-              task.status === "completed" || task.status === "skipped"
-                ? "success"
-                : task.status === "failed"
-                  ? "danger"
-                  : task.status === "processing"
-                    ? "warning"
-                    : "info";
+          <>
+            {/* Playlists agrupadas en tarjetas desplegables (Collapsible) */}
+            {playlistGroups.map(([groupKey, group]) => {
+              const isCollapsed = Boolean(collapsedPlaylists[groupKey]);
+              const completedCount = group.tasks.filter(
+                (t) => t.task.status === "completed" || t.task.status === "skipped",
+              ).length;
+              const totalCount = group.tasks.length;
+              const overallProgress =
+                totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
-            return (
-              <div
-                key={taskKey}
-                className="space-y-2 rounded-xl border border-slate-800 bg-slate-900/80 p-3.5"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <Badge tone={tone} className="uppercase">
-                      {task.status}
-                    </Badge>
-                    <span className="text-sm font-semibold text-slate-100">
-                      {task.metadata?.title ?? task.youtube_id}
-                    </span>
-                    <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">
-                      {task.task_id}
-                    </code>
+              return (
+                <div
+                  key={groupKey}
+                  className="rounded-xl border border-slate-800 bg-slate-900/90 shadow-md transition"
+                >
+                  {/* Encabezado colapsable de Playlist */}
+                  <div
+                    onClick={() => togglePlaylistCollapse(groupKey)}
+                    className="flex cursor-pointer items-center justify-between border-b border-slate-800/80 p-3.5 hover:bg-slate-800/50"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <ListMusic className="h-4 w-4 text-red-500" />
+                      <span className="font-semibold text-white">{group.title}</span>
+                      <Badge tone={completedCount === totalCount ? "success" : "info"}>
+                        {completedCount} de {totalCount} completadas
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-mono text-slate-400">
+                        {overallProgress.toFixed(0)}%
+                      </span>
+                      <button
+                        type="button"
+                        className="rounded p-1 text-slate-400 hover:text-white"
+                        aria-label="Alternar vista de playlist"
+                      >
+                        {isCollapsed ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronUp className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-3 text-xs text-slate-400">
-                    {task.speed && <span>Velocidad: {task.speed}</span>}
-                    {task.eta && <span>ETA: {task.eta}</span>}
-                    <span className="font-semibold text-slate-200">
-                      {task.progress.toFixed(1)}%
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removeTask(taskKey)}
-                      className="text-slate-500 hover:text-rose-400"
-                      title="Quitar de la lista"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                  {/* Lista de temas de la playlist */}
+                  {!isCollapsed && (
+                    <div className="space-y-2 p-3">
+                      {group.tasks.map(({ key: taskKey, task }) => {
+                        const isProcessing =
+                          task.status === "processing" ||
+                          (task.progress >= 95 && task.status === "downloading");
+                        const tone =
+                          task.status === "completed" || task.status === "skipped"
+                            ? "success"
+                            : task.status === "failed"
+                              ? "danger"
+                              : isProcessing
+                                ? "warning"
+                                : "info";
+
+                        return (
+                          <div
+                            key={taskKey}
+                            className="space-y-1.5 rounded-lg border border-slate-800/70 bg-slate-950/70 p-3"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex min-w-0 items-center gap-2">
+                                <Badge tone={tone} className="uppercase text-[10px]">
+                                  {isProcessing ? "FFmpeg" : task.status}
+                                </Badge>
+                                <span className="truncate text-xs font-medium text-slate-200">
+                                  {task.metadata?.title ?? task.youtube_id}
+                                </span>
+                              </div>
+
+                              <div className="flex shrink-0 items-center gap-2 text-[11px] text-slate-400">
+                                {isProcessing ? (
+                                  <span className="flex items-center gap-1 text-amber-300">
+                                    <Loader2 className="h-3 w-3 animate-spin text-amber-400" />
+                                    Post-procesando
+                                  </span>
+                                ) : (
+                                  <>
+                                    {task.speed && <span>{task.speed}</span>}
+                                    <span className="font-semibold text-slate-200">
+                                      {task.progress.toFixed(0)}%
+                                    </span>
+                                  </>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeTask(taskKey);
+                                  }}
+                                  className="text-slate-500 hover:text-rose-400"
+                                  title="Quitar de la lista"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                            <ProgressBar value={task.progress} />
+                            {task.error && (
+                              <p className="text-[11px] text-rose-400">{task.error}</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
+              );
+            })}
 
-                <ProgressBar value={task.progress} />
+            {/* Descargas individuales (sin playlist) */}
+            {individualTasks.map(({ key: taskKey, task }) => {
+              const isProcessing =
+                task.status === "processing" ||
+                (task.progress >= 95 && task.status === "downloading");
+              const tone =
+                task.status === "completed" || task.status === "skipped"
+                  ? "success"
+                  : task.status === "failed"
+                    ? "danger"
+                    : isProcessing
+                      ? "warning"
+                      : "info";
 
-                {task.error && <p className="text-xs text-rose-400">{task.error}</p>}
-              </div>
-            );
-          })
+              return (
+                <div
+                  key={taskKey}
+                  className="space-y-2 rounded-xl border border-slate-800 bg-slate-900/80 p-3.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <Badge tone={tone} className="uppercase">
+                        {isProcessing ? "FFmpeg Post-procesando" : task.status}
+                      </Badge>
+                      <span className="text-sm font-semibold text-slate-100">
+                        {task.metadata?.title ?? task.youtube_id}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-xs text-slate-400">
+                      {isProcessing ? (
+                        <span className="flex items-center gap-1.5 font-medium text-amber-300">
+                          <Loader2 className="h-3 w-3 animate-spin text-amber-400" />
+                          Transcodificando audio e incrustando carátula/tags con FFmpeg...
+                        </span>
+                      ) : (
+                        <>
+                          {task.speed && <span>Velocidad: {task.speed}</span>}
+                          {task.eta && <span>ETA: {task.eta}</span>}
+                          <span className="font-semibold text-slate-200">
+                            {task.progress.toFixed(1)}%
+                          </span>
+                        </>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeTask(taskKey)}
+                        className="text-slate-500 hover:text-rose-400"
+                        title="Quitar de la lista"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <ProgressBar value={task.progress} />
+                  {task.error && <p className="text-xs text-rose-400">{task.error}</p>}
+                </div>
+              );
+            })}
+          </>
         )}
       </div>
 

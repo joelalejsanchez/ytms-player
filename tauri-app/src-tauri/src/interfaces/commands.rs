@@ -159,7 +159,7 @@ pub fn sync_playlist_tracks(
     )
 }
 
-/// Cambia el estado de `liked` de un track en la base de datos local.
+/// Cambia el estado de `liked` de un track en la base de datos local y lo refleja en YouTube si hay sesión activa.
 #[tauri::command]
 pub fn toggle_track_like(
     youtube_id: String,
@@ -167,7 +167,16 @@ pub fn toggle_track_like(
     state: State<'_, AppState>,
 ) -> DomainResult<Track> {
     let ctx = state.active_workspace()?;
-    track_usecases::set_track_like_state(&youtube_id, liked, ctx.store.as_ref())
+    let track = track_usecases::set_track_like_state(&youtube_id, liked, ctx.store.as_ref())?;
+
+    if let Ok(client) = state.microservice_client() {
+        if let Some(is_liked) = liked {
+            let rating = if is_liked { "like" } else { "none" };
+            let _ = client.rate_video(&youtube_id, rating);
+        }
+    }
+
+    Ok(track)
 }
 
 /// Elimina un track de SQLite y opcionalmente sus archivos en `/tracks` y `/thumbnails`.
@@ -455,6 +464,7 @@ pub fn set_preferred_audio_format(
 }
 
 /// Adopta en la biblioteca SQLite un archivo de audio huérfano que ya existe físicamente en `/tracks`.
+/// Si el título no se provee, consulta YouTube para enriquecer nombre, artista, duración y like.
 #[tauri::command]
 pub fn adopt_orphan_file(
     youtube_id: String,
@@ -476,23 +486,48 @@ pub fn adopt_orphan_file(
         )));
     }
 
-    let default_title = title
+    let mut final_title = title
         .filter(|t| !t.trim().is_empty())
         .unwrap_or_else(|| youtube_id.clone());
-    let default_artist = artist
+    let mut final_artist = artist
         .filter(|a| !a.trim().is_empty())
         .unwrap_or_else(|| "Local Audio".to_string());
+    let mut final_duration = 0i64;
+    let mut final_liked: Option<bool> = None;
+
+    if let Ok(client) = state.microservice_client() {
+        if let Ok(preview) = client.preview_url(&format!("https://www.youtube.com/watch?v={youtube_id}")) {
+            if let Some(item) = preview.items.into_iter().next() {
+                if !item.title.trim().is_empty() {
+                    final_title = item.title;
+                }
+                if !item.artist.trim().is_empty() {
+                    final_artist = item.artist;
+                }
+                if item.duration > 0 {
+                    final_duration = item.duration;
+                }
+            }
+        }
+        if let Ok(sync_res) = client.sync_likes(&[youtube_id.clone()], None) {
+            if let Some(liked_item) = sync_res.results.into_iter().next() {
+                if liked_item.synced {
+                    final_liked = Some(liked_item.liked);
+                }
+            }
+        }
+    }
 
     let new_track = NewTrack {
         youtube_id: youtube_id.clone(),
-        title: default_title,
-        artist: default_artist,
-        duration: 0,
+        title: final_title,
+        artist: final_artist,
+        duration: final_duration,
         published_at: None,
         file_extension,
         thumbnail_path: state.workspace_manager.resolve_thumbnail_path(&ctx.root_path, &youtube_id),
         synced: false,
-        liked: None,
+        liked: final_liked,
         is_missing: false,
         file_size: size,
     };
@@ -503,6 +538,64 @@ pub fn adopt_orphan_file(
         &state.workspace_manager,
         ctx.store.as_ref(),
     )
+}
+
+/// Consulta metadatos frescos desde YouTube y actualiza el título, artista y duración en SQLite.
+#[tauri::command]
+pub fn refresh_track_metadata(
+    youtube_id: String,
+    state: State<'_, AppState>,
+) -> DomainResult<Track> {
+    let ctx = state.active_workspace()?;
+    let client = state.microservice_client()?;
+    let preview = client.preview_url(&format!("https://www.youtube.com/watch?v={youtube_id}"))?;
+    let item = preview.items.into_iter().next().ok_or_else(|| {
+        DomainError::ValidationError(format!("No metadata found for {youtube_id} on YouTube"))
+    })?;
+
+    let existing = ctx
+        .store
+        .get_track_by_youtube_id(&youtube_id)?
+        .ok_or_else(|| DomainError::TrackNotFound(youtube_id.clone()))?;
+
+    let updated = NewTrack {
+        youtube_id: existing.youtube_id,
+        title: if !item.title.trim().is_empty() { item.title } else { existing.title },
+        artist: if !item.artist.trim().is_empty() { item.artist } else { existing.artist },
+        duration: if item.duration > 0 { item.duration } else { existing.duration },
+        published_at: existing.published_at,
+        file_extension: existing.file_extension,
+        thumbnail_path: existing.thumbnail_path,
+        synced: existing.synced,
+        liked: existing.liked,
+        is_missing: existing.is_missing,
+        file_size: existing.file_size,
+    };
+
+    track_usecases::register_or_update_track(
+        &ctx.root_path,
+        updated,
+        &state.workspace_manager,
+        ctx.store.as_ref(),
+    )
+}
+
+/// Cierra la sesión OAuth 2.0 y borra el token guardado en el microservicio.
+#[tauri::command]
+pub fn logout_oauth(state: State<'_, AppState>) -> DomainResult<()> {
+    let client = state.microservice_client()?;
+    client.logout_oauth()
+}
+
+/// Califica un video directamente en YouTube ("like", "none", "dislike").
+#[tauri::command]
+pub fn rate_video(
+    youtube_id: String,
+    rating: String,
+    state: State<'_, AppState>,
+) -> DomainResult<()> {
+    let client = state.microservice_client()?;
+    client.rate_video(&youtube_id, &rating)
 }
 
 /// Elimina un archivo físico huérfano de `/tracks`.

@@ -205,4 +205,52 @@ impl MicroserviceClientPort for GoMicroserviceClient {
                 })
         })
     }
+
+    fn logout_oauth(&self) -> DomainResult<()> {
+        let url = format!("{}/api/oauth/logout", self.base_url);
+        let client = self.http_client.clone();
+
+        Self::block_on(async move {
+            let resp = client
+                .post(&url)
+                .send()
+                .await
+                .map_err(|e| DomainError::MicroserviceError(format!("POST /api/oauth/logout failed: {e}")))?;
+
+            if !resp.status().is_success() {
+                return Err(DomainError::MicroserviceError(format!(
+                    "OAuth logout failed with status {}",
+                    resp.status()
+                )));
+            }
+            Ok(())
+        })
+    }
+
+    fn rate_video(&self, youtube_id: &str, rating: &str) -> DomainResult<()> {
+        let url = format!("{}/api/rate-video", self.base_url);
+        let client = self.http_client.clone();
+        let payload = serde_json::json!({
+            "youtube_id": youtube_id,
+            "rating": rating,
+        });
+
+        Self::block_on(async move {
+            let resp = client
+                .post(&url)
+                .json(&payload)
+                .send()
+                .await
+                .map_err(|e| DomainError::MicroserviceError(format!("POST /api/rate-video failed: {e}")))?;
+
+            if !resp.status().is_success() {
+                let status = resp.status();
+                let body = resp.text().await.unwrap_or_default();
+                return Err(DomainError::MicroserviceError(format!(
+                    "Rate video failed with HTTP {status}: {body}"
+                )));
+            }
+            Ok(())
+        })
+    }
 }

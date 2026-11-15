@@ -1,7 +1,7 @@
-import { ListMusic, Play, Plus, Trash2 } from "lucide-react";
+import { ListMusic, Music, Play, Plus, Trash2 } from "lucide-react";
 import React, { useCallback, useState } from "react";
 import { Badge, Button, Input } from "@/components/ui/Primitives";
-import { formatDuration } from "@/lib/utils";
+import { formatDuration, toAssetUrl } from "@/lib/utils";
 import { playlistFormSchema } from "@/schemas/validation";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
@@ -188,19 +188,38 @@ export const PlaylistsView = React.memo(() => {
                     Biblioteca.
                   </p>
                 ) : (
-                  activePlaylist.tracks.map((track) => (
-                    <div
-                      key={track.youtube_id}
-                      className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/70 px-3.5 py-2.5"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-slate-100">
-                          {track.title}
-                        </p>
-                        <p className="truncate text-xs text-slate-400">
-                          {track.artist} · {formatDuration(track.duration)}
-                        </p>
-                      </div>
+                  activePlaylist.tracks.map((track) => {
+                    const thumbUrl = toAssetUrl(track.thumbnail_path);
+                    return (
+                      <div
+                        key={track.youtube_id}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2"
+                      >
+                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-slate-800">
+                            {thumbUrl ? (
+                              <img
+                                src={thumbUrl}
+                                alt={track.title}
+                                loading="lazy"
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-slate-500">
+                                <Music className="h-4 w-4" />
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-slate-100">
+                              {track.title}
+                            </p>
+                            <p className="truncate text-xs text-slate-400">
+                              {track.artist} · {formatDuration(track.duration)}
+                            </p>
+                          </div>
+                        </div>
 
                       <div className="flex items-center gap-2">
                         <Badge tone="default">{track.file_extension}</Badge>
@@ -227,8 +246,8 @@ export const PlaylistsView = React.memo(() => {
                         </Button>
                       </div>
                     </div>
-                  ))
-                )}
+                  );
+                }))}
               </div>
             </>
           )}

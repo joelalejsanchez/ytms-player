@@ -49,8 +49,10 @@ func (h *APIHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/download/preview", h.HandlePreview)
 	mux.HandleFunc("/api/progress/stream", h.HandleProgressStream)
 	mux.HandleFunc("/api/sync-likes", h.HandleSyncLikes)
+	mux.HandleFunc("/api/rate-video", h.HandleRateVideo)
 	mux.HandleFunc("/api/oauth/status", h.HandleOAuthStatus)
 	mux.HandleFunc("/api/oauth/login", h.HandleOAuthLogin)
+	mux.HandleFunc("/api/oauth/logout", h.HandleOAuthLogout)
 	mux.HandleFunc("/api/oauth/callback", h.HandleOAuthCallback)
 	mux.HandleFunc("/api/health", h.HandleHealth)
 }
@@ -312,6 +314,60 @@ func renderOAuthCallbackHTML(w http.ResponseWriter, status int, success bool, me
   <script>if (%v) { setTimeout(function(){ window.close(); }, 2500); }</script>
 </body>
 </html>`, badgeColor, safeTitle, safeMessage, success)
+}
+
+// RateVideoRequest representa el payload para POST /api/rate-video.
+type RateVideoRequest struct {
+	YouTubeID string `json:"youtube_id"`
+	Rating    string `json:"rating"`
+}
+
+// HandleRateVideo procesa POST /api/rate-video.
+func (h *APIHandler) HandleRateVideo(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method_not_allowed", "only POST is supported")
+		return
+	}
+
+	var req RateVideoRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSONError(w, http.StatusBadRequest, "invalid_payload", "malformed json payload")
+		return
+	}
+
+	if err := h.syncLikesUC.RateVideo(r.Context(), req.YouTubeID, req.Rating); err != nil {
+		if errors.Is(err, domain.ErrUnauthorizedOAuth) {
+			writeJSONError(w, http.StatusUnauthorized, "unauthorized", "oauth authorization required to rate videos")
+			return
+		}
+		writeJSONError(w, http.StatusBadRequest, "rate_failed", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{
+		"youtube_id": req.YouTubeID,
+		"rating":     req.Rating,
+		"status":     "ok",
+	})
+}
+
+// HandleOAuthLogout procesa POST /api/oauth/logout.
+func (h *APIHandler) HandleOAuthLogout(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method_not_allowed", "only POST is supported")
+		return
+	}
+	if h.oauthFlow == nil {
+		writeJSONError(w, http.StatusServiceUnavailable, "oauth_unavailable", "oauth flow adapter is not initialized")
+		return
+	}
+
+	if err := h.oauthFlow.Logout(r.Context()); err != nil {
+		writeJSONError(w, http.StatusInternalServerError, "logout_failed", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"status": "logged_out"})
 }
 
 // HandleHealth procesa GET /api/health (SDD 6.4).
