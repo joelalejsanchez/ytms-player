@@ -47,23 +47,65 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<number | null>(null);
   const [unlinkRemoved, setUnlinkRemoved] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedTrackIds, setSelectedTrackIds] = useState<Set<string>>(new Set());
 
   // Set de IDs ya descargados para consulta O(1)
   const existingTrackIds = useMemo(() => {
     return new Set(libraryTracks.map((t) => t.youtube_id));
   }, [libraryTracks]);
 
-  const downloadedCount = useMemo(() => {
-    if (!previewData) return 0;
-    return previewData.items.filter((i) => existingTrackIds.has(i.youtube_id)).length;
-  }, [previewData, existingTrackIds]);
+  // Canciones actualmente seleccionadas por el usuario
+  const selectedItems = useMemo(() => {
+    if (!previewData) return [];
+    return previewData.items.filter((i) => selectedTrackIds.has(i.youtube_id));
+  }, [previewData, selectedTrackIds]);
 
-  const pendingCount = useMemo(() => {
-    if (!previewData) return 0;
+  const selectedCount = selectedItems.length;
+
+  const downloadedCount = useMemo(() => {
+    return selectedItems.filter((i) => existingTrackIds.has(i.youtube_id)).length;
+  }, [selectedItems, existingTrackIds]);
+
+  const pendingItems = useMemo(() => {
     return forceOverwrite
-      ? previewData.items.length
-      : previewData.items.length - downloadedCount;
-  }, [previewData, forceOverwrite, downloadedCount]);
+      ? selectedItems
+      : selectedItems.filter((i) => !existingTrackIds.has(i.youtube_id));
+  }, [selectedItems, forceOverwrite, existingTrackIds]);
+
+  const pendingCount = pendingItems.length;
+
+  // Acciones de selección masiva
+  const selectAll = useCallback(() => {
+    if (!previewData) return;
+    setSelectedTrackIds(new Set(previewData.items.map((i) => i.youtube_id)));
+  }, [previewData]);
+
+  const selectUnder7Min = useCallback(() => {
+    if (!previewData) return;
+    setSelectedTrackIds(
+      new Set(
+        previewData.items
+          .filter((i) => (i.duration || 0) < 420)
+          .map((i) => i.youtube_id),
+      ),
+    );
+  }, [previewData]);
+
+  const deselectAll = useCallback(() => {
+    setSelectedTrackIds(new Set());
+  }, []);
+
+  const toggleTrack = useCallback((youtubeId: string) => {
+    setSelectedTrackIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(youtubeId)) {
+        next.delete(youtubeId);
+      } else {
+        next.add(youtubeId);
+      }
+      return next;
+    });
+  }, []);
 
   // Cargar preview masivo al abrir el modal
   const loadPreview = useCallback(async () => {
@@ -75,6 +117,14 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
       setPreviewData(data);
       const defaultTitle = data.playlist_title?.trim() || "Nueva Playlist";
       setNewTitle(defaultTitle);
+
+      // Canciones menores a 7 minutos (420 segundos) marcadas por defecto
+      const defaultSelected = new Set(
+        data.items
+          .filter((item) => (item.duration || 0) < 420)
+          .map((item) => item.youtube_id),
+      );
+      setSelectedTrackIds(defaultSelected);
 
       // Si existe una playlist local asociada al mismo youtube_playlist_id, sugerir vincularla
       const matched = playlists.find((p) => p.youtube_playlist_id === data.target_id);
@@ -92,6 +142,7 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
             ? String((err as { message: unknown }).message)
             : "No se pudo obtener la previsualización de la playlist";
       setPreviewError(msg);
+      setSelectedTrackIds(new Set());
     } finally {
       setIsLoadingPreview(false);
     }
@@ -103,12 +154,13 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
     } else {
       setPreviewData(null);
       setPreviewError(null);
+      setSelectedTrackIds(new Set());
       setIsSubmitting(false);
     }
   }, [isOpen, loadPreview]);
 
   const handleConfirm = async () => {
-    if (!previewData) return;
+    if (!previewData || selectedCount === 0) return;
     setIsSubmitting(true);
 
     try {
@@ -122,17 +174,12 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
         targetId = selectedPlaylistId;
       }
 
-      const allIds = previewData.items.map((i) => i.youtube_id);
+      const allIds = selectedItems.map((i) => i.youtube_id);
 
       // Sincronización bulk en SQLite: vincular temas ya existentes y opcionalmente desvincular eliminados
       if (targetId !== null) {
         await tauriApi.syncPlaylistTracks(targetId, allIds, unlinkRemoved);
       }
-
-      // Descartar aquellos temas que ya están descargados en local (salvo que se fuerce sobreescritura)
-      const pendingItems = forceOverwrite
-        ? previewData.items
-        : previewData.items.filter((i) => !existingTrackIds.has(i.youtube_id));
 
       // Si todas las canciones de la lista ya estaban descargadas:
       // Se vinculan inmediatamente a la playlist sin lanzar descargas ni registrar duplicados en el historial
@@ -253,9 +300,9 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                       </span>
                       {pendingCount > 0 ? (
                         <span> · <strong className="text-amber-400">{pendingCount}</strong> pendientes de descarga</span>
-                      ) : (
+                      ) : selectedCount > 0 ? (
                         <span> · <strong className="text-emerald-300">Todas disponibles en local</strong></span>
-                      )}
+                      ) : null}
                     </p>
                   </div>
                   <Badge tone={previewData.content_type === "mix" ? "warning" : "info"}>
@@ -263,34 +310,91 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                   </Badge>
                 </div>
 
-                <div className="max-h-48 space-y-1.5 overflow-y-auto rounded-lg border border-slate-800 bg-slate-950/60 p-2">
+                {/* Barra de selección rápida */}
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-medium text-slate-400">Seleccionar:</span>
+                    <button
+                      type="button"
+                      onClick={selectAll}
+                      className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 text-[11px] text-slate-200 transition hover:bg-slate-700 hover:text-white"
+                    >
+                      Todas
+                    </button>
+                    <button
+                      type="button"
+                      onClick={selectUnder7Min}
+                      className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 text-[11px] text-slate-200 transition hover:bg-slate-700 hover:text-white"
+                    >
+                      &lt; 7 min (Por defecto)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={deselectAll}
+                      className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 text-[11px] text-slate-200 transition hover:bg-slate-700 hover:text-white"
+                    >
+                      Ninguna
+                    </button>
+                  </div>
+
+                  <span className="text-[11px] text-slate-400">
+                    <strong className={selectedCount > 0 ? "text-slate-100" : "text-rose-400"}>
+                      {selectedCount}
+                    </strong>{" "}
+                    de {previewData.items.length} seleccionadas
+                  </span>
+                </div>
+
+                <div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-slate-800 bg-slate-950/60 p-2">
                   {previewData.items.map((item, index) => {
                     const isAlreadyDownloaded = existingTrackIds.has(item.youtube_id);
+                    const isSelected = selectedTrackIds.has(item.youtube_id);
+                    const isLong = (item.duration || 0) >= 420;
+
                     return (
                       <div
                         key={`${item.youtube_id}-${index}`}
-                        className="flex items-center justify-between gap-3 rounded px-2.5 py-1.5 hover:bg-slate-900/80"
+                        onClick={() => toggleTrack(item.youtube_id)}
+                        className={`flex cursor-pointer items-center justify-between gap-3 rounded px-2.5 py-1.5 transition select-none ${
+                          isSelected
+                            ? "bg-slate-900/90 hover:bg-slate-800/80"
+                            : "opacity-50 hover:opacity-80 hover:bg-slate-900/40"
+                        }`}
                       >
-                        <div className="flex min-w-0 items-center gap-2">
-                          <span className="w-5 text-right font-mono text-slate-500">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              toggleTrack(item.youtube_id);
+                            }}
+                            className="h-4 w-4 rounded border-slate-700 bg-slate-800 text-red-600 focus:ring-red-500 focus:ring-offset-slate-900"
+                          />
+                          <span className="w-5 text-right font-mono text-[11px] text-slate-500">
                             {index + 1}.
                           </span>
                           <div className="truncate">
-                            <p className="truncate font-medium text-slate-200">
+                            <p className={`truncate font-medium text-xs ${isSelected ? "text-slate-200" : "text-slate-400"}`}>
                               {item.title || item.youtube_id}
                             </p>
-                            <p className="truncate text-[11px] text-slate-400">{item.artist}</p>
+                            <p className="truncate text-[11px] text-slate-500">{item.artist}</p>
                           </div>
                         </div>
 
                         <div className="flex shrink-0 items-center gap-2">
+                          {isLong && (
+                            <Badge tone="warning" className="text-[10px] px-1.5 py-0">
+                              &ge; 7 min
+                            </Badge>
+                          )}
                           {isAlreadyDownloaded && (
-                            <Badge tone="success">
+                            <Badge tone="success" className="text-[10px] px-1.5 py-0">
                               <CheckCircle2 className="h-3 w-3" />
                               Descargada
                             </Badge>
                           )}
-                          <span className="flex items-center gap-1 font-mono text-slate-400">
+                          <span className="flex items-center gap-1 font-mono text-[11px] text-slate-400">
                             <Clock className="h-3 w-3" />
                             {formatDuration(item.duration)}
                           </span>
@@ -432,10 +536,12 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
           </Button>
           <Button
             onClick={() => void handleConfirm()}
-            disabled={!previewData || isLoadingPreview || isSubmitting}
+            disabled={!previewData || isLoadingPreview || isSubmitting || selectedCount === 0}
           >
             {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
+            ) : selectedCount === 0 ? (
+              <AlertCircle className="h-4 w-4" />
             ) : pendingCount === 0 ? (
               <CheckCircle2 className="h-4 w-4 text-emerald-400" />
             ) : (
@@ -443,9 +549,13 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
             )}
             {isSubmitting
               ? "Sincronizando..."
-              : pendingCount === 0
-                ? "Sincronizar a Playlist (0 descargas)"
-                : `Descargar ${pendingCount} y Sincronizar`}
+              : selectedCount === 0
+                ? "Selecciona canciones"
+                : pendingCount === 0
+                  ? destination === "library_only"
+                    ? "Ya en biblioteca (0 descargas)"
+                    : "Sincronizar a Playlist (0 descargas)"
+                  : `Descargar ${pendingCount} y ${destination === "library_only" ? "Guardar" : "Sincronizar"}`}
           </Button>
         </footer>
       </div>

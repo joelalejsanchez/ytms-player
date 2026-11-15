@@ -218,4 +218,25 @@ describe("useDownloadStore & Utility Helpers", () => {
     expect(formatDuration(3665)).toBe("1:01:05");
     expect(formatBytes(1024 * 1024 * 3.5)).toBe("3.5 MB");
   });
+
+  it("filters songs under 7 minutes (420 seconds) by default for playlist imports", () => {
+    const previewItems = [
+      { youtube_id: "short_1", title: "Single 1", artist: "Artist", duration: 180 },
+      { youtube_id: "long_mix", title: "1 Hour DJ Mix", artist: "DJ", duration: 3600 },
+      { youtube_id: "edge_case", title: "7 Min Exact", artist: "Artist", duration: 420 },
+      { youtube_id: "short_2", title: "Single 2", artist: "Artist", duration: 419 },
+    ];
+
+    const defaultSelected = new Set(
+      previewItems
+        .filter((i) => (i.duration || 0) < 420)
+        .map((i) => i.youtube_id),
+    );
+
+    expect(defaultSelected.has("short_1")).toBe(true);
+    expect(defaultSelected.has("short_2")).toBe(true);
+    expect(defaultSelected.has("long_mix")).toBe(false);
+    expect(defaultSelected.has("edge_case")).toBe(false);
+    expect(defaultSelected.size).toBe(2);
+  });
 });
