@@ -104,11 +104,27 @@ export interface DownloadHistoryEntry {
   created_at: string;
 }
 
+export interface PlaylistPreviewItemDto {
+  youtube_id: string;
+  title: string;
+  artist: string;
+  duration: number;
+}
+
+export interface PlaylistPreviewDto {
+  content_type: string;
+  target_id: string;
+  playlist_title?: string | null;
+  items: PlaylistPreviewItemDto[];
+}
+
 export interface DownloadCommandInput {
   url: string;
   audio_format: AudioFormat;
   force_overwrite: boolean;
   async_mode: boolean;
+  target_playlist_id?: number | null;
+  skip_playlist?: boolean | null;
 }
 
 export interface MicroserviceTrackMetadata {

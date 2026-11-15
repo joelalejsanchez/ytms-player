@@ -119,6 +119,23 @@ pub struct DownloadHistoryEntry {
     pub created_at: String,
 }
 
+/// Previsualización rápida de una playlist/mix devuelta por Go.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlaylistPreviewItemDto {
+    pub youtube_id: String,
+    pub title: String,
+    pub artist: String,
+    pub duration: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlaylistPreviewDto {
+    pub content_type: String,
+    pub target_id: String,
+    pub playlist_title: Option<String>,
+    pub items: Vec<PlaylistPreviewItemDto>,
+}
+
 /// Petición de descarga enviada desde el frontend hacia Tauri y delegada al microservicio Go (SDD 6.1).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DownloadCommandInput {
@@ -126,6 +143,10 @@ pub struct DownloadCommandInput {
     pub audio_format: String,
     pub force_overwrite: bool,
     pub async_mode: bool,
+    #[serde(default)]
+    pub target_playlist_id: Option<i64>,
+    #[serde(default)]
+    pub skip_playlist: Option<bool>,
 }
 
 /// Payload enviado al microservicio Go en `POST /api/download`.

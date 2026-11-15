@@ -64,29 +64,34 @@ export function useSseProgress(): void {
           upsertProgressEvent(ev);
 
           if (ev.status === "completed" && ev.metadata) {
+            const dest = useDownloadStore.getState().taskDestinations[ev.task_id];
             void tauriApi
-              .confirmSseDownload({
-                youtube_id: ev.youtube_id,
-                status: "completed",
-                metadata: {
-                  youtube_id: ev.metadata.youtube_id,
-                  title: ev.metadata.title,
-                  artist: ev.metadata.artist,
-                  duration: ev.metadata.duration,
-                  published_at: ev.metadata.published_at ?? null,
-                  file_extension: ev.metadata.file_extension,
-                  thumbnail_path: ev.metadata.thumbnail_path,
+              .confirmSseDownload(
+                {
+                  youtube_id: ev.youtube_id,
+                  status: "completed",
+                  metadata: {
+                    youtube_id: ev.metadata.youtube_id,
+                    title: ev.metadata.title,
+                    artist: ev.metadata.artist,
+                    duration: ev.metadata.duration,
+                    published_at: ev.metadata.published_at ?? null,
+                    file_extension: ev.metadata.file_extension,
+                    thumbnail_path: ev.metadata.thumbnail_path,
+                    audio_path: ev.metadata.audio_path,
+                    file_size: ev.metadata.file_size,
+                    playlist_id: ev.metadata.playlist_id ?? null,
+                    playlist_title: ev.metadata.playlist_title ?? null,
+                  },
                   audio_path: ev.metadata.audio_path,
+                  thumbnail_path: ev.metadata.thumbnail_path,
+                  file_extension: ev.metadata.file_extension,
                   file_size: ev.metadata.file_size,
-                  playlist_id: ev.metadata.playlist_id ?? null,
-                  playlist_title: ev.metadata.playlist_title ?? null,
+                  skipped: false,
                 },
-                audio_path: ev.metadata.audio_path,
-                thumbnail_path: ev.metadata.thumbnail_path,
-                file_extension: ev.metadata.file_extension,
-                file_size: ev.metadata.file_size,
-                skipped: false,
-              })
+                dest?.targetPlaylistId,
+                dest?.skipPlaylist,
+              )
               .then((savedTrack) => {
                 upsertTrackLocal(savedTrack);
               })

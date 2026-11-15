@@ -60,8 +60,14 @@ describe("Zod Schemas Validation", () => {
       audioFormat: "m4a",
       forceOverwrite: false,
       asyncMode: true,
+      targetPlaylistId: 42,
+      skipPlaylist: false,
     });
     expect(dl.success).toBe(true);
+    if (dl.success) {
+      expect(dl.data.targetPlaylistId).toBe(42);
+      expect(dl.data.skipPlaylist).toBe(false);
+    }
 
     const pl = playlistFormSchema.safeParse({
       title: "Synthwave Mix",

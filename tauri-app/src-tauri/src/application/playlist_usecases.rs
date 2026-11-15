@@ -55,3 +55,13 @@ pub fn delete_playlist(
 ) -> DomainResult<()> {
     playlist_repo.delete_playlist(playlist_id)
 }
+
+/// Sincroniza en bulk una lista de youtube_ids con una playlist, vinculando los existentes y opcionalmente desvinculando los eliminados.
+pub fn sync_playlist_tracks(
+    playlist_id: i64,
+    current_youtube_ids: &[String],
+    unlink_removed: bool,
+    playlist_repo: &dyn PlaylistRepository,
+) -> DomainResult<usize> {
+    playlist_repo.sync_playlist_tracks(playlist_id, current_youtube_ids, unlink_removed)
+}

@@ -13,6 +13,7 @@ import type {
   NewTrack,
   OAuthStatusDto,
   Playlist,
+  PlaylistPreviewDto,
   PlaylistWithTracks,
   Track,
   WorkspaceInfo,
@@ -92,8 +93,16 @@ export const tauriApi = {
     return safeInvoke<Track>("register_track", { input });
   },
 
-  confirmSseDownload(item: MicroserviceDownloadItem): Promise<Track> {
-    return safeInvoke<Track>("confirm_sse_download", { item });
+  confirmSseDownload(
+    item: MicroserviceDownloadItem,
+    targetPlaylistId?: number | null,
+    skipPlaylist?: boolean | null,
+  ): Promise<Track> {
+    return safeInvoke<Track>("confirm_sse_download", {
+      item,
+      targetPlaylistId: targetPlaylistId ?? null,
+      skipPlaylist: skipPlaylist ?? null,
+    });
   },
 
   toggleTrackLike(youtubeId: string, liked: boolean | null): Promise<Track> {
@@ -133,6 +142,22 @@ export const tauriApi = {
 
   deletePlaylist(playlistId: number): Promise<void> {
     return safeInvoke<void>("delete_playlist", { playlistId });
+  },
+
+  syncPlaylistTracks(
+    playlistId: number,
+    currentYoutubeIds: string[],
+    unlinkRemoved: boolean,
+  ): Promise<number> {
+    return safeInvoke<number>("sync_playlist_tracks", {
+      playlistId,
+      currentYoutubeIds,
+      unlinkRemoved,
+    });
+  },
+
+  previewPlaylistUrl(url: string): Promise<PlaylistPreviewDto> {
+    return safeInvoke<PlaylistPreviewDto>("preview_playlist_url", { url });
   },
 
   startDownload(input: DownloadCommandInput): Promise<MicroserviceDownloadResponse> {

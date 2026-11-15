@@ -733,4 +733,94 @@ impl PlaylistRepository for SqliteWorkspaceStore {
         tx.commit()
             .map_err(|e| DomainError::PersistenceError(format!("Commit failed: {e}")))
     }
+
+    fn sync_playlist_tracks(
+        &self,
+        playlist_id: i64,
+        current_youtube_ids: &[String],
+        unlink_removed: bool,
+    ) -> DomainResult<usize> {
+        let mut conn = self
+            .conn
+            .lock()
+            .map_err(|e| DomainError::PersistenceError(format!("Mutex poisoned: {e}")))?;
+
+        let tx = conn
+            .transaction()
+            .map_err(|e| DomainError::PersistenceError(format!("Transaction error: {e}")))?;
+
+        let mut linked_count = 0usize;
+        {
+            let mut insert_stmt = tx
+                .prepare(
+                    r"
+                    INSERT OR IGNORE INTO playlist_tracks (playlist_id, track_id)
+                    SELECT ?1, id FROM tracks WHERE youtube_id = ?2
+                    ",
+                )
+                .map_err(|e| DomainError::PersistenceError(format!("Prepare insert failed: {e}")))?;
+
+            for ytid in current_youtube_ids {
+                let affected = insert_stmt
+                    .execute(params![playlist_id, ytid])
+                    .map_err(|e| DomainError::PersistenceError(format!("Execute insert failed: {e}")))?;
+                linked_count += affected;
+            }
+        }
+
+        if unlink_removed {
+            let mut fetch_stmt = tx
+                .prepare(
+                    r"
+                    SELECT pt.track_id, t.youtube_id
+                    FROM playlist_tracks pt
+                    JOIN tracks t ON t.id = pt.track_id
+                    WHERE pt.playlist_id = ?1
+                    ",
+                )
+                .map_err(|e| DomainError::PersistenceError(format!("Prepare select failed: {e}")))?;
+
+            let id_set: std::collections::HashSet<&str> =
+                current_youtube_ids.iter().map(|s| s.as_str()).collect();
+            let mut to_unlink: Vec<i64> = Vec::new();
+
+            let rows = fetch_stmt
+                .query_map(params![playlist_id], |row| {
+                    let track_id: i64 = row.get(0)?;
+                    let yt_id: String = row.get(1)?;
+                    Ok((track_id, yt_id))
+                })
+                .map_err(|e| DomainError::PersistenceError(format!("Query failed: {e}")))?;
+
+            for item in rows {
+                let (tid, ytid) =
+                    item.map_err(|e| DomainError::PersistenceError(e.to_string()))?;
+                if !id_set.contains(ytid.as_str()) {
+                    to_unlink.push(tid);
+                }
+            }
+
+            if !to_unlink.is_empty() {
+                let mut del_stmt = tx
+                    .prepare(
+                        "DELETE FROM playlist_tracks WHERE playlist_id = ?1 AND track_id = ?2",
+                    )
+                    .map_err(|e| {
+                        DomainError::PersistenceError(format!("Prepare delete failed: {e}"))
+                    })?;
+                for tid in to_unlink {
+                    del_stmt
+                        .execute(params![playlist_id, tid])
+                        .map_err(|e| {
+                            DomainError::PersistenceError(format!("Delete link failed: {e}"))
+                        })?;
+                }
+            }
+        }
+
+        tx.commit()
+            .map_err(|e| DomainError::PersistenceError(format!("Commit failed: {e}")))?;
+
+        Ok(linked_count)
+    }
 }

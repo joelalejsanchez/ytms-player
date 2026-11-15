@@ -48,6 +48,21 @@ const (
 	ContentPlaylist ContentType = "playlist"
 )
 
+// PlaylistPreviewResponse entrega la lista rápida de elementos de una playlist para previsualizar antes de descargar.
+type PlaylistPreviewItem struct {
+	YouTubeID string `json:"youtube_id"`
+	Title     string `json:"title"`
+	Artist    string `json:"artist"`
+	Duration  int    `json:"duration"`
+}
+
+type PlaylistPreviewResponse struct {
+	ContentType   ContentType           `json:"content_type"`
+	TargetID      string                `json:"target_id"`
+	PlaylistTitle string                `json:"playlist_title,omitempty"`
+	Items         []PlaylistPreviewItem `json:"items"`
+}
+
 // DownloadRequest encapsula los parámetros de entrada para POST /api/download (SDD 6.1).
 type DownloadRequest struct {
 	URL            string      `json:"url"`

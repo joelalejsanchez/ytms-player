@@ -172,4 +172,37 @@ impl MicroserviceClientPort for GoMicroserviceClient {
             })
         })
     }
+
+    fn preview_url(&self, raw_url: &str) -> DomainResult<crate::domain::entities::PlaylistPreviewDto> {
+        let url = format!("{}/api/download/preview", self.base_url);
+        let client = self.http_client.clone();
+        let target = raw_url.to_string();
+
+        Self::block_on(async move {
+            let resp = client
+                .get(&url)
+                .query(&[("url", &target)])
+                .send()
+                .await
+                .map_err(|e| {
+                    DomainError::MicroserviceError(format!("GET /api/download/preview failed: {e}"))
+                })?;
+
+            if !resp.status().is_success() {
+                let status = resp.status();
+                let body = resp.text().await.unwrap_or_default();
+                return Err(DomainError::MicroserviceError(format!(
+                    "Preview failed with HTTP {status}: {body}"
+                )));
+            }
+
+            resp.json::<crate::domain::entities::PlaylistPreviewDto>()
+                .await
+                .map_err(|e| {
+                    DomainError::MicroserviceError(format!(
+                        "Failed to deserialize preview response: {e}"
+                    ))
+                })
+        })
+    }
 }

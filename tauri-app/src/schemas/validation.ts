@@ -67,6 +67,8 @@ export const downloadFormSchema = z.object({
   audioFormat: audioFormatSchema.default("mp3"),
   forceOverwrite: z.boolean().default(false),
   asyncMode: z.boolean().default(false),
+  targetPlaylistId: z.number().nullable().optional(),
+  skipPlaylist: z.boolean().optional(),
 });
 
 export type DownloadFormValues = z.infer<typeof downloadFormSchema>;

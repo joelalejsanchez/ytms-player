@@ -1,10 +1,11 @@
-import { AlertCircle, Download, History, List, Loader2, Music2, Trash2, Wifi } from "lucide-react";
+import { AlertCircle, Download, History, List, ListMusic, Loader2, Music2, Trash2, Wifi } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge, Button, Input, ProgressBar } from "@/components/ui/Primitives";
 import { downloadFormSchema } from "@/schemas/validation";
 import { useDownloadStore } from "@/stores/useDownloadStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import type { AudioFormat } from "@/types/models";
+import { PlaylistImportModal } from "./PlaylistImportModal";
 
 export const DownloadsView = React.memo(() => {
   const appSettings = useLibraryStore((s) => s.appSettings);
@@ -21,6 +22,7 @@ export const DownloadsView = React.memo(() => {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [mixOption, setMixOption] = useState<"track" | "mix">("track");
+  const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
 
   const connectionState = useDownloadStore((s) => s.connectionState);
   const tasks = useDownloadStore((s) => s.tasks);
@@ -54,12 +56,26 @@ export const DownloadsView = React.memo(() => {
     return url.includes("list=RD") || url.includes("list=UL");
   }, [url]);
 
+  const isPlaylistUrl = useMemo(() => {
+    return url.includes("list=") && !url.includes("list=RD") && !url.includes("list=UL");
+  }, [url]);
+
+  const shouldOpenPlaylistModal = useMemo(() => {
+    return isPlaylistUrl || (isMixUrl && mixOption === "mix");
+  }, [isPlaylistUrl, isMixUrl, mixOption]);
+
   const taskEntries = useMemo(() => Object.entries(tasks).reverse(), [tasks]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       setValidationError(null);
+
+      // Si es una playlist o un mix completo, abrir el modal de previsualización y destino
+      if (shouldOpenPlaylistModal) {
+        setIsPlaylistModalOpen(true);
+        return;
+      }
 
       // Si es un mix y el usuario eligió solo la canción, limpiar el parámetro list
       let finalUrl = url.trim();
@@ -108,6 +124,7 @@ export const DownloadsView = React.memo(() => {
     },
     [
       url,
+      shouldOpenPlaylistModal,
       isMixUrl,
       mixOption,
       audioFormat,
@@ -179,6 +196,17 @@ export const DownloadsView = React.memo(() => {
             <option value="m4a">M4A (AAC + Átomos iTunes)</option>
             <option value="opus">OPUS (Vorbis Comments)</option>
           </select>
+
+          {shouldOpenPlaylistModal && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setIsPlaylistModalOpen(true)}
+            >
+              <ListMusic className="h-4 w-4 text-red-500" />
+              Previsualizar e Importar
+            </Button>
+          )}
 
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? (
@@ -387,6 +415,22 @@ export const DownloadsView = React.memo(() => {
           })
         )}
       </div>
+
+      <PlaylistImportModal
+        isOpen={isPlaylistModalOpen}
+        onClose={() => setIsPlaylistModalOpen(false)}
+        url={url}
+        audioFormat={audioFormat}
+        forceOverwrite={forceOverwrite}
+        onSuccess={async () => {
+          setUrl("");
+          await Promise.all([
+            refreshTracks(),
+            refreshPlaylists(),
+            refreshDownloadHistory(),
+          ]);
+        }}
+      />
     </section>
   );
 });

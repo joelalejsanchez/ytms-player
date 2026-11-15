@@ -53,6 +53,12 @@ pub trait PlaylistRepository: Send + Sync {
     fn add_track_to_playlist(&self, playlist_id: i64, track_id: i64) -> DomainResult<()>;
     fn remove_track_from_playlist(&self, playlist_id: i64, track_id: i64) -> DomainResult<()>;
     fn delete_playlist(&self, playlist_id: i64) -> DomainResult<()>;
+    fn sync_playlist_tracks(
+        &self,
+        playlist_id: i64,
+        current_youtube_ids: &[String],
+        unlink_removed: bool,
+    ) -> DomainResult<usize>;
 }
 
 /// Puerto para la administración física del directorio Workspace y archivo `.ytms-player-workspace` (SDD Sección 3).
@@ -91,4 +97,5 @@ pub trait MicroserviceClientPort: Send + Sync {
     ) -> DomainResult<LikeSyncResponseDto>;
     fn check_health(&self) -> DomainResult<HealthStatusDto>;
     fn get_oauth_status(&self) -> DomainResult<OAuthStatusDto>;
+    fn preview_url(&self, url: &str) -> DomainResult<crate::domain::entities::PlaylistPreviewDto>;
 }

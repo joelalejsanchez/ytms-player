@@ -12,6 +12,10 @@ export interface DownloadStoreState {
   microserviceUrl: string;
   connectionState: SseConnectionState;
   tasks: Record<string, DownloadProgressEvent>;
+  taskDestinations: Record<
+    string,
+    { targetPlaylistId?: number | null; skipPlaylist?: boolean | null }
+  >;
   isSubmitting: boolean;
   lastError: string | null;
 
@@ -34,6 +38,7 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
   microserviceUrl: "http://127.0.0.1:8080",
   connectionState: "disconnected",
   tasks: {},
+  taskDestinations: {},
   isSubmitting: false,
   lastError: null,
 
@@ -63,6 +68,15 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
     set({ isSubmitting: true, lastError: null });
     try {
       const response = await tauriApi.startDownload(input);
+      set((state) => ({
+        taskDestinations: {
+          ...state.taskDestinations,
+          [response.task_id]: {
+            targetPlaylistId: input.target_playlist_id,
+            skipPlaylist: input.skip_playlist,
+          },
+        },
+      }));
       if (response.items && response.items.length > 0) {
         set((state) => {
           const nextTasks = { ...state.tasks };

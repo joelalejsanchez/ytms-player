@@ -48,6 +48,8 @@ pub fn execute_download_and_persist(
         persist_downloaded_items(
             workspace_path,
             &response,
+            input.target_playlist_id,
+            input.skip_playlist.unwrap_or(false),
             workspace_manager,
             track_repo,
             playlist_repo,
@@ -82,6 +84,8 @@ pub fn execute_download_and_persist(
 pub fn persist_single_downloaded_item(
     workspace_path: &Path,
     item: &MicroserviceDownloadItem,
+    target_playlist_id: Option<i64>,
+    skip_playlist: bool,
     workspace_manager: &dyn WorkspaceManagerPort,
     track_repo: &dyn TrackRepository,
     playlist_repo: &dyn PlaylistRepository,
@@ -119,16 +123,20 @@ pub fn persist_single_downloaded_item(
         item.error.as_deref(),
     );
 
-    if let Some(yt_playlist_id) = &item.metadata.playlist_id {
-        if !yt_playlist_id.trim().is_empty() {
-            let title = item
-                .metadata
-                .playlist_title
-                .as_deref()
-                .filter(|s| !s.trim().is_empty())
-                .unwrap_or(yt_playlist_id.as_str());
-            let playlist = playlist_repo.create_playlist(title, Some(yt_playlist_id.as_str()))?;
-            playlist_repo.add_track_to_playlist(playlist.id, saved_track.id)?;
+    if !skip_playlist {
+        if let Some(target_id) = target_playlist_id {
+            let _ = playlist_repo.add_track_to_playlist(target_id, saved_track.id);
+        } else if let Some(yt_playlist_id) = &item.metadata.playlist_id {
+            if !yt_playlist_id.trim().is_empty() {
+                let title = item
+                    .metadata
+                    .playlist_title
+                    .as_deref()
+                    .filter(|s| !s.trim().is_empty())
+                    .unwrap_or(yt_playlist_id.as_str());
+                let playlist = playlist_repo.create_playlist(title, Some(yt_playlist_id.as_str()))?;
+                playlist_repo.add_track_to_playlist(playlist.id, saved_track.id)?;
+            }
         }
     }
 
@@ -138,11 +146,17 @@ pub fn persist_single_downloaded_item(
 fn persist_downloaded_items(
     workspace_path: &Path,
     response: &MicroserviceDownloadResponse,
+    target_playlist_id: Option<i64>,
+    skip_playlist: bool,
     workspace_manager: &dyn WorkspaceManagerPort,
     track_repo: &dyn TrackRepository,
     playlist_repo: &dyn PlaylistRepository,
 ) -> DomainResult<Vec<Track>> {
-    let maybe_playlist = if let Some(pl_id) = &response.playlist_id {
+    let maybe_playlist = if skip_playlist {
+        None
+    } else if let Some(target_id) = target_playlist_id {
+        Some(target_id)
+    } else if let Some(pl_id) = &response.playlist_id {
         if pl_id.trim().is_empty() {
             None
         } else {
@@ -151,7 +165,7 @@ fn persist_downloaded_items(
                 .as_deref()
                 .filter(|t| !t.trim().is_empty())
                 .unwrap_or(pl_id.as_str());
-            Some(playlist_repo.create_playlist(title, Some(pl_id.as_str()))?)
+            Some(playlist_repo.create_playlist(title, Some(pl_id.as_str()))?.id)
         }
     } else {
         None
@@ -163,13 +177,12 @@ fn persist_downloaded_items(
             let track = persist_single_downloaded_item(
                 workspace_path,
                 item,
+                maybe_playlist,
+                skip_playlist,
                 workspace_manager,
                 track_repo,
                 playlist_repo,
             )?;
-            if let Some(ref pl) = maybe_playlist {
-                playlist_repo.add_track_to_playlist(pl.id, track.id)?;
-            }
             saved_tracks.push(track);
         }
     }
@@ -210,6 +223,8 @@ pub fn recover_missing_track(
         audio_format: existing.file_extension,
         force_overwrite: true,
         async_mode: false,
+        target_playlist_id: None,
+        skip_playlist: None,
     };
 
     execute_download_and_persist(

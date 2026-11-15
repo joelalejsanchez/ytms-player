@@ -9,9 +9,10 @@ use interfaces::commands::{
     add_track_to_playlist, adopt_orphan_file, check_microservice_health, confirm_sse_download,
     create_playlist, delete_orphan_file, delete_playlist, delete_track, get_app_settings,
     get_download_history, get_missing_tracks, get_oauth_status, get_playlist_details, get_playlists,
-    get_tracks, get_workspace_info, import_cookies_file, open_oauth_login, read_audio_data_url,
-    recover_track, register_track, remove_saved_workspace, remove_track_from_playlist,
-    select_workspace, set_microservice_url, set_preferred_audio_format, start_download, sync_likes,
+    get_tracks, get_workspace_info, import_cookies_file, open_oauth_login, preview_playlist_url,
+    read_audio_data_url, recover_track, register_track, remove_saved_workspace,
+    remove_track_from_playlist, select_workspace, set_microservice_url,
+    set_preferred_audio_format, start_download, sync_likes, sync_playlist_tracks,
     toggle_track_like, verify_integrity,
 };
 use interfaces::state::AppState;
@@ -58,6 +59,8 @@ fn main() {
             set_preferred_audio_format,
             adopt_orphan_file,
             delete_orphan_file,
+            preview_playlist_url,
+            sync_playlist_tracks,
         ])
         .run(tauri::generate_context!())
         .expect("Error while running ytms-player Tauri application");
@@ -204,6 +207,42 @@ mod tests {
             .expect("track exists");
         assert_eq!(synced_track.liked, Some(true));
         assert!(synced_track.synced);
+
+        // Prueba de sincronización masiva y desvinculación sin N+1
+        let _track2 = store
+            .upsert_track(&NewTrack {
+                youtube_id: "def456uvw12".to_string(),
+                title: "Second Song".to_string(),
+                artist: "Second Artist".to_string(),
+                duration: 200,
+                published_at: None,
+                file_extension: "mp3".to_string(),
+                thumbnail_path: None,
+                synced: false,
+                liked: None,
+                is_missing: false,
+                file_size: 2048,
+            })
+            .expect("insert second track");
+
+        // Vincular track2 y desvincular track1 si no está en la lista remota
+        let current_yt_ids = vec!["def456uvw12".to_string()];
+        let synced_count = playlist_usecases::sync_playlist_tracks(
+            playlist.id,
+            &current_yt_ids,
+            true,
+            &store,
+        )
+        .expect("sync playlist tracks");
+        assert_eq!(synced_count, 1);
+
+        let updated_details = playlist_usecases::get_playlist_with_tracks(playlist.id, &store)
+            .expect("get updated playlist details");
+        assert_eq!(updated_details.tracks.len(), 1);
+        assert_eq!(updated_details.tracks[0].youtube_id, "def456uvw12");
+
+        // El track1 debe seguir existiendo en la biblioteca local aunque se haya desvinculado de la playlist
+        assert!(store.get_track_by_youtube_id("abc123xyz89").expect("fetch").is_some());
 
         let _ = fs::remove_dir_all(&ws_dir);
     }

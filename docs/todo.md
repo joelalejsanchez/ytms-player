@@ -97,3 +97,11 @@ Para la sesión de pruebas funcionales completas, ten a mano:
 
 - [ ] Icono definitivo de la aplicación en alta resolución (`1024x1024 PNG`) para generar automáticamente los `.icns`, `.ico` y `.png` con `npx tauri icon`.
 - [ ] Identificador de bundle definitivo en `tauri.conf.json` (actualmente `com.ytms-player.desktop`).
+
+---
+
+## 7. Features Realizables a Futuro (Baja Prioridad)
+
+- [ ] **Selección granular / Importación específica de canciones en Playlists:** Permitir desmarcar o marcar checkboxes individuales en la lista de previsualización de una Playlist antes de lanzar la descarga.
+- [ ] **Sincronización selectiva de canciones:** En playlists sincronizadas, elegir qué canciones individuales ignorar o congelar localmente aunque sean eliminadas en YouTube.
+- [ ] **Empaquetado multiplataforma para Windows:** Compilación `.msi` / `.exe` nativa con WebView2 y scripts de inicio en PowerShell.

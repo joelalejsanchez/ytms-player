@@ -18,7 +18,40 @@ type downloadJob struct {
 	req    domain.DownloadRequest
 }
 
-// DownloadUseCase coordina el flujo completo de descarga, procesamiento FFmpeg, control de duplicados y emisión SSE.
+// PreviewURL extrae la lista de temas en una sola operación bulk de yt-dlp sin descargar audio.
+func (uc *DownloadUseCase) PreviewURL(ctx context.Context, rawURL string) (*domain.PlaylistPreviewResponse, error) {
+	contentType, targetID, err := domain.ParseYouTubeURL(rawURL)
+	if err != nil {
+		return nil, err
+	}
+
+	items, err := uc.downloader.FetchMetadata(ctx, rawURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to preview url: %w", err)
+	}
+
+	previewItems := make([]domain.PlaylistPreviewItem, 0, len(items))
+	playlistTitle := ""
+
+	for _, item := range items {
+		if playlistTitle == "" && item.PlaylistTitle != "" {
+			playlistTitle = item.PlaylistTitle
+		}
+		previewItems = append(previewItems, domain.PlaylistPreviewItem{
+			YouTubeID: item.YouTubeID,
+			Title:     item.Title,
+			Artist:    item.Artist,
+			Duration:  item.Duration,
+		})
+	}
+
+	return &domain.PlaylistPreviewResponse{
+		ContentType:   contentType,
+		TargetID:      targetID,
+		PlaylistTitle: playlistTitle,
+		Items:         previewItems,
+	}, nil
+}
 type DownloadUseCase struct {
 	downloader   domain.DownloaderPort
 	processor    domain.AudioProcessorPort

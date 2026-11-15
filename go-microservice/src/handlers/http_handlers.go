@@ -46,6 +46,7 @@ func NewAPIHandler(
 // RegisterRoutes registra los endpoints especificados en SDD Sección 6 y el flujo OAuth 2.0 en navegador.
 func (h *APIHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/download", h.HandleDownload)
+	mux.HandleFunc("/api/download/preview", h.HandlePreview)
 	mux.HandleFunc("/api/progress/stream", h.HandleProgressStream)
 	mux.HandleFunc("/api/sync-likes", h.HandleSyncLikes)
 	mux.HandleFunc("/api/oauth/status", h.HandleOAuthStatus)
@@ -97,6 +98,28 @@ func (h *APIHandler) HandleDownload(w http.ResponseWriter, r *http.Request) {
 		statusCode = http.StatusAccepted
 	}
 	writeJSON(w, statusCode, resp)
+}
+
+// HandlePreview procesa GET /api/download/preview?url=... devolviendo la lista de temas en bulk sin descargar.
+func (h *APIHandler) HandlePreview(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method_not_allowed", "only GET is supported")
+		return
+	}
+
+	targetURL := strings.TrimSpace(r.URL.Query().Get("url"))
+	if targetURL == "" {
+		writeJSONError(w, http.StatusBadRequest, "missing_url", "query parameter 'url' is required")
+		return
+	}
+
+	preview, err := h.downloadUC.PreviewURL(r.Context(), targetURL)
+	if err != nil {
+		writeJSONError(w, http.StatusBadRequest, "preview_failed", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, preview)
 }
 
 // HandleProgressStream transmite eventos SSE en tiempo real para GET /api/progress/stream (SDD 6.2).

@@ -9,7 +9,7 @@ use crate::application::{
 use crate::domain::entities::{
     AppSettings, DownloadCommandInput, DownloadHistoryEntry, HealthStatusDto, IntegrityReport,
     LikeSyncResponseDto, MicroserviceDownloadItem, MicroserviceDownloadResponse, NewTrack,
-    OAuthStatusDto, Playlist, PlaylistWithTracks, Track, WorkspaceInfo,
+    OAuthStatusDto, Playlist, PlaylistPreviewDto, PlaylistWithTracks, Track, WorkspaceInfo,
 };
 use crate::domain::errors::{DomainError, DomainResult};
 use crate::domain::ports::{MicroserviceClientPort, TrackRepository, WorkspaceManagerPort};
@@ -114,14 +114,47 @@ pub fn register_track(input: NewTrack, state: State<'_, AppState>) -> DomainResu
 #[tauri::command]
 pub fn confirm_sse_download(
     item: MicroserviceDownloadItem,
+    target_playlist_id: Option<i64>,
+    skip_playlist: Option<bool>,
     state: State<'_, AppState>,
 ) -> DomainResult<Track> {
     let ctx = state.active_workspace()?;
     download_sync_usecases::persist_single_downloaded_item(
         &ctx.root_path,
         &item,
+        target_playlist_id,
+        skip_playlist.unwrap_or(false),
         &state.workspace_manager,
         ctx.store.as_ref(),
+        ctx.store.as_ref(),
+    )
+}
+
+/// Obtiene la previsualización de una playlist o mix sin descargar los audios (SDD 6.1).
+#[tauri::command]
+pub async fn preview_playlist_url(
+    url: String,
+    state: State<'_, AppState>,
+) -> DomainResult<PlaylistPreviewDto> {
+    let client = state.microservice_client()?;
+    tokio::task::spawn_blocking(move || client.preview_url(&url))
+        .await
+        .map_err(|e| DomainError::MicroserviceError(format!("Preview execution failed: {e}")))?
+}
+
+/// Sincroniza en bulk los tracks de una playlist con una lista de IDs de YouTube.
+#[tauri::command]
+pub fn sync_playlist_tracks(
+    playlist_id: i64,
+    current_youtube_ids: Vec<String>,
+    unlink_removed: bool,
+    state: State<'_, AppState>,
+) -> DomainResult<usize> {
+    let ctx = state.active_workspace()?;
+    playlist_usecases::sync_playlist_tracks(
+        playlist_id,
+        &current_youtube_ids,
+        unlink_removed,
         ctx.store.as_ref(),
     )
 }
