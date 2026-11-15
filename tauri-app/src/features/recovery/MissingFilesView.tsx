@@ -9,6 +9,7 @@ import {
   Trash2,
 } from "lucide-react";
 import React, { useCallback, useState } from "react";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Badge, Button } from "@/components/ui/Primitives";
 import { formatBytes } from "@/lib/utils";
 import { useLibraryStore } from "@/stores/useLibraryStore";
@@ -23,6 +24,21 @@ export const MissingFilesView = React.memo(() => {
   const [deletingOrphanId, setDeletingOrphanId] = useState<string | null>(null);
   const [deletingTrackId, setDeletingTrackId] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    confirmLabel: string;
+    tone: "danger" | "warning";
+    onConfirm: () => Promise<void>;
+  }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    confirmLabel: "Confirmar",
+    tone: "danger",
+    onConfirm: async () => {},
+  });
 
   const missingTracks = useLibraryStore((s) => s.missingTracks);
   const orphanFiles = useLibraryStore((s) => s.orphanFiles);
@@ -198,7 +214,19 @@ export const MissingFilesView = React.memo(() => {
                     variant="danger"
                     size="sm"
                     disabled={deletingTrackId === track.youtube_id || isLoading}
-                    onClick={() => void handleDeleteTrack(track.youtube_id)}
+                    onClick={() => {
+                      setConfirmModal({
+                        isOpen: true,
+                        title: "¿Estás seguro de eliminar este registro?",
+                        description: `Se eliminará el registro de "${track.title}" de la base de datos local. Esto no afectará archivos físicos.`,
+                        confirmLabel: "Sí, eliminar registro",
+                        tone: "danger",
+                        onConfirm: async () => {
+                          await handleDeleteTrack(track.youtube_id);
+                          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+                        },
+                      });
+                    }}
                   >
                     {deletingTrackId === track.youtube_id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -284,9 +312,19 @@ export const MissingFilesView = React.memo(() => {
                       deletingOrphanId === file.youtube_id ||
                       isLoading
                     }
-                    onClick={() =>
-                      void handleDeleteOrphan(file.youtube_id, file.file_extension)
-                    }
+                    onClick={() => {
+                      setConfirmModal({
+                        isOpen: true,
+                        title: "¿Estás seguro de borrar este archivo?",
+                        description: `El archivo "${file.file_name}" (${formatBytes(file.file_size)}) será eliminado permanentemente del disco. Esta acción no se puede deshacer.`,
+                        confirmLabel: "Sí, borrar de disco",
+                        tone: "danger",
+                        onConfirm: async () => {
+                          await handleDeleteOrphan(file.youtube_id, file.file_extension);
+                          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+                        },
+                      });
+                    }}
                   >
                     {deletingOrphanId === file.youtube_id ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -303,6 +341,17 @@ export const MissingFilesView = React.memo(() => {
           </div>
         )}
       </div>
+
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        description={confirmModal.description}
+        confirmLabel={confirmModal.confirmLabel}
+        tone={confirmModal.tone}
+        isLoading={Boolean(deletingOrphanId || deletingTrackId)}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+      />
     </section>
   );
 });

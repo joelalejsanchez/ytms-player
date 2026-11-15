@@ -1,6 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowUpDown, Heart, Loader2, Play, RefreshCw, Search, ShieldCheck, Sparkles } from "lucide-react";
 import React, { useCallback, useMemo, useRef, useState } from "react";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Badge, Button, Input } from "@/components/ui/Primitives";
 import { MetadataSyncModal } from "@/features/library/MetadataSyncModal";
 import { TrackRow } from "@/features/library/TrackRow";
@@ -22,6 +23,7 @@ export const LibraryView = React.memo(() => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSyncingLikes, setIsSyncingLikes] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [trackToDelete, setTrackToDelete] = useState<Track | null>(null);
 
   const tracks = useLibraryStore((s) => s.tracks);
   const playlists = useLibraryStore((s) => s.playlists);
@@ -106,15 +108,13 @@ export const LibraryView = React.memo(() => {
   );
 
   const handleDelete = useCallback(
-    async (youtubeId: string) => {
-      setDeletingId(youtubeId);
-      try {
-        await deleteTrack(youtubeId, true);
-      } finally {
-        setDeletingId(null);
+    (youtubeId: string) => {
+      const found = tracks.find((t) => t.youtube_id === youtubeId);
+      if (found) {
+        setTrackToDelete(found);
       }
     },
-    [deleteTrack],
+    [tracks],
   );
 
   const handleVerifyIntegrity = useCallback(async () => {
@@ -339,6 +339,26 @@ export const LibraryView = React.memo(() => {
       <MetadataSyncModal
         isOpen={isMetadataModalOpen}
         onClose={() => setIsMetadataModalOpen(false)}
+      />
+
+      <ConfirmationModal
+        isOpen={Boolean(trackToDelete)}
+        title="¿Estás seguro de eliminar esta canción?"
+        description={`La pista "${trackToDelete?.title ?? ""}" será eliminada de la biblioteca y sus archivos de audio y carátula se borrarán permanentemente del disco.`}
+        confirmLabel="Sí, eliminar canción"
+        tone="danger"
+        isLoading={Boolean(deletingId)}
+        onConfirm={async () => {
+          if (!trackToDelete) return;
+          setDeletingId(trackToDelete.youtube_id);
+          try {
+            await deleteTrack(trackToDelete.youtube_id, true);
+          } finally {
+            setDeletingId(null);
+            setTrackToDelete(null);
+          }
+        }}
+        onCancel={() => setTrackToDelete(null)}
       />
     </section>
   );

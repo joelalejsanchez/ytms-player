@@ -75,13 +75,17 @@ pub fn get_workspace_info(state: State<'_, AppState>) -> DomainResult<Option<Wor
 
 /// Ejecuta la verificación de integridad entre SQLite y los archivos físicos en `/tracks` (SDD 3.5).
 #[tauri::command]
-pub fn verify_integrity(state: State<'_, AppState>) -> DomainResult<IntegrityReport> {
+pub async fn verify_integrity(state: State<'_, AppState>) -> DomainResult<IntegrityReport> {
     let ctx = state.active_workspace()?;
-    workspace_usecases::verify_workspace_integrity(
-        &ctx.root_path,
-        &state.workspace_manager,
-        ctx.store.as_ref(),
-    )
+    let root_path = ctx.root_path.clone();
+    let manager = state.workspace_manager.clone();
+    let store = ctx.store.clone();
+
+    tokio::task::spawn_blocking(move || {
+        workspace_usecases::verify_workspace_integrity(&root_path, &manager, store.as_ref())
+    })
+    .await
+    .map_err(|e| DomainError::MicroserviceError(format!("Integrity verification task failed: {e}")))?
 }
 
 /// Lista todos los tracks del Workspace activo.
@@ -161,56 +165,71 @@ pub fn sync_playlist_tracks(
 
 /// Cambia el estado de `liked` de un track en la base de datos local y lo refleja en YouTube si hay sesión activa.
 #[tauri::command]
-pub fn toggle_track_like(
+pub async fn toggle_track_like(
     youtube_id: String,
     liked: Option<bool>,
     state: State<'_, AppState>,
 ) -> DomainResult<Track> {
     let ctx = state.active_workspace()?;
-    validate_youtube_id(&youtube_id)?;
+    let client = state.microservice_client().ok();
+    let store = ctx.store.clone();
 
-    let mut is_synced = false;
-    let mut sync_error: Option<String> = None;
+    tokio::task::spawn_blocking(move || {
+        validate_youtube_id(&youtube_id)?;
 
-    if let Ok(client) = state.microservice_client() {
-        if let Some(is_liked) = liked {
-            let rating = if is_liked { "like" } else { "none" };
-            match client.rate_video(&youtube_id, rating) {
-                Ok(_) => {
-                    is_synced = true;
-                }
-                Err(err) => {
-                    sync_error = Some(err.to_string());
+        let mut is_synced = false;
+        let mut sync_error: Option<String> = None;
+
+        if let Some(client) = client {
+            if let Some(is_liked) = liked {
+                let rating = if is_liked { "like" } else { "none" };
+                match client.rate_video(&youtube_id, rating) {
+                    Ok(_) => {
+                        is_synced = true;
+                    }
+                    Err(err) => {
+                        sync_error = Some(err.to_string());
+                    }
                 }
             }
         }
-    }
 
-    // Persistir en SQLite con el estado real de sincronización
-    let track = ctx.store.set_track_liked(&youtube_id, liked, is_synced)?;
+        // Persistir en SQLite con el estado real de sincronización
+        let track = store.set_track_liked(&youtube_id, liked, is_synced)?;
 
-    if let Some(err) = sync_error {
-        return Err(DomainError::MicroserviceError(err));
-    }
+        if let Some(err) = sync_error {
+            return Err(DomainError::MicroserviceError(err));
+        }
 
-    Ok(track)
+        Ok(track)
+    })
+    .await
+    .map_err(|e| DomainError::MicroserviceError(format!("Toggle like task failed: {e}")))?
 }
 
 /// Elimina un track de SQLite y opcionalmente sus archivos en `/tracks` y `/thumbnails`.
 #[tauri::command]
-pub fn delete_track(
+pub async fn delete_track(
     youtube_id: String,
     delete_files: bool,
     state: State<'_, AppState>,
 ) -> DomainResult<()> {
     let ctx = state.active_workspace()?;
-    track_usecases::remove_track(
-        &ctx.root_path,
-        &youtube_id,
-        delete_files,
-        &state.workspace_manager,
-        ctx.store.as_ref(),
-    )
+    let root_path = ctx.root_path.clone();
+    let manager = state.workspace_manager.clone();
+    let store = ctx.store.clone();
+
+    tokio::task::spawn_blocking(move || {
+        track_usecases::remove_track(
+            &root_path,
+            &youtube_id,
+            delete_files,
+            &manager,
+            store.as_ref(),
+        )
+    })
+    .await
+    .map_err(|e| DomainError::MicroserviceError(format!("Delete track task failed: {e}")))?
 }
 
 /// Recupera un archivo extraviado re-descargándolo o re-validándolo en `/tracks` (SDD 3.5).
@@ -344,9 +363,11 @@ pub async fn sync_likes(
 
 /// Consulta `GET /api/health` del microservicio Go (SDD 6.4).
 #[tauri::command]
-pub fn check_microservice_health(state: State<'_, AppState>) -> DomainResult<HealthStatusDto> {
+pub async fn check_microservice_health(state: State<'_, AppState>) -> DomainResult<HealthStatusDto> {
     let client = state.microservice_client()?;
-    client.check_health()
+    tokio::task::spawn_blocking(move || client.check_health())
+        .await
+        .map_err(|e| DomainError::MicroserviceError(format!("Check health task failed: {e}")))?
 }
 
 /// Lee el contenido binario de un archivo de audio local como Base64 Data URL para reproducción HTML5 sin restricciones de protocolo.
@@ -481,9 +502,9 @@ pub fn set_preferred_audio_format(
 }
 
 /// Adopta en la biblioteca SQLite un archivo de audio huérfano que ya existe físicamente en `/tracks`.
-/// Si el título no se provee, consulta YouTube para enriquecer nombre, artista, duración y like.
+/// Si el título no se provee, consulta YouTube para enriquecer nombre, artista, duración y like sin bloquear la UI.
 #[tauri::command]
-pub fn adopt_orphan_file(
+pub async fn adopt_orphan_file(
     youtube_id: String,
     file_extension: String,
     title: Option<String>,
@@ -491,150 +512,171 @@ pub fn adopt_orphan_file(
     state: State<'_, AppState>,
 ) -> DomainResult<Track> {
     let ctx = state.active_workspace()?;
-    let (exists, size, _) = state.workspace_manager.track_file_status(
-        &ctx.root_path,
-        &youtube_id,
-        &file_extension,
-    );
+    let client = state.microservice_client().ok();
+    let manager = state.workspace_manager.clone();
+    let store = ctx.store.clone();
+    let root_path = ctx.root_path.clone();
 
-    if !exists {
-        return Err(DomainError::ValidationError(format!(
-            "Orphan file {youtube_id}.{file_extension} not found on disk"
-        )));
-    }
+    tokio::task::spawn_blocking(move || {
+        let (exists, size, _) = manager.track_file_status(&root_path, &youtube_id, &file_extension);
 
-    let mut final_title = title
-        .filter(|t| !t.trim().is_empty())
-        .unwrap_or_else(|| youtube_id.clone());
-    let mut final_artist = artist
-        .filter(|a| !a.trim().is_empty())
-        .unwrap_or_else(|| "Local Audio".to_string());
-    let mut final_duration = 0i64;
-    let mut final_liked: Option<bool> = None;
+        if !exists {
+            return Err(DomainError::ValidationError(format!(
+                "Orphan file {youtube_id}.{file_extension} not found on disk"
+            )));
+        }
 
-    if let Ok(client) = state.microservice_client() {
-        if let Ok(preview) = client.preview_url(&format!("https://www.youtube.com/watch?v={youtube_id}")) {
-            if let Some(item) = preview.items.into_iter().next() {
-                if !item.title.trim().is_empty() {
-                    final_title = item.title;
+        let mut final_title = title
+            .filter(|t| !t.trim().is_empty())
+            .unwrap_or_else(|| youtube_id.clone());
+        let mut final_artist = artist
+            .filter(|a| !a.trim().is_empty())
+            .unwrap_or_else(|| "Local Audio".to_string());
+        let mut final_duration = 0i64;
+        let mut final_liked: Option<bool> = None;
+
+        if let Some(client) = client {
+            if let Ok(preview) = client.preview_url(&format!("https://www.youtube.com/watch?v={youtube_id}")) {
+                if let Some(item) = preview.items.into_iter().next() {
+                    if !item.title.trim().is_empty() {
+                        final_title = item.title;
+                    }
+                    if !item.artist.trim().is_empty() {
+                        final_artist = item.artist;
+                    }
+                    if item.duration > 0 {
+                        final_duration = item.duration;
+                    }
                 }
-                if !item.artist.trim().is_empty() {
-                    final_artist = item.artist;
-                }
-                if item.duration > 0 {
-                    final_duration = item.duration;
+            }
+            if let Ok(sync_res) = client.sync_likes(&[youtube_id.clone()], None) {
+                if let Some(liked_item) = sync_res.results.into_iter().next() {
+                    if liked_item.synced {
+                        final_liked = Some(liked_item.liked);
+                    }
                 }
             }
         }
-        if let Ok(sync_res) = client.sync_likes(&[youtube_id.clone()], None) {
-            if let Some(liked_item) = sync_res.results.into_iter().next() {
-                if liked_item.synced {
-                    final_liked = Some(liked_item.liked);
-                }
-            }
-        }
-    }
 
-    let new_track = NewTrack {
-        youtube_id: youtube_id.clone(),
-        title: final_title,
-        artist: final_artist,
-        duration: final_duration,
-        published_at: None,
-        file_extension,
-        thumbnail_path: state.workspace_manager.resolve_thumbnail_path(&ctx.root_path, &youtube_id),
-        synced: false,
-        liked: final_liked,
-        is_missing: false,
-        file_size: size,
-    };
+        let new_track = NewTrack {
+            youtube_id: youtube_id.clone(),
+            title: final_title,
+            artist: final_artist,
+            duration: final_duration,
+            published_at: None,
+            file_extension,
+            thumbnail_path: manager.resolve_thumbnail_path(&root_path, &youtube_id),
+            synced: false,
+            liked: final_liked,
+            is_missing: false,
+            file_size: size,
+        };
 
-    track_usecases::register_or_update_track(
-        &ctx.root_path,
-        new_track,
-        &state.workspace_manager,
-        ctx.store.as_ref(),
-    )
+        track_usecases::register_or_update_track(
+            &root_path,
+            new_track,
+            &manager,
+            store.as_ref(),
+        )
+    })
+    .await
+    .map_err(|e| DomainError::MicroserviceError(format!("Adopt orphan task failed: {e}")))?
 }
 
-/// Consulta metadatos frescos desde YouTube y actualiza el título, artista y duración en SQLite.
+/// Consulta metadatos frescos desde YouTube y actualiza el título, artista y duración en SQLite en segundo plano.
 #[tauri::command]
-pub fn refresh_track_metadata(
+pub async fn refresh_track_metadata(
     youtube_id: String,
     state: State<'_, AppState>,
 ) -> DomainResult<Track> {
     let ctx = state.active_workspace()?;
     let client = state.microservice_client()?;
-    let preview = client.preview_url(&format!("https://www.youtube.com/watch?v={youtube_id}"))?;
-    let item = preview.items.into_iter().next().ok_or_else(|| {
-        DomainError::ValidationError(format!("No metadata found for {youtube_id} on YouTube"))
-    })?;
+    let manager = state.workspace_manager.clone();
+    let store = ctx.store.clone();
+    let root_path = ctx.root_path.clone();
 
-    let existing = ctx
-        .store
-        .get_track_by_youtube_id(&youtube_id)?
-        .ok_or_else(|| DomainError::TrackNotFound(youtube_id.clone()))?;
+    tokio::task::spawn_blocking(move || {
+        let preview = client.preview_url(&format!("https://www.youtube.com/watch?v={youtube_id}"))?;
+        let item = preview.items.into_iter().next().ok_or_else(|| {
+            DomainError::ValidationError(format!("No metadata found for {youtube_id} on YouTube"))
+        })?;
 
-    let updated = NewTrack {
-        youtube_id: existing.youtube_id,
-        title: if !item.title.trim().is_empty() { item.title } else { existing.title },
-        artist: if !item.artist.trim().is_empty() { item.artist } else { existing.artist },
-        duration: if item.duration > 0 { item.duration } else { existing.duration },
-        published_at: existing.published_at,
-        file_extension: existing.file_extension,
-        thumbnail_path: existing.thumbnail_path,
-        synced: existing.synced,
-        liked: existing.liked,
-        is_missing: existing.is_missing,
-        file_size: existing.file_size,
-    };
+        let existing = store
+            .get_track_by_youtube_id(&youtube_id)?
+            .ok_or_else(|| DomainError::TrackNotFound(youtube_id.clone()))?;
 
-    track_usecases::register_or_update_track(
-        &ctx.root_path,
-        updated,
-        &state.workspace_manager,
-        ctx.store.as_ref(),
-    )
+        let updated = NewTrack {
+            youtube_id: existing.youtube_id,
+            title: if !item.title.trim().is_empty() { item.title } else { existing.title },
+            artist: if !item.artist.trim().is_empty() { item.artist } else { existing.artist },
+            duration: if item.duration > 0 { item.duration } else { existing.duration },
+            published_at: existing.published_at,
+            file_extension: existing.file_extension,
+            thumbnail_path: existing.thumbnail_path,
+            synced: existing.synced,
+            liked: existing.liked,
+            is_missing: existing.is_missing,
+            file_size: existing.file_size,
+        };
+
+        track_usecases::register_or_update_track(
+            &root_path,
+            updated,
+            &manager,
+            store.as_ref(),
+        )
+    })
+    .await
+    .map_err(|e| DomainError::MicroserviceError(format!("Refresh metadata task failed: {e}")))?
 }
 
 /// Cierra la sesión OAuth 2.0 y borra el token guardado en el microservicio.
 #[tauri::command]
-pub fn logout_oauth(state: State<'_, AppState>) -> DomainResult<()> {
+pub async fn logout_oauth(state: State<'_, AppState>) -> DomainResult<()> {
     let client = state.microservice_client()?;
-    client.logout_oauth()
+    tokio::task::spawn_blocking(move || client.logout_oauth())
+        .await
+        .map_err(|e| DomainError::MicroserviceError(format!("Logout task failed: {e}")))?
 }
 
 /// Califica un video directamente en YouTube ("like", "none", "dislike").
 #[tauri::command]
-pub fn rate_video(
+pub async fn rate_video(
     youtube_id: String,
     rating: String,
     state: State<'_, AppState>,
 ) -> DomainResult<()> {
     let client = state.microservice_client()?;
-    client.rate_video(&youtube_id, &rating)
+    tokio::task::spawn_blocking(move || client.rate_video(&youtube_id, &rating))
+        .await
+        .map_err(|e| DomainError::MicroserviceError(format!("Rate video task failed: {e}")))?
 }
 
 /// Elimina un archivo físico huérfano de `/tracks`.
 #[tauri::command]
-pub fn delete_orphan_file(
+pub async fn delete_orphan_file(
     youtube_id: String,
     file_extension: String,
     state: State<'_, AppState>,
 ) -> DomainResult<()> {
     let ctx = state.active_workspace()?;
-    state.workspace_manager.delete_physical_files(
-        &ctx.root_path,
-        &youtube_id,
-        &file_extension,
-    )
+    let root_path = ctx.root_path.clone();
+    let manager = state.workspace_manager.clone();
+
+    tokio::task::spawn_blocking(move || {
+        manager.delete_physical_files(&root_path, &youtube_id, &file_extension)
+    })
+    .await
+    .map_err(|e| DomainError::MicroserviceError(format!("Delete orphan task failed: {e}")))?
 }
 
 /// Consulta el estado de conexión OAuth 2.0 en `GET /api/oauth/status`.
 #[tauri::command]
-pub fn get_oauth_status(state: State<'_, AppState>) -> DomainResult<OAuthStatusDto> {
+pub async fn get_oauth_status(state: State<'_, AppState>) -> DomainResult<OAuthStatusDto> {
     let client = state.microservice_client()?;
-    client.get_oauth_status()
+    tokio::task::spawn_blocking(move || client.get_oauth_status())
+        .await
+        .map_err(|e| DomainError::MicroserviceError(format!("OAuth status task failed: {e}")))?
 }
 
 /// Abre la pantalla de consentimiento de Google OAuth 2.0 en el navegador predeterminado del sistema operativo.

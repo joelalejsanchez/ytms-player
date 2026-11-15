@@ -1,5 +1,6 @@
 import { ListMusic, Loader2, Music, Play, Plus, Trash2 } from "lucide-react";
 import React, { useCallback, useState } from "react";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Badge, Button, Input } from "@/components/ui/Primitives";
 import { formatDuration, toAssetUrl } from "@/lib/utils";
 import { playlistFormSchema } from "@/schemas/validation";
@@ -13,6 +14,21 @@ export const PlaylistsView = React.memo(() => {
   const [isCreating, setIsCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [removingTrackId, setRemovingTrackId] = useState<number | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    confirmLabel: string;
+    tone: "danger" | "warning";
+    onConfirm: () => Promise<void>;
+  }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    confirmLabel: "Confirmar",
+    tone: "danger",
+    onConfirm: async () => {},
+  });
 
   const playlists = useLibraryStore((s) => s.playlists);
   const activePlaylist = useLibraryStore((s) => s.activePlaylist);
@@ -176,7 +192,19 @@ export const PlaylistsView = React.memo(() => {
                     variant="ghost"
                     size="icon"
                     disabled={deletingId === pl.id}
-                    onClick={() => void handleDeletePlaylist(pl.id)}
+                    onClick={() => {
+                      setConfirmModal({
+                        isOpen: true,
+                        title: "¿Estás seguro de eliminar esta playlist?",
+                        description: `La playlist "${pl.title}" será eliminada de tu base de datos. Las canciones individuales seguirán en tu biblioteca.`,
+                        confirmLabel: "Sí, eliminar playlist",
+                        tone: "danger",
+                        onConfirm: async () => {
+                          await handleDeletePlaylist(pl.id);
+                          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+                        },
+                      });
+                    }}
                     title="Eliminar playlist"
                   >
                     {deletingId === pl.id ? (
@@ -274,12 +302,22 @@ export const PlaylistsView = React.memo(() => {
                           variant="ghost"
                           size="icon"
                           disabled={removingTrackId === track.id}
-                          onClick={() =>
-                            void handleRemoveTrack(
-                              activePlaylist.playlist.id,
-                              track.id,
-                            )
-                          }
+                          onClick={() => {
+                            setConfirmModal({
+                              isOpen: true,
+                              title: "¿Estás seguro de quitar esta canción?",
+                              description: `Se desvinculará "${track.title}" de la playlist "${activePlaylist.playlist.title}". Seguirá disponible en tu biblioteca.`,
+                              confirmLabel: "Sí, quitar de playlist",
+                              tone: "warning",
+                              onConfirm: async () => {
+                                await handleRemoveTrack(
+                                  activePlaylist.playlist.id,
+                                  track.id,
+                                );
+                                setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+                              },
+                            });
+                          }}
                           title="Quitar de la playlist"
                         >
                           {removingTrackId === track.id ? (
@@ -297,6 +335,17 @@ export const PlaylistsView = React.memo(() => {
           )}
         </div>
       </div>
+
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        description={confirmModal.description}
+        confirmLabel={confirmModal.confirmLabel}
+        tone={confirmModal.tone}
+        isLoading={Boolean(deletingId || removingTrackId)}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+      />
     </section>
   );
 });
