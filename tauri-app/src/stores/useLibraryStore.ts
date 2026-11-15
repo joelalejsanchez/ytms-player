@@ -14,6 +14,13 @@ import type {
   WorkspaceInfo,
 } from "@/types/models";
 
+export type TrackSyncStatus = "idle" | "loading" | "synced" | "local" | "error";
+
+export interface TrackSyncInfo {
+  status: TrackSyncStatus;
+  error?: string;
+}
+
 export interface LibraryStoreState {
   workspace: WorkspaceInfo | null;
   appSettings: AppSettings | null;
@@ -28,6 +35,7 @@ export interface LibraryStoreState {
   oauthStatus: OAuthStatusDto | null;
   isLoading: boolean;
   error: string | null;
+  syncStatusByTrack: Record<string, TrackSyncInfo>;
 
   selectWorkspace: (path: string) => Promise<WorkspaceInfo>;
   removeSavedWorkspace: (path: string) => Promise<void>;
@@ -81,6 +89,7 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
   oauthStatus: null,
   isLoading: false,
   error: null,
+  syncStatusByTrack: {},
 
   selectWorkspace: async (path) => {
     set({ isLoading: true, error: null });
@@ -268,13 +277,40 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
   },
 
   toggleLike: async (youtubeId, liked) => {
+    set((state) => ({
+      syncStatusByTrack: {
+        ...state.syncStatusByTrack,
+        [youtubeId]: { status: "loading" },
+      },
+    }));
+
     try {
       const updated = await tauriApi.toggleTrackLike(youtubeId, liked);
       get().upsertTrackLocal(updated);
+      set((state) => ({
+        syncStatusByTrack: {
+          ...state.syncStatusByTrack,
+          [youtubeId]: {
+            status: updated.synced ? "synced" : "local",
+          },
+        },
+      }));
     } catch (err) {
-      set({
-        error: extractErrorMessage(err, "No se pudo actualizar el estado de like"),
-      });
+      const message = extractErrorMessage(
+        err,
+        "No se pudo sincronizar el estado de like con YouTube",
+      );
+      await get().refreshTracks();
+      set((state) => ({
+        syncStatusByTrack: {
+          ...state.syncStatusByTrack,
+          [youtubeId]: {
+            status: "error",
+            error: message,
+          },
+        },
+        error: message,
+      }));
     }
   },
 

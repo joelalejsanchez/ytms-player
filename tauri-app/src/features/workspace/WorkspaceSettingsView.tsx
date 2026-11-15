@@ -6,6 +6,7 @@ import {
   HardDrive,
   History,
   KeyRound,
+  Loader2,
   RefreshCw,
   Server,
   Trash2,
@@ -38,6 +39,15 @@ export const WorkspaceSettingsView = React.memo(() => {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
+  const [isConnectingOAuth, setIsConnectingOAuth] = useState(false);
+  const [isLoggingOutOAuth, setIsLoggingOutOAuth] = useState(false);
+  const [isCheckingHealth, setIsCheckingHealth] = useState(false);
+  const [isCheckingOAuth, setIsCheckingOAuth] = useState(false);
+  const [isImportingCookies, setIsImportingCookies] = useState(false);
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const [switchingWorkspace, setSwitchingWorkspace] = useState<string | null>(null);
+  const [removingWorkspace, setRemovingWorkspace] = useState<string | null>(null);
+
   // Actualizar estado OAuth automáticamente al volver del navegador a la ventana de la app
   useEffect(() => {
     void checkOAuthStatus();
@@ -51,6 +61,7 @@ export const WorkspaceSettingsView = React.memo(() => {
   const handleConnectOAuth = useCallback(async () => {
     setFormError(null);
     setStatusMessage(null);
+    setIsConnectingOAuth(true);
     try {
       await openOAuthLogin();
       setStatusMessage(
@@ -62,20 +73,43 @@ export const WorkspaceSettingsView = React.memo(() => {
           ? err.message
           : "No se pudo iniciar la autenticación OAuth 2.0",
       );
+    } finally {
+      setIsConnectingOAuth(false);
     }
   }, [openOAuthLogin]);
 
   const handleLogoutOAuth = useCallback(async () => {
     setFormError(null);
     setStatusMessage(null);
+    setIsLoggingOutOAuth(true);
     try {
       await tauriApi.logoutOAuth();
       await checkOAuthStatus();
       setStatusMessage("Has cerrado la sesión de Google OAuth. Tu token local ha sido eliminado.");
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Error al cerrar sesión OAuth");
+    } finally {
+      setIsLoggingOutOAuth(false);
     }
   }, [checkOAuthStatus]);
+
+  const handleCheckOAuth = useCallback(async () => {
+    setIsCheckingOAuth(true);
+    try {
+      await checkOAuthStatus();
+    } finally {
+      setIsCheckingOAuth(false);
+    }
+  }, [checkOAuthStatus]);
+
+  const handleCheckHealth = useCallback(async () => {
+    setIsCheckingHealth(true);
+    try {
+      await checkHealth();
+    } finally {
+      setIsCheckingHealth(false);
+    }
+  }, [checkHealth]);
 
   const handleBrowseFolder = useCallback(async () => {
     const picked = await tauriApi.pickWorkspaceFolder();
@@ -98,6 +132,7 @@ export const WorkspaceSettingsView = React.memo(() => {
       setFormError("Selecciona o escribe la ruta de tu archivo cookies.txt");
       return;
     }
+    setIsImportingCookies(true);
     try {
       const updated = await importCookiesFile(cookiesInput.trim());
       setCookiesInput("");
@@ -108,6 +143,8 @@ export const WorkspaceSettingsView = React.memo(() => {
       setFormError(
         err instanceof Error ? err.message : "Error al importar el archivo cookies.txt",
       );
+    } finally {
+      setIsImportingCookies(false);
     }
   }, [cookiesInput, importCookiesFile]);
 
@@ -127,6 +164,7 @@ export const WorkspaceSettingsView = React.memo(() => {
         return;
       }
 
+      setIsSavingConfig(true);
       try {
         await setMicroserviceUrl(parsed.data.microserviceUrl);
         await selectWorkspace(parsed.data.rootPath);
@@ -138,6 +176,8 @@ export const WorkspaceSettingsView = React.memo(() => {
         setFormError(
           err instanceof Error ? err.message : "Error al inicializar el Workspace",
         );
+      } finally {
+        setIsSavingConfig(false);
       }
     },
     [pathInput, urlInput, setMicroserviceUrl, selectWorkspace, checkHealth],
@@ -194,18 +234,27 @@ export const WorkspaceSettingsView = React.memo(() => {
             <Button
               type="button"
               variant="secondary"
-              onClick={() => void checkHealth()}
+              onClick={() => void handleCheckHealth()}
+              disabled={isCheckingHealth}
             >
-              <Server className="h-4 w-4" />
-              Probar /api/health
+              {isCheckingHealth ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Server className="h-4 w-4" />
+              )}
+              {isCheckingHealth ? "Comprobando..." : "Probar /api/health"}
             </Button>
           </div>
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-2">
-          <Button type="submit" variant="primary">
-            <HardDrive className="h-4 w-4" />
-            Inicializar y Guardar Workspace
+          <Button type="submit" variant="primary" disabled={isSavingConfig}>
+            {isSavingConfig ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <HardDrive className="h-4 w-4" />
+            )}
+            {isSavingConfig ? "Guardando..." : "Inicializar y Guardar Workspace"}
           </Button>
         </div>
 
@@ -278,22 +327,42 @@ export const WorkspaceSettingsView = React.memo(() => {
                       <Button
                         variant="secondary"
                         size="sm"
-                        disabled={!saved.is_available}
-                        onClick={() => {
+                        disabled={!saved.is_available || switchingWorkspace === saved.path}
+                        onClick={async () => {
+                          setSwitchingWorkspace(saved.path);
                           setPathInput(saved.path);
-                          void selectWorkspace(saved.path);
+                          try {
+                            await selectWorkspace(saved.path);
+                          } finally {
+                            setSwitchingWorkspace(null);
+                          }
                         }}
                       >
-                        Activar
+                        {switchingWorkspace === saved.path ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : null}
+                        {switchingWorkspace === saved.path ? "Activando..." : "Activar"}
                       </Button>
                     )}
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => void removeSavedWorkspace(saved.path)}
+                      disabled={removingWorkspace === saved.path}
+                      onClick={async () => {
+                        setRemovingWorkspace(saved.path);
+                        try {
+                          await removeSavedWorkspace(saved.path);
+                        } finally {
+                          setRemovingWorkspace(null);
+                        }
+                      }}
                       title="Olvidar de la lista (no borra archivos)"
                     >
-                      <Trash2 className="h-4 w-4 text-slate-400 hover:text-rose-400" />
+                      {removingWorkspace === saved.path ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-rose-400" />
+                      ) : (
+                        <Trash2 className="h-4 w-4 text-slate-400 hover:text-rose-400" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -344,9 +413,13 @@ export const WorkspaceSettingsView = React.memo(() => {
           <Button
             type="button"
             variant="primary"
+            disabled={isImportingCookies}
             onClick={() => void handleImportCookies()}
           >
-            Actualizar Cookies
+            {isImportingCookies ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : null}
+            {isImportingCookies ? "Actualizando..." : "Actualizar Cookies"}
           </Button>
         </div>
       </div>
@@ -387,29 +460,41 @@ export const WorkspaceSettingsView = React.memo(() => {
           <Button
             type="button"
             variant="primary"
+            disabled={isConnectingOAuth || isLoggingOutOAuth}
             onClick={() => void handleConnectOAuth()}
           >
-            <ExternalLink className="h-4 w-4" />
-            {oauthStatus?.authenticated
-              ? "Reconectar cuenta de Google en Navegador"
-              : "Conectar con Google (OAuth 2.0)"}
+            {isConnectingOAuth ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ExternalLink className="h-4 w-4" />
+            )}
+            {isConnectingOAuth
+              ? "Conectando..."
+              : oauthStatus?.authenticated
+                ? "Reconectar cuenta de Google en Navegador"
+                : "Conectar con Google (OAuth 2.0)"}
           </Button>
           {oauthStatus?.authenticated && (
             <Button
               type="button"
               variant="danger"
+              disabled={isLoggingOutOAuth || isConnectingOAuth}
               onClick={() => void handleLogoutOAuth()}
             >
-              Cerrar Sesión OAuth
+              {isLoggingOutOAuth ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : null}
+              {isLoggingOutOAuth ? "Cerrando..." : "Cerrar Sesión OAuth"}
             </Button>
           )}
           <Button
             type="button"
             variant="secondary"
-            onClick={() => void checkOAuthStatus()}
+            disabled={isCheckingOAuth}
+            onClick={() => void handleCheckOAuth()}
           >
-            <RefreshCw className="h-4 w-4" />
-            Verificar Estado OAuth
+            <RefreshCw className={`h-4 w-4 ${isCheckingOAuth ? "animate-spin" : ""}`} />
+            {isCheckingOAuth ? "Verificando..." : "Verificar Estado OAuth"}
           </Button>
         </div>
       </div>

@@ -4,6 +4,7 @@ import {
   FolderPlus,
   Heart,
   ListPlus,
+  Loader2,
   Music,
   Play,
   Trash2,
@@ -11,6 +12,7 @@ import {
 import React from "react";
 import { Badge, Button } from "@/components/ui/Primitives";
 import { formatBytes, formatDuration, toAssetUrl } from "@/lib/utils";
+import type { TrackSyncInfo } from "@/stores/useLibraryStore";
 import type { Playlist, Track } from "@/types/models";
 
 export interface TrackRowProps {
@@ -18,6 +20,8 @@ export interface TrackRowProps {
   isCurrent: boolean;
   isPlaying: boolean;
   playlists: Playlist[];
+  syncStatus?: TrackSyncInfo;
+  isDeleting?: boolean;
   onPlay: (track: Track) => void;
   onEnqueue: (track: Track) => void;
   onToggleLike: (youtubeId: string, nextLiked: boolean | null) => void;
@@ -35,6 +39,8 @@ export const TrackRow = React.memo(
     isCurrent,
     isPlaying,
     playlists,
+    syncStatus,
+    isDeleting = false,
     onPlay,
     onEnqueue,
     onToggleLike,
@@ -42,20 +48,23 @@ export const TrackRow = React.memo(
     onAddToPlaylist,
   }: TrackRowProps) => {
     const thumbUrl = toAssetUrl(track.thumbnail_path);
+    const isSyncingLike = syncStatus?.status === "loading";
+    const isSyncError = syncStatus?.status === "error";
+    const isSynced = track.synced || syncStatus?.status === "synced";
 
     return (
       <div
-        className={`group flex items-center justify-between gap-4 rounded-xl border px-4 py-2.5 transition-colors ${
+        className={`group flex h-[60px] max-h-[60px] box-border select-none items-center justify-between gap-4 rounded-xl border px-4 py-2 transition-colors ${
           track.is_missing
-            ? "border-amber-800/50 bg-amber-950/15"
+            ? "border-amber-800 bg-amber-950/20"
             : isCurrent
-              ? "border-red-500/40 bg-red-950/20"
-              : "border-slate-800/80 bg-slate-900/50 hover:border-slate-700 hover:bg-slate-800/50"
+              ? "border-red-500/50 bg-red-950/20"
+              : "border-slate-800 bg-slate-900/50 hover:border-slate-700 hover:bg-slate-800/50"
         }`}
       >
         {/* Miniatura + Título + Artista */}
         <div className="flex min-w-0 flex-1 items-center gap-3.5">
-          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-slate-800">
+          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-slate-800 transform-gpu">
             {thumbUrl ? (
               <img
                 src={thumbUrl}
@@ -73,7 +82,7 @@ export const TrackRow = React.memo(
                 type="button"
                 onClick={() => onPlay(track)}
                 aria-label={`Reproducir ${track.title}`}
-                className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"
+                className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity duration-150 transform-gpu will-change-opacity group-hover:opacity-100"
               >
                 <Play className="h-4 w-4 fill-white text-white" />
               </button>
@@ -104,14 +113,14 @@ export const TrackRow = React.memo(
             <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-400">
               <span className="truncate">{track.artist}</span>
               <span>·</span>
-              <code className="rounded bg-slate-800 px-1.5 py-0.2 text-[11px] text-slate-300">
+              <code className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-300">
                 {track.youtube_id}
               </code>
             </div>
           </div>
         </div>
 
-        {/* Metadatos técnicos */}
+        {/* Metadatos técnicos + Indicador de sincronización con YouTube */}
         <div className="hidden items-center gap-4 text-xs text-slate-400 md:flex">
           <Badge tone="default" className="uppercase">
             {track.file_extension}
@@ -122,13 +131,29 @@ export const TrackRow = React.memo(
           <span className="w-12 text-right tabular-nums">
             {formatDuration(track.duration)}
           </span>
-          <span title={track.synced ? "Sincronizado con YouTube" : "Local"}>
-            <CheckCircle2
-              className={`h-4 w-4 ${
-                track.synced ? "text-emerald-400" : "text-slate-600"
-              }`}
-            />
-          </span>
+
+          {/* Indicador de sincronización (Carga: amarillo / Sincronizado: verde / Error: rojo / Solo local: gris) */}
+          <div className="flex items-center justify-center w-5">
+            {isSyncingLike ? (
+              <span title="Sincronizando like con tu cuenta de YouTube...">
+                <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
+              </span>
+            ) : isSyncError ? (
+              <span
+                title={`Error al sincronizar con YouTube: ${syncStatus?.error ?? "Fallo desconocido"}`}
+              >
+                <AlertCircle className="h-4 w-4 text-rose-500" />
+              </span>
+            ) : isSynced ? (
+              <span title="Sincronizado con tu cuenta de YouTube (Algoritmo actualizado)">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+              </span>
+            ) : (
+              <span title="Solo local (no sincronizado con YouTube)">
+                <CheckCircle2 className="h-4 w-4 text-slate-600" />
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Acciones */}
@@ -136,14 +161,25 @@ export const TrackRow = React.memo(
           <Button
             variant="ghost"
             size="icon"
+            disabled={isSyncingLike}
             onClick={() => onToggleLike(track.youtube_id, !track.liked)}
-            title={track.liked ? "Quitar Me gusta" : "Marcar Me gusta"}
+            title={
+              isSyncingLike
+                ? "Sincronizando con YouTube..."
+                : track.liked
+                  ? "Quitar Me gusta"
+                  : "Marcar Me gusta"
+            }
           >
-            <Heart
-              className={`h-4 w-4 ${
-                track.liked ? "fill-red-500 text-red-500" : "text-slate-400"
-              }`}
-            />
+            {isSyncingLike ? (
+              <Loader2 className="h-4 w-4 animate-spin text-red-400" />
+            ) : (
+              <Heart
+                className={`h-4 w-4 ${
+                  track.liked ? "fill-red-500 text-red-500" : "text-slate-400"
+                }`}
+              />
+            )}
           </Button>
 
           <Button
@@ -185,11 +221,16 @@ export const TrackRow = React.memo(
           <Button
             variant="ghost"
             size="icon"
+            disabled={isDeleting}
             onClick={() => onDelete(track.youtube_id)}
             title="Eliminar track"
             className="hover:text-rose-400"
           >
-            <Trash2 className="h-4 w-4" />
+            {isDeleting ? (
+              <Loader2 className="h-4 w-4 animate-spin text-rose-400" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>

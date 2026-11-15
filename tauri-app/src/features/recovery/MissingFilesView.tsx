@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   DownloadCloud,
   FileAudio,
+  Loader2,
   PlusCircle,
   RefreshCw,
   Trash2,
@@ -18,6 +19,10 @@ import { useLibraryStore } from "@/stores/useLibraryStore";
  */
 export const MissingFilesView = React.memo(() => {
   const [recoveringId, setRecoveringId] = useState<string | null>(null);
+  const [adoptingId, setAdoptingId] = useState<string | null>(null);
+  const [deletingOrphanId, setDeletingOrphanId] = useState<string | null>(null);
+  const [deletingTrackId, setDeletingTrackId] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
 
   const missingTracks = useLibraryStore((s) => s.missingTracks);
   const orphanFiles = useLibraryStore((s) => s.orphanFiles);
@@ -29,6 +34,15 @@ export const MissingFilesView = React.memo(() => {
   const deleteOrphanFile = useLibraryStore((s) => s.deleteOrphanFile);
   const deleteTrack = useLibraryStore((s) => s.deleteTrack);
 
+  const handleScan = useCallback(async () => {
+    setIsScanning(true);
+    try {
+      await verifyIntegrity();
+    } finally {
+      setIsScanning(false);
+    }
+  }, [verifyIntegrity]);
+
   const handleRecover = useCallback(
     async (youtubeId: string) => {
       setRecoveringId(youtubeId);
@@ -39,6 +53,42 @@ export const MissingFilesView = React.memo(() => {
       }
     },
     [recoverTrack],
+  );
+
+  const handleAdoptOrphan = useCallback(
+    async (youtubeId: string, fileExtension: string) => {
+      setAdoptingId(youtubeId);
+      try {
+        await adoptOrphanFile(youtubeId, fileExtension);
+      } finally {
+        setAdoptingId(null);
+      }
+    },
+    [adoptOrphanFile],
+  );
+
+  const handleDeleteOrphan = useCallback(
+    async (youtubeId: string, fileExtension: string) => {
+      setDeletingOrphanId(youtubeId);
+      try {
+        await deleteOrphanFile(youtubeId, fileExtension);
+      } finally {
+        setDeletingOrphanId(null);
+      }
+    },
+    [deleteOrphanFile],
+  );
+
+  const handleDeleteTrack = useCallback(
+    async (youtubeId: string) => {
+      setDeletingTrackId(youtubeId);
+      try {
+        await deleteTrack(youtubeId, false);
+      } finally {
+        setDeletingTrackId(null);
+      }
+    },
+    [deleteTrack],
   );
 
   return (
@@ -60,11 +110,15 @@ export const MissingFilesView = React.memo(() => {
         <Button
           variant="primary"
           size="sm"
-          onClick={() => void verifyIntegrity()}
-          disabled={isLoading}
+          onClick={() => void handleScan()}
+          disabled={isLoading || isScanning}
         >
-          <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-          Escanear Integridad Ahora
+          {isScanning || isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4" />
+          )}
+          {isScanning ? "Escaneando..." : "Escanear Integridad Ahora"}
         </Button>
       </header>
 
@@ -132,17 +186,26 @@ export const MissingFilesView = React.memo(() => {
                     disabled={isRecoveringThis || isLoading}
                     onClick={() => void handleRecover(track.youtube_id)}
                   >
-                    <DownloadCloud className="h-4 w-4" />
+                    {isRecoveringThis ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <DownloadCloud className="h-4 w-4" />
+                    )}
                     {isRecoveringThis ? "Recuperando..." : "Re-descargar / Restaurar"}
                   </Button>
 
                   <Button
                     variant="danger"
                     size="sm"
-                    onClick={() => void deleteTrack(track.youtube_id, false)}
+                    disabled={deletingTrackId === track.youtube_id || isLoading}
+                    onClick={() => void handleDeleteTrack(track.youtube_id)}
                   >
-                    <Trash2 className="h-4 w-4" />
-                    Eliminar Registro
+                    {deletingTrackId === track.youtube_id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                    {deletingTrackId === track.youtube_id ? "Eliminando..." : "Eliminar Registro"}
                   </Button>
                 </div>
               </div>
@@ -195,24 +258,44 @@ export const MissingFilesView = React.memo(() => {
                   <Button
                     variant="primary"
                     size="sm"
-                    disabled={isLoading}
+                    disabled={
+                      adoptingId === file.youtube_id ||
+                      deletingOrphanId === file.youtube_id ||
+                      isLoading
+                    }
                     onClick={() =>
-                      void adoptOrphanFile(file.youtube_id, file.file_extension)
+                      void handleAdoptOrphan(file.youtube_id, file.file_extension)
                     }
                   >
-                    <PlusCircle className="h-3.5 w-3.5" />
-                    Adoptar en Biblioteca
+                    {adoptingId === file.youtube_id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <PlusCircle className="h-3.5 w-3.5" />
+                    )}
+                    {adoptingId === file.youtube_id
+                      ? "Integrando..."
+                      : "Adoptar en Biblioteca"}
                   </Button>
                   <Button
                     variant="danger"
                     size="sm"
-                    disabled={isLoading}
+                    disabled={
+                      adoptingId === file.youtube_id ||
+                      deletingOrphanId === file.youtube_id ||
+                      isLoading
+                    }
                     onClick={() =>
-                      void deleteOrphanFile(file.youtube_id, file.file_extension)
+                      void handleDeleteOrphan(file.youtube_id, file.file_extension)
                     }
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Borrar de Disco
+                    {deletingOrphanId === file.youtube_id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5" />
+                    )}
+                    {deletingOrphanId === file.youtube_id
+                      ? "Borrando..."
+                      : "Borrar de Disco"}
                   </Button>
                 </div>
               </div>

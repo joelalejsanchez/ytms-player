@@ -1,4 +1,4 @@
-import { ListMusic, Music, Play, Plus, Trash2 } from "lucide-react";
+import { ListMusic, Loader2, Music, Play, Plus, Trash2 } from "lucide-react";
 import React, { useCallback, useState } from "react";
 import { Badge, Button, Input } from "@/components/ui/Primitives";
 import { formatDuration, toAssetUrl } from "@/lib/utils";
@@ -10,6 +10,9 @@ export const PlaylistsView = React.memo(() => {
   const [title, setTitle] = useState("");
   const [youtubePlaylistId, setYoutubePlaylistId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [removingTrackId, setRemovingTrackId] = useState<number | null>(null);
 
   const playlists = useLibraryStore((s) => s.playlists);
   const activePlaylist = useLibraryStore((s) => s.activePlaylist);
@@ -35,6 +38,7 @@ export const PlaylistsView = React.memo(() => {
         return;
       }
 
+      setIsCreating(true);
       try {
         const created = await createPlaylist(
           parsed.data.title,
@@ -47,9 +51,35 @@ export const PlaylistsView = React.memo(() => {
         setFormError(
           err instanceof Error ? err.message : "No se pudo crear la playlist",
         );
+      } finally {
+        setIsCreating(false);
       }
     },
     [title, youtubePlaylistId, createPlaylist, selectPlaylist],
+  );
+
+  const handleDeletePlaylist = useCallback(
+    async (id: number) => {
+      setDeletingId(id);
+      try {
+        await deletePlaylist(id);
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    [deletePlaylist],
+  );
+
+  const handleRemoveTrack = useCallback(
+    async (playlistId: number, trackId: number) => {
+      setRemovingTrackId(trackId);
+      try {
+        await removeTrackFromPlaylist(playlistId, trackId);
+      } finally {
+        setRemovingTrackId(null);
+      }
+    },
+    [removeTrackFromPlaylist],
   );
 
   const handlePlayPlaylist = useCallback(() => {
@@ -90,9 +120,13 @@ export const PlaylistsView = React.memo(() => {
           placeholder="ID de Playlist de YouTube (opcional)"
           className="w-64"
         />
-        <Button type="submit">
-          <Plus className="h-4 w-4" />
-          Crear Playlist
+        <Button type="submit" disabled={isCreating}>
+          {isCreating ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Plus className="h-4 w-4" />
+          )}
+          {isCreating ? "Creando..." : "Crear Playlist"}
         </Button>
 
         {formError && <p className="w-full text-xs text-rose-400">{formError}</p>}
@@ -141,10 +175,15 @@ export const PlaylistsView = React.memo(() => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => void deletePlaylist(pl.id)}
+                    disabled={deletingId === pl.id}
+                    onClick={() => void handleDeletePlaylist(pl.id)}
                     title="Eliminar playlist"
                   >
-                    <Trash2 className="h-4 w-4 text-slate-400 hover:text-rose-400" />
+                    {deletingId === pl.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-rose-400" />
+                    ) : (
+                      <Trash2 className="h-4 w-4 text-slate-400 hover:text-rose-400" />
+                    )}
                   </Button>
                 </div>
               );
@@ -234,15 +273,20 @@ export const PlaylistsView = React.memo(() => {
                         <Button
                           variant="ghost"
                           size="icon"
+                          disabled={removingTrackId === track.id}
                           onClick={() =>
-                            void removeTrackFromPlaylist(
+                            void handleRemoveTrack(
                               activePlaylist.playlist.id,
                               track.id,
                             )
                           }
                           title="Quitar de la playlist"
                         >
-                          <Trash2 className="h-4 w-4 text-rose-400" />
+                          {removingTrackId === track.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-rose-400" />
+                          ) : (
+                            <Trash2 className="h-4 w-4 text-rose-400" />
+                          )}
                         </Button>
                       </div>
                     </div>

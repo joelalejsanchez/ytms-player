@@ -1,5 +1,5 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowUpDown, Heart, Play, RefreshCw, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowUpDown, Heart, Loader2, Play, RefreshCw, Search, ShieldCheck, Sparkles } from "lucide-react";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { Badge, Button, Input } from "@/components/ui/Primitives";
 import { MetadataSyncModal } from "@/features/library/MetadataSyncModal";
@@ -19,10 +19,14 @@ export const LibraryView = React.memo(() => {
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortAsc, setSortAsc] = useState(false);
   const [isMetadataModalOpen, setIsMetadataModalOpen] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isSyncingLikes, setIsSyncingLikes] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const tracks = useLibraryStore((s) => s.tracks);
   const playlists = useLibraryStore((s) => s.playlists);
   const isLoading = useLibraryStore((s) => s.isLoading);
+  const syncStatusByTrack = useLibraryStore((s) => s.syncStatusByTrack);
   const toggleLike = useLibraryStore((s) => s.toggleLike);
   const deleteTrack = useLibraryStore((s) => s.deleteTrack);
   const addTrackToPlaylist = useLibraryStore((s) => s.addTrackToPlaylist);
@@ -102,11 +106,34 @@ export const LibraryView = React.memo(() => {
   );
 
   const handleDelete = useCallback(
-    (youtubeId: string) => {
-      void deleteTrack(youtubeId, true);
+    async (youtubeId: string) => {
+      setDeletingId(youtubeId);
+      try {
+        await deleteTrack(youtubeId, true);
+      } finally {
+        setDeletingId(null);
+      }
     },
     [deleteTrack],
   );
+
+  const handleVerifyIntegrity = useCallback(async () => {
+    setIsVerifying(true);
+    try {
+      await verifyIntegrity();
+    } finally {
+      setIsVerifying(false);
+    }
+  }, [verifyIntegrity]);
+
+  const handleSyncLikes = useCallback(async () => {
+    setIsSyncingLikes(true);
+    try {
+      await syncLikes();
+    } finally {
+      setIsSyncingLikes(false);
+    }
+  }, [syncLikes]);
 
   const handleAddToPlaylist = useCallback(
     (playlistId: number, trackId: number) => {
@@ -146,7 +173,7 @@ export const LibraryView = React.memo(() => {
             variant="secondary"
             size="sm"
             onClick={() => setIsMetadataModalOpen(true)}
-            disabled={tracks.length === 0}
+            disabled={tracks.length === 0 || isLoading || isVerifying || isSyncingLikes}
           >
             <Sparkles className="h-4 w-4 text-amber-400" />
             Actualizar Metadatos
@@ -155,21 +182,29 @@ export const LibraryView = React.memo(() => {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => void verifyIntegrity()}
-            disabled={isLoading}
+            onClick={() => void handleVerifyIntegrity()}
+            disabled={isLoading || isVerifying || isSyncingLikes}
           >
-            <ShieldCheck className="h-4 w-4 text-emerald-400" />
-            Verificar Integridad
+            {isVerifying ? (
+              <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+            ) : (
+              <ShieldCheck className="h-4 w-4 text-emerald-400" />
+            )}
+            {isVerifying ? "Verificando..." : "Verificar Integridad"}
           </Button>
 
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => void syncLikes()}
-            disabled={isLoading || tracks.length === 0}
+            onClick={() => void handleSyncLikes()}
+            disabled={isLoading || isVerifying || isSyncingLikes || tracks.length === 0}
           >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            Sincronizar Likes
+            {isSyncingLikes ? (
+              <Loader2 className="h-4 w-4 animate-spin text-red-400" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            {isSyncingLikes ? "Sincronizando..." : "Sincronizar Likes"}
           </Button>
 
           <Button
@@ -286,6 +321,8 @@ export const LibraryView = React.memo(() => {
                     isCurrent={currentTrackId === track.youtube_id}
                     isPlaying={isPlaying}
                     playlists={playlists}
+                    syncStatus={syncStatusByTrack[track.youtube_id]}
+                    isDeleting={deletingId === track.youtube_id}
                     onPlay={handlePlay}
                     onEnqueue={handleEnqueue}
                     onToggleLike={handleToggleLike}

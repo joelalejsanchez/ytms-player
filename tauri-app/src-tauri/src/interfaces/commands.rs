@@ -11,7 +11,7 @@ use crate::domain::entities::{
     LikeSyncResponseDto, MicroserviceDownloadItem, MicroserviceDownloadResponse, NewTrack,
     OAuthStatusDto, Playlist, PlaylistPreviewDto, PlaylistWithTracks, Track, WorkspaceInfo,
 };
-use crate::domain::errors::{DomainError, DomainResult};
+use crate::domain::errors::{validate_youtube_id, DomainError, DomainResult};
 use crate::domain::ports::{MicroserviceClientPort, TrackRepository, WorkspaceManagerPort};
 use crate::infrastructure::go_microservice_client::GoMicroserviceClient;
 use crate::infrastructure::sqlite_repository::SqliteWorkspaceStore;
@@ -167,13 +167,30 @@ pub fn toggle_track_like(
     state: State<'_, AppState>,
 ) -> DomainResult<Track> {
     let ctx = state.active_workspace()?;
-    let track = track_usecases::set_track_like_state(&youtube_id, liked, ctx.store.as_ref())?;
+    validate_youtube_id(&youtube_id)?;
+
+    let mut is_synced = false;
+    let mut sync_error: Option<String> = None;
 
     if let Ok(client) = state.microservice_client() {
         if let Some(is_liked) = liked {
             let rating = if is_liked { "like" } else { "none" };
-            let _ = client.rate_video(&youtube_id, rating);
+            match client.rate_video(&youtube_id, rating) {
+                Ok(_) => {
+                    is_synced = true;
+                }
+                Err(err) => {
+                    sync_error = Some(err.to_string());
+                }
+            }
         }
+    }
+
+    // Persistir en SQLite con el estado real de sincronización
+    let track = ctx.store.set_track_liked(&youtube_id, liked, is_synced)?;
+
+    if let Some(err) = sync_error {
+        return Err(DomainError::MicroserviceError(err));
     }
 
     Ok(track)
