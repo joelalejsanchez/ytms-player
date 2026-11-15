@@ -64,7 +64,7 @@ export const TrackRow = React.memo(
             ? "border-amber-500/50 bg-amber-500/10"
             : isCurrent
               ? "border-primary/50 bg-primary/10"
-              : "border-border bg-card/60 hover:border-primary/30 hover:bg-muted/60"
+              : "border-border bg-card hover:border-primary/30 hover:bg-muted/60"
         }`}
       >
         {/* Miniatura + Título + Artista */}

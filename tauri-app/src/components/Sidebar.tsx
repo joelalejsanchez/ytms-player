@@ -90,13 +90,15 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
   const isGoOnline = health?.status === "healthy";
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-r border-primary bg-card">
+    <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-card">
       <div className="flex items-center gap-3 border-b border-border px-5 py-4">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary bg-primary/15 text-primary shadow-xs">
           <Radio className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-base font-bold tracking-tight text-foreground">ytms-player</h1>
+          <h1 className="text-base font-bold tracking-tight text-foreground">
+            ytms-player
+          </h1>
           <p className="text-xs text-muted-foreground">YouTube Audio Desktop</p>
         </div>
       </div>
@@ -113,7 +115,7 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
               className={cn(
                 "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-primary/15 text-primary ring-1 ring-primary/30"
+                  ? "bg-primary/15 text-primary ring-1 ring-primary"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
