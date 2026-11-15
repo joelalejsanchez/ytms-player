@@ -16,12 +16,19 @@ export const RadioButton = React.memo(
         checked = false,
         disabled = false,
         onChange,
+        onClick,
         ...props
       },
       ref,
     ) => {
+      const handleClick = (e: React.MouseEvent<HTMLInputElement>) => {
+        e.stopPropagation();
+        onClick?.(e);
+      };
+
       return (
         <span
+          onClick={(e) => e.stopPropagation()}
           className={cn(
             "relative inline-flex h-4 w-4 shrink-0 items-center justify-center",
             containerClassName,
@@ -33,6 +40,7 @@ export const RadioButton = React.memo(
             checked={checked}
             disabled={disabled}
             onChange={onChange}
+            onClick={handleClick}
             className="peer absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
             {...props}
           />

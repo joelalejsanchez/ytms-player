@@ -12,7 +12,7 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { Badge, Button, Checkbox, Input, RadioButton } from "@/components/ui/Primitives";
-import { formatDuration } from "@/lib/utils";
+import { cn, formatDuration } from "@/lib/utils";
 import { tauriApi } from "@/services/tauriIpc";
 import { useDownloadStore } from "@/stores/useDownloadStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
@@ -81,6 +81,17 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
     setSelectedTrackIds(new Set(previewData.items.map((i) => i.youtube_id)));
   }, [previewData]);
 
+  const selectUnder15Min = useCallback(() => {
+    if (!previewData) return;
+    setSelectedTrackIds(
+      new Set(
+        previewData.items
+          .filter((i) => (i.duration || 0) < 900)
+          .map((i) => i.youtube_id),
+      ),
+    );
+  }, [previewData]);
+
   const selectUnder7Min = useCallback(() => {
     if (!previewData) return;
     setSelectedTrackIds(
@@ -95,6 +106,49 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
   const deselectAll = useCallback(() => {
     setSelectedTrackIds(new Set());
   }, []);
+
+  const totalTracks = previewData?.items.length ?? 0;
+
+  const tracksUnder7Min = useMemo(() => {
+    if (!previewData) return [];
+    return previewData.items.filter((i) => (i.duration || 0) < 420);
+  }, [previewData]);
+
+  const tracksUnder15Min = useMemo(() => {
+    if (!previewData) return [];
+    return previewData.items.filter((i) => (i.duration || 0) < 900);
+  }, [previewData]);
+
+  // Precedencia de estilos: Ninguna si 0; Todas si coincide con el total; luego < 7 min o < 15 min
+  const activePreset = useMemo<"none" | "all" | "7min" | "15min" | null>(() => {
+    if (!previewData || totalTracks === 0) return null;
+
+    if (selectedCount === 0) {
+      return "none";
+    }
+
+    if (selectedCount === totalTracks) {
+      return "all";
+    }
+
+    if (
+      tracksUnder7Min.length > 0 &&
+      selectedCount === tracksUnder7Min.length &&
+      tracksUnder7Min.every((i) => selectedTrackIds.has(i.youtube_id))
+    ) {
+      return "7min";
+    }
+
+    if (
+      tracksUnder15Min.length > 0 &&
+      selectedCount === tracksUnder15Min.length &&
+      tracksUnder15Min.every((i) => selectedTrackIds.has(i.youtube_id))
+    ) {
+      return "15min";
+    }
+
+    return null;
+  }, [previewData, totalTracks, selectedCount, tracksUnder7Min, tracksUnder15Min, selectedTrackIds]);
 
   const toggleTrack = useCallback((youtubeId: string) => {
     setSelectedTrackIds((prev) => {
@@ -315,27 +369,54 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[11px] font-medium text-muted-foreground">Seleccionar:</span>
-                    <button
+                    <Button
                       type="button"
+                      size="sm"
+                      variant={activePreset === "all" ? "outline" : "ghost"}
                       onClick={selectAll}
-                      className="rounded border border-border bg-muted px-2 py-0.5 text-[11px] text-foreground transition hover:bg-muted/80"
+                      className={cn(
+                        "h-6 px-2 text-[11px]",
+                        activePreset === "all" && "border-primary text-primary font-semibold shadow-xs",
+                      )}
                     >
                       Todas
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
-                      onClick={selectUnder7Min}
-                      className="rounded border border-border bg-muted px-2 py-0.5 text-[11px] text-foreground transition hover:bg-muted/80"
+                      size="sm"
+                      variant={activePreset === "15min" ? "outline" : "ghost"}
+                      onClick={selectUnder15Min}
+                      className={cn(
+                        "h-6 px-2 text-[11px]",
+                        activePreset === "15min" && "border-primary text-primary font-semibold shadow-xs",
+                      )}
                     >
-                      &lt; 7 min (Por defecto)
-                    </button>
-                    <button
+                      &lt; 15 min
+                    </Button>
+                    <Button
                       type="button"
+                      size="sm"
+                      variant={activePreset === "7min" ? "outline" : "ghost"}
+                      onClick={selectUnder7Min}
+                      className={cn(
+                        "h-6 px-2 text-[11px]",
+                        activePreset === "7min" && "border-primary text-primary font-semibold shadow-xs",
+                      )}
+                    >
+                      &lt; 7 min
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={activePreset === "none" ? "outline" : "ghost"}
                       onClick={deselectAll}
-                      className="rounded border border-border bg-muted px-2 py-0.5 text-[11px] text-foreground transition hover:bg-muted/80"
+                      className={cn(
+                        "h-6 px-2 text-[11px]",
+                        activePreset === "none" && "border-primary text-primary font-semibold shadow-xs",
+                      )}
                     >
                       Ninguna
-                    </button>
+                    </Button>
                   </div>
 
                   <span className="text-[11px] text-muted-foreground">
@@ -363,13 +444,15 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                         }`}
                       >
                         <div className="flex min-w-0 items-center gap-2.5">
-                          <Checkbox
-                            checked={isSelected}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              toggleTrack(item.youtube_id);
-                            }}
-                          />
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex shrink-0 items-center"
+                          >
+                            <Checkbox
+                              checked={isSelected}
+                              onChange={() => toggleTrack(item.youtube_id)}
+                            />
+                          </div>
                           <span className="w-5 text-right font-mono text-[11px] text-muted-foreground">
                             {index + 1}.
                           </span>

@@ -19,6 +19,7 @@ export const Checkbox = React.memo(
         disabled = false,
         onChange,
         onCheckedChange,
+        onClick,
         ...props
       },
       ref,
@@ -28,8 +29,14 @@ export const Checkbox = React.memo(
         onCheckedChange?.(e.target.checked);
       };
 
+      const handleClick = (e: React.MouseEvent<HTMLInputElement>) => {
+        e.stopPropagation();
+        onClick?.(e);
+      };
+
       return (
         <span
+          onClick={(e) => e.stopPropagation()}
           className={cn(
             "relative inline-flex h-4 w-4 shrink-0 items-center justify-center",
             containerClassName,
@@ -41,6 +48,7 @@ export const Checkbox = React.memo(
             checked={checked}
             disabled={disabled}
             onChange={handleChange}
+            onClick={handleClick}
             className="peer absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
             {...props}
           />
