@@ -177,9 +177,10 @@ export const PlaylistsView = React.memo(() => {
               return (
                 <div
                   key={pl.id}
-                  className={`flex items-center justify-between rounded-xl border p-3 transition-colors ${
+                  onClick={() => void selectPlaylist(pl.id)}
+                  className={`flex cursor-pointer items-center justify-between rounded-xl border p-3 transition-colors ${
                     isSelected
-                      ? "border-primary/40 bg-primary/10"
+                      ? "border-primary bg-card"
                       : "border-border bg-card hover:border-primary/30 hover:bg-muted/60"
                   }`}
                 >
@@ -191,19 +192,21 @@ export const PlaylistsView = React.memo(() => {
                       void handlePlayPlaylistById(pl.id);
                     }}
                     title={`Reproducir playlist ${pl.title}`}
-                    className="mr-2 shrink-0 text-foreground hover:bg-muted"
+                    className={`mr-2 shrink-0 hover:bg-muted ${
+                      isSelected ? "text-primary" : "text-foreground"
+                    }`}
                   >
                     <Play className="h-4 w-4 fill-current" />
                   </Button>
 
-                  <button
-                    type="button"
-                    onClick={() => void selectPlaylist(pl.id)}
-                    className="min-w-0 flex-1 text-left"
-                  >
+                  <div className="min-w-0 flex-1 text-left select-none">
                     <div className="flex items-center gap-2">
                       <ListMusic className="h-4 w-4 text-primary" />
-                      <span className="truncate text-sm font-semibold text-foreground">
+                      <span
+                        className={`truncate text-sm font-semibold ${
+                          isSelected ? "text-primary" : "text-foreground"
+                        }`}
+                      >
                         {pl.title}
                       </span>
                     </div>
@@ -215,32 +218,34 @@ export const PlaylistsView = React.memo(() => {
                         </code>
                       )}
                     </div>
-                  </button>
+                  </div>
 
-                  <ActionMenu
-                    isLoading={deletingId === pl.id}
-                    title="Opciones de la playlist"
-                    items={[
-                      {
-                        label: "Eliminar playlist",
-                        icon: <Trash2 className="h-3.5 w-3.5" />,
-                        variant: "danger",
-                        onClick: () => {
-                          setConfirmModal({
-                            isOpen: true,
-                            title: "¿Estás seguro de eliminar esta playlist?",
-                            description: `La playlist "${pl.title}" será eliminada de tu base de datos. Las canciones individuales seguirán en tu biblioteca.`,
-                            confirmLabel: "Sí, eliminar playlist",
-                            tone: "danger",
-                            onConfirm: async () => {
-                              await handleDeletePlaylist(pl.id);
-                              setConfirmModal((prev) => ({ ...prev, isOpen: false }));
-                            },
-                          });
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <ActionMenu
+                      isLoading={deletingId === pl.id}
+                      title="Opciones de la playlist"
+                      items={[
+                        {
+                          label: "Eliminar playlist",
+                          icon: <Trash2 className="h-3.5 w-3.5" />,
+                          variant: "danger",
+                          onClick: () => {
+                            setConfirmModal({
+                              isOpen: true,
+                              title: "¿Estás seguro de eliminar esta playlist?",
+                              description: `La playlist "${pl.title}" será eliminada de tu base de datos. Las canciones individuales seguirán en tu biblioteca.`,
+                              confirmLabel: "Sí, eliminar playlist",
+                              tone: "danger",
+                              onConfirm: async () => {
+                                await handleDeletePlaylist(pl.id);
+                                setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+                              },
+                            });
+                          },
                         },
-                      },
-                    ]}
-                  />
+                      ]}
+                    />
+                  </div>
                 </div>
               );
             })
