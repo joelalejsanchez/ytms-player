@@ -53,60 +53,123 @@ export const PersistentPlayer = React.memo(() => {
   const cycleRepeatMode = usePlayerStore((s) => s.cycleRepeatMode);
   const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
 
-  // Sincronizar fuente de audio cuando cambia el track activo
+  const audioDataUrlCache = useRef<Map<string, string>>(new Map());
+
+  // Sincronizar fuente de audio cuando cambia el track activo con silenciado instantáneo y precarga (SDD 7.1)
   useEffect(() => {
     let isCancelled = false;
     const audio = audioRef.current;
     if (!audio) {
       return;
     }
+
+    // 1. Silenciar e interrumpir inmediatamente el audio previo para evitar sangrado o solapamiento
+    audio.pause();
+    audio.currentTime = 0;
+
     if (!currentTrack || currentTrack.is_missing) {
-      audio.pause();
       audio.removeAttribute("src");
       return;
     }
 
-    // Usar Tauri IPC nativo para leer el audio como Data URL o convertir por Asset Protocol
-    const loadAudioSrc = async () => {
-      let src = toAssetUrl(currentTrack.audio_path);
-      try {
-        const dataUrl = await tauriApi.readAudioDataUrl(currentTrack.audio_path);
-        if (dataUrl) {
-          src = dataUrl;
-        }
-      } catch {
-        // Fallback a toAssetUrl
-      }
-
-      if (isCancelled || !audio) {
-        return;
-      }
-      if (audio.src !== src) {
-        audio.src = src;
-        audio.load();
-      }
-
-      if (isPlaying) {
+    // 2. Verificar si la pista ya está precargada en la caché en memoria
+    const cachedDataUrl = audioDataUrlCache.current.get(currentTrack.audio_path);
+    if (cachedDataUrl) {
+      audio.src = cachedDataUrl;
+      audio.load();
+      if (usePlayerStore.getState().isPlaying) {
         void audio.play().catch(() => {
           setPlaying(false);
         });
       }
-    };
+    } else {
+      // Dejar src vacío para asegurar silencio total mientras se carga la nueva pista
+      audio.removeAttribute("src");
 
-    void loadAudioSrc();
+      const loadAudioSrc = async () => {
+        let src = toAssetUrl(currentTrack.audio_path);
+        try {
+          const dataUrl = await tauriApi.readAudioDataUrl(currentTrack.audio_path);
+          if (dataUrl) {
+            src = dataUrl;
+            // Guardar en la caché (máx. 15 canciones en memoria)
+            if (audioDataUrlCache.current.size >= 15) {
+              const oldestKey = audioDataUrlCache.current.keys().next().value;
+              if (oldestKey) {
+                audioDataUrlCache.current.delete(oldestKey);
+              }
+            }
+            audioDataUrlCache.current.set(currentTrack.audio_path, dataUrl);
+          }
+        } catch {
+          // Fallback a convertFileSrc / toAssetUrl
+        }
+
+        if (isCancelled || !audioRef.current) {
+          return;
+        }
+
+        audioRef.current.src = src;
+        audioRef.current.load();
+
+        if (usePlayerStore.getState().isPlaying) {
+          void audioRef.current.play().catch(() => {
+            setPlaying(false);
+          });
+        }
+      };
+
+      void loadAudioSrc();
+    }
+
+    // 3. Precargar anticipadamente (preload) la siguiente pista de la cola
+    const currentQueue = usePlayerStore.getState().queue;
+    const currentIdx = currentQueue.findIndex(
+      (item) => item.youtube_id === currentTrack.youtube_id,
+    );
+    const nextIdx =
+      currentIdx >= 0 && currentIdx + 1 < currentQueue.length
+        ? currentIdx + 1
+        : usePlayerStore.getState().repeatMode === "all" && currentQueue.length > 0
+          ? 0
+          : -1;
+
+    if (nextIdx >= 0) {
+      const nextTrack = currentQueue[nextIdx];
+      if (
+        nextTrack &&
+        !nextTrack.is_missing &&
+        !audioDataUrlCache.current.has(nextTrack.audio_path)
+      ) {
+        tauriApi
+          .readAudioDataUrl(nextTrack.audio_path)
+          .then((dataUrl) => {
+            if (dataUrl && !isCancelled) {
+              if (audioDataUrlCache.current.size >= 15) {
+                const oldestKey = audioDataUrlCache.current.keys().next().value;
+                if (oldestKey) {
+                  audioDataUrlCache.current.delete(oldestKey);
+                }
+              }
+              audioDataUrlCache.current.set(nextTrack.audio_path, dataUrl);
+            }
+          })
+          .catch(() => {});
+      }
+    }
 
     return () => {
       isCancelled = true;
     };
-  }, [currentTrack, isPlaying, setPlaying]);
+  }, [currentTrack?.youtube_id, currentTrack?.audio_path, setPlaying]);
 
-  // Sincronizar play / pause
+  // Sincronizar play / pause manual
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack) {
       return;
     }
-    if (isPlaying && audio.paused) {
+    if (isPlaying && audio.paused && audio.src) {
       void audio.play().catch(() => {
         setPlaying(false);
       });

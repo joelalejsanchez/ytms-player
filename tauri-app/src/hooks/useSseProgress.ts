@@ -94,10 +94,14 @@ export function useSseProgress(): void {
               )
               .then((savedTrack) => {
                 upsertTrackLocal(savedTrack);
+                void useLibraryStore.getState().refreshDownloadHistory();
               })
               .catch(() => {
                 void refreshTracks();
+                void useLibraryStore.getState().refreshDownloadHistory();
               });
+          } else if (ev.status === "failed") {
+            void useLibraryStore.getState().refreshDownloadHistory();
           }
         } catch {
           // Ignorar eventos malformados sin interrumpir el stream SSE
