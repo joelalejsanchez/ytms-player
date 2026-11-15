@@ -21,8 +21,6 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 2. Prioridad Baja (Casos Específicos o Opcionales)
 
-- [ ] **Selección granular / Importación específica de canciones en Playlists:**
-  - Permitir desmarcar o marcar canciones individuales en el modal de previsualización antes de lanzar la descarga, para descartar canciones no deseadas de una lista ajena.
 - [ ] **Sincronización selectiva de canciones en Playlists vinculadas:**
   - En playlists sincronizadas, elegir qué canciones individuales ignorar o congelar localmente aunque hayan sido eliminadas en el canal de YouTube.
 - [ ] **Editor manual de etiquetas de metadatos (Tag Editor integrado):**

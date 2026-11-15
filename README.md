@@ -1,6 +1,18 @@
-# ytms-player Monorepo
+# ytms-player Monorepo (v1.0.0)
 
 Aplicación de escritorio nativa de alto rendimiento construida con **Tauri v2 (React/TypeScript + Rust/SQLite)** y un microservicio backend autohospedado en **Docker (Go + yt-dlp + FFmpeg)**, siguiendo **Clean Architecture** de 4 capas.
+
+[![Version](https://img.shields.io/badge/version-1.0.0-red.svg)](docs/changelog.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+---
+
+## Documentación del Proyecto
+
+- [Guía de Instalación y Puesta en Marcha (`docs/setup.md`)](docs/setup.md): Requisitos del sistema, configuración de Google Cloud OAuth 2.0 y ejecución.
+- [Registro de Cambios (`docs/changelog.md`)](docs/changelog.md): Historial de características y notas de la versión 1.0.0.
+- [Backlog e Ideas Futuras (`docs/todo.md`)](docs/todo.md): Hoja de ruta para extensiones y versiones posteriores.
+- [Especificación de Diseño de Software (`docs/sdd.md`)](docs/sdd.md): Arquitectura detallada, diagramas y contratos de API.
 
 ---
 
