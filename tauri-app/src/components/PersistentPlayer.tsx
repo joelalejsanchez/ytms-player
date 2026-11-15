@@ -23,7 +23,11 @@ import { usePlayerStore } from "@/stores/usePlayerStore";
  * Utiliza selectores granulares de Zustand para mantenerse desacoplado de la biblioteca visual (SDD 7.2).
  */
 export const PersistentPlayer = React.memo(() => {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const deckARef = useRef<HTMLAudioElement | null>(null);
+  const deckBRef = useRef<HTMLAudioElement | null>(null);
+  const activeDeckKeyRef = useRef<"A" | "B">("A");
+  const fadeAnimationRef = useRef<number | null>(null);
+  const isTransitioningRef = useRef<boolean>(false);
   const [showQueue, setShowQueue] = useState(false);
 
   const currentTrack = usePlayerStore((s) => s.currentTrack);
@@ -55,44 +59,124 @@ export const PersistentPlayer = React.memo(() => {
 
   const audioDataUrlCache = useRef<Map<string, string>>(new Map());
 
-  // Sincronizar fuente de audio cuando cambia el track activo con silenciado instantáneo y precarga (SDD 7.1)
+  // Referencias mutables para cálculo reactivo de volumen objetivo sin desincronizaciones
+  const volumeRef = useRef(volume);
+  const isMutedRef = useRef(isMuted);
+  useEffect(() => {
+    volumeRef.current = volume;
+    isMutedRef.current = isMuted;
+  }, [volume, isMuted]);
+
+  const getTargetVolume = useCallback(() => {
+    return isMutedRef.current ? 0 : volumeRef.current;
+  }, []);
+
+  const getActiveDeck = useCallback(() => {
+    return activeDeckKeyRef.current === "A" ? deckARef.current : deckBRef.current;
+  }, []);
+
+  const getStandbyDeck = useCallback(() => {
+    return activeDeckKeyRef.current === "A" ? deckBRef.current : deckARef.current;
+  }, []);
+
+  const cancelFade = useCallback(() => {
+    if (fadeAnimationRef.current !== null) {
+      cancelAnimationFrame(fadeAnimationRef.current);
+      fadeAnimationRef.current = null;
+    }
+  }, []);
+
+  // Precargar de forma anticipada la siguiente pista de la cola en el deck en espera (standby deck)
+  const preloadNextTrack = useCallback(() => {
+    const state = usePlayerStore.getState();
+    const current = state.currentTrack;
+    if (!current) return;
+
+    const currentQueue = state.queue;
+    const currentIdx = currentQueue.findIndex(
+      (item) => item.youtube_id === current.youtube_id,
+    );
+    const nextIdx =
+      currentIdx >= 0 && currentIdx + 1 < currentQueue.length
+        ? currentIdx + 1
+        : state.repeatMode === "all" && currentQueue.length > 0
+          ? 0
+          : -1;
+
+    if (nextIdx >= 0) {
+      const nextTrack = currentQueue[nextIdx];
+      if (nextTrack && !nextTrack.is_missing) {
+        const standby = activeDeckKeyRef.current === "A" ? deckBRef.current : deckARef.current;
+
+        const applyPreload = (src: string) => {
+          if (standby && standby.src !== src) {
+            standby.src = src;
+            standby.volume = 0;
+            standby.preload = "auto";
+            standby.load();
+          }
+        };
+
+        const cached = audioDataUrlCache.current.get(nextTrack.audio_path);
+        if (cached) {
+          applyPreload(cached);
+        } else {
+          tauriApi
+            .readAudioDataUrl(nextTrack.audio_path)
+            .then((dataUrl) => {
+              if (dataUrl) {
+                if (audioDataUrlCache.current.size >= 15) {
+                  const oldestKey = audioDataUrlCache.current.keys().next().value;
+                  if (oldestKey) {
+                    audioDataUrlCache.current.delete(oldestKey);
+                  }
+                }
+                audioDataUrlCache.current.set(nextTrack.audio_path, dataUrl);
+                applyPreload(dataUrl);
+              } else {
+                applyPreload(toAssetUrl(nextTrack.audio_path));
+              }
+            })
+            .catch(() => {
+              applyPreload(toAssetUrl(nextTrack.audio_path));
+            });
+        }
+      }
+    }
+  }, []);
+
+  // Transición suave (crossfade) entre pistas y gestión de decks A/B
   useEffect(() => {
     let isCancelled = false;
-    const audio = audioRef.current;
-    if (!audio) {
-      return;
-    }
-
-    // 1. Silenciar e interrumpir inmediatamente el audio previo para evitar sangrado o solapamiento
-    audio.pause();
-    audio.currentTime = 0;
+    cancelFade();
 
     if (!currentTrack || currentTrack.is_missing) {
-      audio.removeAttribute("src");
+      const deckA = deckARef.current;
+      const deckB = deckBRef.current;
+      if (deckA) {
+        deckA.pause();
+        deckA.removeAttribute("src");
+      }
+      if (deckB) {
+        deckB.pause();
+        deckB.removeAttribute("src");
+      }
+      isTransitioningRef.current = false;
       return;
     }
 
-    // 2. Verificar si la pista ya está precargada en la caché en memoria
-    const cachedDataUrl = audioDataUrlCache.current.get(currentTrack.audio_path);
-    if (cachedDataUrl) {
-      audio.src = cachedDataUrl;
-      audio.load();
-      if (usePlayerStore.getState().isPlaying) {
-        void audio.play().catch(() => {
-          setPlaying(false);
-        });
-      }
-    } else {
-      // Dejar src vacío para asegurar silencio total mientras se carga la nueva pista
-      audio.removeAttribute("src");
+    const outgoingDeck = getActiveDeck();
+    const incomingDeckKey: "A" | "B" = activeDeckKeyRef.current === "A" ? "B" : "A";
+    const incomingDeck = incomingDeckKey === "A" ? deckARef.current : deckBRef.current;
 
-      const loadAudioSrc = async () => {
-        let src = toAssetUrl(currentTrack.audio_path);
+    const performTransition = async () => {
+      // 1. Obtener URL de datos o asset de la nueva pista
+      let src = audioDataUrlCache.current.get(currentTrack.audio_path);
+      if (!src) {
         try {
           const dataUrl = await tauriApi.readAudioDataUrl(currentTrack.audio_path);
           if (dataUrl) {
             src = dataUrl;
-            // Guardar en la caché (máx. 15 canciones en memoria)
             if (audioDataUrlCache.current.size >= 15) {
               const oldestKey = audioDataUrlCache.current.keys().next().value;
               if (oldestKey) {
@@ -102,113 +186,238 @@ export const PersistentPlayer = React.memo(() => {
             audioDataUrlCache.current.set(currentTrack.audio_path, dataUrl);
           }
         } catch {
-          // Fallback a convertFileSrc / toAssetUrl
+          // Fallback a toAssetUrl
         }
+      }
+      if (!src) {
+        src = toAssetUrl(currentTrack.audio_path);
+      }
 
-        if (isCancelled || !audioRef.current) {
+      if (isCancelled) return;
+
+      const shouldCrossfade =
+        outgoingDeck &&
+        !outgoingDeck.paused &&
+        outgoingDeck.currentTime > 0 &&
+        incomingDeck;
+
+      if (shouldCrossfade && incomingDeck) {
+        isTransitioningRef.current = true;
+        // Asignar al deck entrante
+        if (incomingDeck.src !== src) {
+          incomingDeck.src = src;
+          incomingDeck.load();
+        }
+        incomingDeck.currentTime = 0;
+        incomingDeck.volume = 0;
+
+        try {
+          await incomingDeck.play();
+        } catch {
+          if (!isCancelled) setPlaying(false);
+          isTransitioningRef.current = false;
           return;
         }
 
-        audioRef.current.src = src;
-        audioRef.current.load();
+        if (isCancelled) return;
 
-        if (usePlayerStore.getState().isPlaying) {
-          void audioRef.current.play().catch(() => {
-            setPlaying(false);
-          });
-        }
-      };
+        // Animar crossfade de 400ms con curva de igual potencia
+        const CROSSFADE_DURATION_MS = 400;
+        const startTime = performance.now();
 
-      void loadAudioSrc();
-    }
+        const crossfadeStep = (now: number) => {
+          if (isCancelled) return;
+          const elapsed = now - startTime;
+          const progress = Math.min(1, elapsed / CROSSFADE_DURATION_MS);
+          const currentTargetVol = getTargetVolume();
 
-    // 3. Precargar anticipadamente (preload) la siguiente pista de la cola
-    const currentQueue = usePlayerStore.getState().queue;
-    const currentIdx = currentQueue.findIndex(
-      (item) => item.youtube_id === currentTrack.youtube_id,
-    );
-    const nextIdx =
-      currentIdx >= 0 && currentIdx + 1 < currentQueue.length
-        ? currentIdx + 1
-        : usePlayerStore.getState().repeatMode === "all" && currentQueue.length > 0
-          ? 0
-          : -1;
+          // Curva de igual potencia (coseno / seno) para evitar caídas de volumen perceptibles
+          const outVol = Math.max(
+            0,
+            Math.min(1, currentTargetVol * Math.cos((progress * Math.PI) / 2)),
+          );
+          const inVol = Math.max(
+            0,
+            Math.min(1, currentTargetVol * Math.sin((progress * Math.PI) / 2)),
+          );
 
-    if (nextIdx >= 0) {
-      const nextTrack = currentQueue[nextIdx];
-      if (
-        nextTrack &&
-        !nextTrack.is_missing &&
-        !audioDataUrlCache.current.has(nextTrack.audio_path)
-      ) {
-        tauriApi
-          .readAudioDataUrl(nextTrack.audio_path)
-          .then((dataUrl) => {
-            if (dataUrl && !isCancelled) {
-              if (audioDataUrlCache.current.size >= 15) {
-                const oldestKey = audioDataUrlCache.current.keys().next().value;
-                if (oldestKey) {
-                  audioDataUrlCache.current.delete(oldestKey);
-                }
-              }
-              audioDataUrlCache.current.set(nextTrack.audio_path, dataUrl);
+          if (outgoingDeck) outgoingDeck.volume = outVol;
+          incomingDeck.volume = inVol;
+
+          if (progress < 1) {
+            fadeAnimationRef.current = requestAnimationFrame(crossfadeStep);
+          } else {
+            fadeAnimationRef.current = null;
+            if (outgoingDeck) {
+              outgoingDeck.pause();
+              outgoingDeck.removeAttribute("src");
             }
-          })
-          .catch(() => {});
+            incomingDeck.volume = currentTargetVol;
+            activeDeckKeyRef.current = incomingDeckKey;
+            isTransitioningRef.current = false;
+            // Precargar la siguiente canción en el deck ahora libre
+            preloadNextTrack();
+          }
+        };
+
+        fadeAnimationRef.current = requestAnimationFrame(crossfadeStep);
+      } else {
+        // Inicio directo o cambio en pausa sin crossfade requerido
+        const targetDeck = incomingDeck && incomingDeck.src === src ? incomingDeck : (outgoingDeck ?? incomingDeck);
+        if (targetDeck) {
+          if (targetDeck === incomingDeck) {
+            activeDeckKeyRef.current = incomingDeckKey;
+          }
+          if (targetDeck.src !== src) {
+            targetDeck.src = src;
+            targetDeck.load();
+          }
+          targetDeck.currentTime = 0;
+          targetDeck.volume = getTargetVolume();
+
+          if (usePlayerStore.getState().isPlaying) {
+            void targetDeck.play().catch(() => {
+              if (!isCancelled) setPlaying(false);
+            });
+          }
+          preloadNextTrack();
+        }
       }
-    }
+    };
+
+    void performTransition();
 
     return () => {
       isCancelled = true;
+      cancelFade();
     };
-  }, [currentTrack?.youtube_id, currentTrack?.audio_path, setPlaying]);
+  }, [
+    currentTrack?.youtube_id,
+    currentTrack?.audio_path,
+    cancelFade,
+    getActiveDeck,
+    getTargetVolume,
+    preloadNextTrack,
+    setPlaying,
+  ]);
 
-  // Sincronizar play / pause manual
+  // Micro-fade suave (120ms) en transiciones manuales de Play / Pause para eliminar pops de audio
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || !currentTrack) {
+    const active = getActiveDeck();
+    if (!active || !currentTrack || !active.src || isTransitioningRef.current) {
       return;
     }
-    if (isPlaying && audio.paused && audio.src) {
-      void audio.play().catch(() => {
+
+    const FADE_TIME_MS = 120;
+
+    if (isPlaying && active.paused) {
+      // Micro-fade in
+      active.volume = 0;
+      void active.play().then(() => {
+        const startTime = performance.now();
+        const stepIn = (now: number) => {
+          const elapsed = now - startTime;
+          const progress = Math.min(1, elapsed / FADE_TIME_MS);
+          const currentTgt = getTargetVolume();
+          active.volume = Math.max(0, Math.min(1, currentTgt * progress));
+          if (progress < 1 && usePlayerStore.getState().isPlaying) {
+            requestAnimationFrame(stepIn);
+          } else {
+            active.volume = currentTgt;
+          }
+        };
+        requestAnimationFrame(stepIn);
+      }).catch(() => {
         setPlaying(false);
       });
-    } else if (!isPlaying && !audio.paused) {
-      audio.pause();
+    } else if (!isPlaying && !active.paused) {
+      // Micro-fade out
+      const startVol = active.volume;
+      const startTime = performance.now();
+      const stepOut = (now: number) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(1, elapsed / FADE_TIME_MS);
+        active.volume = Math.max(0, Math.min(1, startVol * (1 - progress)));
+        if (progress < 1 && !usePlayerStore.getState().isPlaying) {
+          requestAnimationFrame(stepOut);
+        } else {
+          active.pause();
+          active.volume = getTargetVolume();
+        }
+      };
+      requestAnimationFrame(stepOut);
     }
-  }, [isPlaying, currentTrack, setPlaying]);
+  }, [isPlaying, currentTrack, getActiveDeck, getTargetVolume, setPlaying]);
 
-  // Sincronizar volumen y silencio
+  // Sincronizar volumen reactivo y modo silencio en decks
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) {
-      return;
+    if (fadeAnimationRef.current !== null) {
+      return; // El loop de fade ajusta reactivamente según getTargetVolume()
     }
-    audio.volume = volume;
-    audio.muted = isMuted;
-  }, [volume, isMuted]);
+    const target = isMuted ? 0 : volume;
+    const active = getActiveDeck();
+    if (active) {
+      active.volume = target;
+      active.muted = isMuted;
+    }
+    const standby = getStandbyDeck();
+    if (standby) {
+      standby.volume = 0;
+      standby.muted = isMuted;
+    }
+  }, [volume, isMuted, getActiveDeck, getStandbyDeck]);
 
-  // Sincronizar operaciones de Seek manuales
+  // Sincronizar operaciones de Seek manuales en el deck activo
   useEffect(() => {
-    const audio = audioRef.current;
+    const audio = getActiveDeck();
     if (!audio || seekTarget === null) {
       return;
     }
     audio.currentTime = seekTarget;
     clearSeekTarget();
-  }, [seekTarget, clearSeekTarget]);
+  }, [seekTarget, clearSeekTarget, getActiveDeck]);
 
-  const handleTimeUpdate = useCallback(() => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-    }
-  }, [setCurrentTime]);
+  const handleTimeUpdate = useCallback(
+    (deck: "A" | "B") => {
+      if (activeDeckKeyRef.current === deck) {
+        const audio = deck === "A" ? deckARef.current : deckBRef.current;
+        if (audio) {
+          setCurrentTime(audio.currentTime);
+        }
+      }
+    },
+    [setCurrentTime],
+  );
 
-  const handleLoadedMetadata = useCallback(() => {
-    if (audioRef.current && Number.isFinite(audioRef.current.duration)) {
-      setDuration(audioRef.current.duration);
-    }
-  }, [setDuration]);
+  const handleLoadedMetadata = useCallback(
+    (deck: "A" | "B") => {
+      if (activeDeckKeyRef.current === deck) {
+        const audio = deck === "A" ? deckARef.current : deckBRef.current;
+        if (audio && Number.isFinite(audio.duration)) {
+          setDuration(audio.duration);
+        }
+      }
+    },
+    [setDuration],
+  );
+
+  const handleEnded = useCallback(
+    (deck: "A" | "B") => {
+      if (activeDeckKeyRef.current === deck) {
+        const repeat = usePlayerStore.getState().repeatMode;
+        if (repeat === "one") {
+          const audio = deck === "A" ? deckARef.current : deckBRef.current;
+          if (audio) {
+            audio.currentTime = 0;
+            void audio.play();
+          }
+        } else {
+          playNext();
+        }
+      }
+    },
+    [playNext],
+  );
 
   const handleSeekInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -228,12 +437,20 @@ export const PersistentPlayer = React.memo(() => {
 
   return (
     <footer className="relative z-20 border-t border-slate-800 bg-slate-900/95 px-6 py-3 backdrop-blur">
+      {/* Decks duales A/B para crossfade fluido sin cortes y precarga continua (SDD 7.1) */}
       <audio
-        ref={audioRef}
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onEnded={playNext}
-        preload="metadata"
+        ref={deckARef}
+        onTimeUpdate={() => handleTimeUpdate("A")}
+        onLoadedMetadata={() => handleLoadedMetadata("A")}
+        onEnded={() => handleEnded("A")}
+        preload="auto"
+      />
+      <audio
+        ref={deckBRef}
+        onTimeUpdate={() => handleTimeUpdate("B")}
+        onLoadedMetadata={() => handleLoadedMetadata("B")}
+        onEnded={() => handleEnded("B")}
+        preload="auto"
       />
 
       {showQueue && (
