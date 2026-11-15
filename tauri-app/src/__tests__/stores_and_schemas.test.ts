@@ -281,5 +281,13 @@ describe("useThemeStore", () => {
     expect(document.documentElement.classList.contains("light")).toBe(true);
     expect(document.documentElement.classList.contains("dark")).toBe(false);
     expect(document.documentElement.classList.contains("ember")).toBe(true);
+
+    store.setMode("system");
+    expect(useThemeStore.getState().mode).toBe("system");
+    // Resolved mode injects either light or dark depending on matchMedia
+    expect(
+      document.documentElement.classList.contains("light") ||
+        document.documentElement.classList.contains("dark"),
+    ).toBe(true);
   });
 });
