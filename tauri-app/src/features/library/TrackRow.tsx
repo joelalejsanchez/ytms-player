@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   FolderPlus,
   Heart,
+  Link,
   ListPlus,
   Loader2,
   Music,
@@ -41,7 +42,7 @@ export const TrackRow = React.memo(
   ({
     track,
     isCurrent,
-    isPlaying,
+    isPlaying: _isPlaying,
     playlists,
     assignedPlaylistIds = [],
     syncStatus,
@@ -103,11 +104,6 @@ export const TrackRow = React.memo(
               >
                 {track.title}
               </p>
-              {isCurrent && isPlaying && (
-                <Badge tone="info" className="text-[10px]">
-                  Reproduciendo
-                </Badge>
-              )}
               {track.is_missing && (
                 <Badge tone="warning" className="text-[10px]">
                   <AlertCircle className="h-3 w-3" />
@@ -117,10 +113,6 @@ export const TrackRow = React.memo(
             </div>
             <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
               <span className="truncate">{track.artist}</span>
-              <span>·</span>
-              <code className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
-                {track.youtube_id}
-              </code>
             </div>
           </div>
         </div>
@@ -203,6 +195,19 @@ export const TrackRow = React.memo(
             isLoading={isDeleting}
             title="Opciones de la canción"
             items={[
+              {
+                label: "Copiar enlace",
+                icon: <Link className="h-3.5 w-3.5" />,
+                onClick: async () => {
+                  try {
+                    await navigator.clipboard.writeText(
+                      `https://www.youtube.com/watch?v=${track.youtube_id}`,
+                    );
+                  } catch (err) {
+                    console.error("No se pudo copiar el enlace al portapapeles:", err);
+                  }
+                },
+              },
               {
                 label: "Eliminar canción",
                 icon: <Trash2 className="h-3.5 w-3.5" />,
