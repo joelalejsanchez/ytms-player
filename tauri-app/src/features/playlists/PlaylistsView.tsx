@@ -5,10 +5,8 @@ import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Button, Input } from "@/components/ui/Primitives";
 import { formatDuration, toAssetUrl } from "@/lib/utils";
 import { playlistFormSchema } from "@/schemas/validation";
-import { tauriApi } from "@/services/tauriIpc";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
-import type { Track } from "@/types/models";
 
 export const PlaylistsView = React.memo(() => {
   const [title, setTitle] = useState("");
@@ -114,23 +112,17 @@ export const PlaylistsView = React.memo(() => {
 
   const handlePlayPlaylistById = useCallback(
     async (playlistId: number) => {
-      let tracksToPlay: Track[] = [];
-      if (activePlaylist?.playlist.id === playlistId) {
-        tracksToPlay = activePlaylist.tracks;
-      } else {
-        try {
-          const details = await tauriApi.getPlaylistDetails(playlistId);
-          tracksToPlay = details.tracks;
-        } catch {
-          return;
-        }
-      }
+      // Abre la playlist en la vista de detalle como al hacer click en la card
+      await selectPlaylist(playlistId);
+      const currentActive = useLibraryStore.getState().activePlaylist;
+      const tracksToPlay =
+        currentActive?.playlist.id === playlistId ? currentActive.tracks : [];
       const firstPlayable = tracksToPlay.find((t) => !t.is_missing);
       if (firstPlayable) {
         playTrack(firstPlayable, tracksToPlay);
       }
     },
-    [activePlaylist, playTrack],
+    [playTrack, selectPlaylist],
   );
 
   return (

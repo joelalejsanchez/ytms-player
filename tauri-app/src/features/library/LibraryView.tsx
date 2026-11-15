@@ -1,6 +1,6 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowUpDown, Loader2, Play, RefreshCw, Search, ShieldCheck, Sparkles } from "lucide-react";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import { ArrowUpDown, ListMusic, Loader2, Play, RefreshCw, Search, ShieldCheck, Sparkles } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { CustomSelect, type SelectOption } from "@/components/ui/CustomSelect";
@@ -33,6 +33,7 @@ export const LibraryView = React.memo(() => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [formatFilter, setFormatFilter] = useState<string>("all");
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>("all");
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortAsc, setSortAsc] = useState(false);
   const [isMetadataModalOpen, setIsMetadataModalOpen] = useState(false);
@@ -58,13 +59,47 @@ export const LibraryView = React.memo(() => {
   const playTrack = usePlayerStore((s) => s.playTrack);
   const enqueueTrack = usePlayerStore((s) => s.enqueueTrack);
 
+  // Sincronizar selección si se elimina la playlist activa
+  useEffect(() => {
+    if (
+      selectedPlaylistId !== "all" &&
+      !playlists.some((p) => String(p.id) === selectedPlaylistId)
+    ) {
+      setSelectedPlaylistId("all");
+    }
+  }, [playlists, selectedPlaylistId]);
+
+  // Opciones para el selector de filtrado por playlist
+  const playlistOptions: SelectOption[] = useMemo(() => {
+    return [
+      {
+        value: "all",
+        label: "Todas las playlists",
+        icon: <ListMusic className="h-3.5 w-3.5 text-muted-foreground shrink-0" />,
+      },
+      ...playlists.map((pl) => ({
+        value: String(pl.id),
+        label: `${pl.title} (${pl.track_count})`,
+        icon: <ListMusic className="h-3.5 w-3.5 text-primary shrink-0" />,
+      })),
+    ];
+  }, [playlists]);
+
   // Filtrado y ordenamiento memoizado (SDD 7.2 useMemo)
   const filteredTracks = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
+    const activePlaylistId =
+      selectedPlaylistId !== "all" ? Number(selectedPlaylistId) : null;
 
     const filtered = tracks.filter((track) => {
       if (formatFilter !== "all" && track.file_extension !== formatFilter) {
         return false;
+      }
+      if (activePlaylistId !== null) {
+        const assignedPlaylists = playlistTrackMap[track.id] || [];
+        if (!assignedPlaylists.includes(activePlaylistId)) {
+          return false;
+        }
       }
       if (!query) {
         return true;
@@ -98,7 +133,15 @@ export const LibraryView = React.memo(() => {
       }
       return sortAsc ? comparison : -comparison;
     });
-  }, [tracks, searchQuery, formatFilter, sortField, sortAsc]);
+  }, [
+    tracks,
+    searchQuery,
+    formatFilter,
+    selectedPlaylistId,
+    playlistTrackMap,
+    sortField,
+    sortAsc,
+  ]);
 
   // Callbacks estables para hijos memoizados (SDD 7.2 useCallback)
   const handlePlay = useCallback(
@@ -178,7 +221,7 @@ export const LibraryView = React.memo(() => {
 
   return (
     <section className="flex h-full flex-col gap-3">
-      {/* 1. Contenedor transparente superior: Búsqueda de ancho completo + Menú dropdown de 3 puntos */}
+      {/* 1. Contenedor transparente superior: Búsqueda + Filtro de Playlist + Menú dropdown de 3 puntos */}
       <div className="flex items-center gap-2 w-full relative z-20">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -189,6 +232,15 @@ export const LibraryView = React.memo(() => {
             className="h-9 w-full pl-9 bg-card"
           />
         </div>
+
+        <CustomSelect
+          value={selectedPlaylistId}
+          onChange={setSelectedPlaylistId}
+          options={playlistOptions}
+          ariaLabel="Filtrar por playlist"
+          className="w-48 sm:w-56 shrink-0"
+          triggerClassName="h-9 text-xs bg-card"
+        />
 
         <ActionMenu
           title="Opciones de biblioteca"
