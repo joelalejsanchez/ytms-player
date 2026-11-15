@@ -105,35 +105,71 @@ export const workspaceConfigSchema = z.object({
 
 export type WorkspaceConfigValues = z.infer<typeof workspaceConfigSchema>;
 
-export const progressEventSchema = z.object({
-  task_id: z.string(),
-  youtube_id: z.string(),
-  status: z.enum([
-    "queued",
-    "downloading",
-    "processing",
-    "completed",
-    "skipped",
-    "failed",
-  ]),
-  progress: z.number().min(0).max(100),
-  speed: z.string().optional(),
-  downloaded_size: z.string().optional(),
-  eta: z.string().optional(),
-  error: z.string().optional(),
-  metadata: z
-    .object({
-      youtube_id: z.string(),
-      title: z.string(),
-      artist: z.string(),
-      duration: z.number(),
-      published_at: z.string().nullable().optional(),
-      file_extension: z.string(),
-      thumbnail_path: z.string(),
-      audio_path: z.string(),
-      file_size: z.number(),
-      playlist_id: z.string().nullable().optional(),
-      playlist_title: z.string().nullable().optional(),
-    })
-    .optional(),
-});
+export const progressEventSchema = z
+  .object({
+    task_id: z.string(),
+    youtube_id: z.string(),
+    status: z.enum([
+      "queued",
+      "downloading",
+      "processing",
+      "completed",
+      "skipped",
+      "failed",
+    ]),
+    progress: z.coerce.number().default(0),
+    speed: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((v) => v ?? undefined),
+    downloaded_size: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((v) => v ?? undefined),
+    eta: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((v) => v ?? undefined),
+    error: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((v) => v ?? undefined),
+    metadata: z
+      .object({
+        youtube_id: z.string().optional(),
+        title: z.string().optional(),
+        artist: z.string().optional(),
+        duration: z.coerce.number().optional().default(0),
+        published_at: z.string().nullable().optional(),
+        file_extension: z.string().optional().default("mp3"),
+        thumbnail_path: z.string().nullable().optional().default(""),
+        audio_path: z.string().nullable().optional().default(""),
+        file_size: z.coerce.number().optional().default(0),
+        playlist_id: z.string().nullable().optional(),
+        playlist_title: z.string().nullable().optional(),
+      })
+      .passthrough()
+      .nullable()
+      .optional()
+      .transform((v) => {
+        if (!v) return undefined;
+        return {
+          youtube_id: v.youtube_id ?? "",
+          title: v.title ?? "",
+          artist: v.artist ?? "Unknown Artist",
+          duration: v.duration ?? 0,
+          published_at: v.published_at ?? null,
+          file_extension: v.file_extension ?? "mp3",
+          thumbnail_path: v.thumbnail_path ?? "",
+          audio_path: v.audio_path ?? "",
+          file_size: v.file_size ?? 0,
+          playlist_id: v.playlist_id ?? null,
+          playlist_title: v.playlist_title ?? null,
+        };
+      }),
+  })
+  .passthrough();

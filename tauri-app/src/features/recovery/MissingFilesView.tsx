@@ -21,6 +21,7 @@ import { useLibraryStore } from "@/stores/useLibraryStore";
 export const MissingFilesView = React.memo(() => {
   const [recoveringId, setRecoveringId] = useState<string | null>(null);
   const [adoptingId, setAdoptingId] = useState<string | null>(null);
+  const [isAdoptingAll, setIsAdoptingAll] = useState(false);
   const [deletingOrphanId, setDeletingOrphanId] = useState<string | null>(null);
   const [deletingTrackId, setDeletingTrackId] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -82,6 +83,19 @@ export const MissingFilesView = React.memo(() => {
     },
     [adoptOrphanFile],
   );
+
+  const handleAdoptAllOrphans = useCallback(async () => {
+    if (orphanFiles.length === 0) return;
+    setIsAdoptingAll(true);
+    try {
+      for (const file of orphanFiles) {
+        await adoptOrphanFile(file.youtube_id, file.file_extension);
+      }
+    } finally {
+      setIsAdoptingAll(false);
+      await verifyIntegrity();
+    }
+  }, [orphanFiles, adoptOrphanFile, verifyIntegrity]);
 
   const handleDeleteOrphan = useCallback(
     async (youtubeId: string, fileExtension: string) => {
@@ -251,9 +265,28 @@ export const MissingFilesView = React.memo(() => {
               Archivos Huérfanos en /tracks ({orphanFiles.length})
             </h3>
           </div>
-          <Badge tone={orphanFiles.length > 0 ? "warning" : "success"}>
-            {orphanFiles.length > 0 ? "Requiere acción" : "Limpio"}
-          </Badge>
+          <div className="flex items-center gap-3">
+            {orphanFiles.length > 0 && (
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={isAdoptingAll || isLoading}
+                onClick={() => void handleAdoptAllOrphans()}
+              >
+                {isAdoptingAll ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <PlusCircle className="h-3.5 w-3.5" />
+                )}
+                {isAdoptingAll
+                  ? "Adoptando todos..."
+                  : `Adoptar todos (${orphanFiles.length})`}
+              </Button>
+            )}
+            <Badge tone={orphanFiles.length > 0 ? "warning" : "success"}>
+              {orphanFiles.length > 0 ? "Requiere acción" : "Limpio"}
+            </Badge>
+          </div>
         </div>
 
         {orphanFiles.length === 0 ? (

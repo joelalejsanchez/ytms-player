@@ -23,11 +23,8 @@ import { usePlayerStore } from "@/stores/usePlayerStore";
  * Utiliza selectores granulares de Zustand para mantenerse desacoplado de la biblioteca visual (SDD 7.2).
  */
 export const PersistentPlayer = React.memo(() => {
-  const deckARef = useRef<HTMLAudioElement | null>(null);
-  const deckBRef = useRef<HTMLAudioElement | null>(null);
-  const activeDeckKeyRef = useRef<"A" | "B">("A");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const fadeAnimationRef = useRef<number | null>(null);
-  const isTransitioningRef = useRef<boolean>(false);
   const [showQueue, setShowQueue] = useState(false);
 
   const currentTrack = usePlayerStore((s) => s.currentTrack);
@@ -59,7 +56,7 @@ export const PersistentPlayer = React.memo(() => {
 
   const audioDataUrlCache = useRef<Map<string, string>>(new Map());
 
-  // Referencias mutables para cálculo reactivo de volumen objetivo sin desincronizaciones
+  // Referencias para cálculo reactivo de volumen objetivo
   const volumeRef = useRef(volume);
   const isMutedRef = useRef(isMuted);
   useEffect(() => {
@@ -71,14 +68,6 @@ export const PersistentPlayer = React.memo(() => {
     return isMutedRef.current ? 0 : volumeRef.current;
   }, []);
 
-  const getActiveDeck = useCallback(() => {
-    return activeDeckKeyRef.current === "A" ? deckARef.current : deckBRef.current;
-  }, []);
-
-  const getStandbyDeck = useCallback(() => {
-    return activeDeckKeyRef.current === "A" ? deckBRef.current : deckARef.current;
-  }, []);
-
   const cancelFade = useCallback(() => {
     if (fadeAnimationRef.current !== null) {
       cancelAnimationFrame(fadeAnimationRef.current);
@@ -86,7 +75,7 @@ export const PersistentPlayer = React.memo(() => {
     }
   }, []);
 
-  // Precargar de forma anticipada la siguiente pista de la cola en el deck en espera (standby deck)
+  // Precargar de forma anticipada la siguiente pista de la cola en caché de memoria
   const preloadNextTrack = useCallback(() => {
     const state = usePlayerStore.getState();
     const current = state.currentTrack;
@@ -105,73 +94,70 @@ export const PersistentPlayer = React.memo(() => {
 
     if (nextIdx >= 0) {
       const nextTrack = currentQueue[nextIdx];
-      if (nextTrack && !nextTrack.is_missing) {
-        const standby =
-          activeDeckKeyRef.current === "A" ? deckBRef.current : deckARef.current;
-
-        const applyPreload = (src: string) => {
-          if (standby && standby.src !== src) {
-            standby.src = src;
-            standby.volume = 0;
-            standby.preload = "auto";
-            standby.load();
-          }
-        };
-
-        const cached = audioDataUrlCache.current.get(nextTrack.audio_path);
-        if (cached) {
-          applyPreload(cached);
-        } else {
-          tauriApi
-            .readAudioDataUrl(nextTrack.audio_path)
-            .then((dataUrl) => {
-              if (dataUrl) {
-                if (audioDataUrlCache.current.size >= 15) {
-                  const oldestKey = audioDataUrlCache.current.keys().next().value;
-                  if (oldestKey) {
-                    audioDataUrlCache.current.delete(oldestKey);
-                  }
+      if (
+        nextTrack &&
+        !nextTrack.is_missing &&
+        !audioDataUrlCache.current.has(nextTrack.audio_path)
+      ) {
+        tauriApi
+          .readAudioDataUrl(nextTrack.audio_path)
+          .then((dataUrl) => {
+            if (dataUrl) {
+              if (audioDataUrlCache.current.size >= 15) {
+                const oldestKey = audioDataUrlCache.current.keys().next().value;
+                if (oldestKey) {
+                  audioDataUrlCache.current.delete(oldestKey);
                 }
-                audioDataUrlCache.current.set(nextTrack.audio_path, dataUrl);
-                applyPreload(dataUrl);
-              } else {
-                applyPreload(toAssetUrl(nextTrack.audio_path));
               }
-            })
-            .catch(() => {
-              applyPreload(toAssetUrl(nextTrack.audio_path));
-            });
-        }
+              audioDataUrlCache.current.set(nextTrack.audio_path, dataUrl);
+            }
+          })
+          .catch(() => {});
       }
     }
   }, []);
 
-  // Transición suave (crossfade) entre pistas y gestión de decks A/B
+  // Sincronizar cambio de pista con micro-fade suave y garantía total de volumen activo
   useEffect(() => {
     let isCancelled = false;
     cancelFade();
 
+    const audio = audioRef.current;
+    if (!audio) return;
+
     if (!currentTrack || currentTrack.is_missing) {
-      const deckA = deckARef.current;
-      const deckB = deckBRef.current;
-      if (deckA) {
-        deckA.pause();
-        deckA.removeAttribute("src");
-      }
-      if (deckB) {
-        deckB.pause();
-        deckB.removeAttribute("src");
-      }
-      isTransitioningRef.current = false;
+      audio.pause();
+      audio.removeAttribute("src");
       return;
     }
 
-    const outgoingDeck = getActiveDeck();
-    const incomingDeckKey: "A" | "B" = activeDeckKeyRef.current === "A" ? "B" : "A";
-    const incomingDeck = incomingDeckKey === "A" ? deckARef.current : deckBRef.current;
+    const loadAndPlayTrack = async () => {
+      // 1. Si estaba sonando, atenuar brevemente (60ms) para evitar chasquido acústico
+      if (!audio.paused && audio.currentTime > 0 && audio.volume > 0) {
+        const startVol = audio.volume;
+        const fadeOutDuration = 60;
+        const startTime = performance.now();
+        await new Promise<void>((resolve) => {
+          const stepOut = (now: number) => {
+            if (isCancelled) {
+              resolve();
+              return;
+            }
+            const progress = Math.min(1, (now - startTime) / fadeOutDuration);
+            audio.volume = Math.max(0, startVol * (1 - progress));
+            if (progress < 1) {
+              requestAnimationFrame(stepOut);
+            } else {
+              resolve();
+            }
+          };
+          requestAnimationFrame(stepOut);
+        });
+      }
 
-    const performTransition = async () => {
-      // 1. Obtener URL de datos o asset de la nueva pista
+      if (isCancelled) return;
+
+      // 2. Resolver fuente de audio (caché en RAM o carga asíncrona)
       let src = audioDataUrlCache.current.get(currentTrack.audio_path);
       if (!src) {
         try {
@@ -194,102 +180,55 @@ export const PersistentPlayer = React.memo(() => {
         src = toAssetUrl(currentTrack.audio_path);
       }
 
-      if (isCancelled) return;
+      if (isCancelled || !audioRef.current) return;
 
-      const shouldCrossfade =
-        outgoingDeck &&
-        !outgoingDeck.paused &&
-        outgoingDeck.currentTime > 0 &&
-        incomingDeck;
+      audio.src = src;
+      audio.currentTime = 0;
+      audio.load();
 
-      if (shouldCrossfade && incomingDeck) {
-        isTransitioningRef.current = true;
-        // Asignar al deck entrante
-        if (incomingDeck.src !== src) {
-          incomingDeck.src = src;
-          incomingDeck.load();
-        }
-        incomingDeck.currentTime = 0;
-        incomingDeck.volume = 0;
+      const currentTgt = getTargetVolume();
+
+      if (usePlayerStore.getState().isPlaying) {
+        audio.volume = 0;
+        audio.muted = isMutedRef.current;
 
         try {
-          await incomingDeck.play();
+          await audio.play();
         } catch {
           if (!isCancelled) setPlaying(false);
-          isTransitioningRef.current = false;
+          audio.volume = currentTgt;
           return;
         }
 
         if (isCancelled) return;
 
-        // Animar crossfade de 400ms con curva de igual potencia
-        const CROSSFADE_DURATION_MS = 400;
-        const startTime = performance.now();
-
-        const crossfadeStep = (now: number) => {
+        // 3. Fade-in suave de entrada (90ms) hasta el volumen objetivo real
+        const fadeInDuration = 90;
+        const fadeInStart = performance.now();
+        const stepIn = (now: number) => {
           if (isCancelled) return;
-          const elapsed = now - startTime;
-          const progress = Math.min(1, elapsed / CROSSFADE_DURATION_MS);
-          const currentTargetVol = getTargetVolume();
-
-          // Curva de igual potencia (coseno / seno) para evitar caídas de volumen perceptibles
-          const outVol = Math.max(
-            0,
-            Math.min(1, currentTargetVol * Math.cos((progress * Math.PI) / 2)),
-          );
-          const inVol = Math.max(
-            0,
-            Math.min(1, currentTargetVol * Math.sin((progress * Math.PI) / 2)),
-          );
-
-          if (outgoingDeck) outgoingDeck.volume = outVol;
-          incomingDeck.volume = inVol;
-
+          const progress = Math.min(1, (now - fadeInStart) / fadeInDuration);
+          const tgt = getTargetVolume();
+          audio.volume = Math.max(0, Math.min(1, tgt * progress));
           if (progress < 1) {
-            fadeAnimationRef.current = requestAnimationFrame(crossfadeStep);
+            fadeAnimationRef.current = requestAnimationFrame(stepIn);
           } else {
             fadeAnimationRef.current = null;
-            if (outgoingDeck) {
-              outgoingDeck.pause();
-              outgoingDeck.removeAttribute("src");
-            }
-            incomingDeck.volume = currentTargetVol;
-            activeDeckKeyRef.current = incomingDeckKey;
-            isTransitioningRef.current = false;
-            // Precargar la siguiente canción en el deck ahora libre
+            // Garantizar firmemente el volumen objetivo sin quedarse silenciado
+            audio.volume = tgt;
+            audio.muted = isMutedRef.current;
             preloadNextTrack();
           }
         };
-
-        fadeAnimationRef.current = requestAnimationFrame(crossfadeStep);
+        fadeAnimationRef.current = requestAnimationFrame(stepIn);
       } else {
-        // Inicio directo o cambio en pausa sin crossfade requerido
-        const targetDeck =
-          incomingDeck && incomingDeck.src === src
-            ? incomingDeck
-            : (outgoingDeck ?? incomingDeck);
-        if (targetDeck) {
-          if (targetDeck === incomingDeck) {
-            activeDeckKeyRef.current = incomingDeckKey;
-          }
-          if (targetDeck.src !== src) {
-            targetDeck.src = src;
-            targetDeck.load();
-          }
-          targetDeck.currentTime = 0;
-          targetDeck.volume = getTargetVolume();
-
-          if (usePlayerStore.getState().isPlaying) {
-            void targetDeck.play().catch(() => {
-              if (!isCancelled) setPlaying(false);
-            });
-          }
-          preloadNextTrack();
-        }
+        audio.volume = currentTgt;
+        audio.muted = isMutedRef.current;
+        preloadNextTrack();
       }
     };
 
-    void performTransition();
+    void loadAndPlayTrack();
 
     return () => {
       isCancelled = true;
@@ -299,132 +238,104 @@ export const PersistentPlayer = React.memo(() => {
     currentTrack?.youtube_id,
     currentTrack?.audio_path,
     cancelFade,
-    getActiveDeck,
     getTargetVolume,
     preloadNextTrack,
     setPlaying,
   ]);
 
-  // Micro-fade suave (120ms) en transiciones manuales de Play / Pause para eliminar pops de audio
+  // Sincronizar manual play / pause con micro-fade de 70ms
   useEffect(() => {
-    const active = getActiveDeck();
-    if (!active || !currentTrack || !active.src || isTransitioningRef.current) {
+    const audio = audioRef.current;
+    if (!audio || !currentTrack || !audio.src) {
       return;
     }
 
-    const FADE_TIME_MS = 120;
+    const FADE_TIME_MS = 70;
+    const targetVol = getTargetVolume();
 
-    if (isPlaying && active.paused) {
-      // Micro-fade in
-      active.volume = 0;
-      void active
-        .play()
-        .then(() => {
-          const startTime = performance.now();
-          const stepIn = (now: number) => {
-            const elapsed = now - startTime;
-            const progress = Math.min(1, elapsed / FADE_TIME_MS);
-            const currentTgt = getTargetVolume();
-            active.volume = Math.max(0, Math.min(1, currentTgt * progress));
-            if (progress < 1 && usePlayerStore.getState().isPlaying) {
-              requestAnimationFrame(stepIn);
-            } else {
-              active.volume = currentTgt;
-            }
-          };
-          requestAnimationFrame(stepIn);
-        })
-        .catch(() => {
-          setPlaying(false);
-        });
-    } else if (!isPlaying && !active.paused) {
-      // Micro-fade out
-      const startVol = active.volume;
+    if (isPlaying && audio.paused) {
+      audio.volume = 0;
+      audio.muted = isMutedRef.current;
+      void audio.play().then(() => {
+        const startTime = performance.now();
+        const stepIn = (now: number) => {
+          const elapsed = now - startTime;
+          const progress = Math.min(1, elapsed / FADE_TIME_MS);
+          const currentTgt = getTargetVolume();
+          audio.volume = Math.max(0, Math.min(1, currentTgt * progress));
+          if (progress < 1 && usePlayerStore.getState().isPlaying) {
+            requestAnimationFrame(stepIn);
+          } else {
+            audio.volume = currentTgt;
+          }
+        };
+        requestAnimationFrame(stepIn);
+      }).catch(() => {
+        setPlaying(false);
+        audio.volume = targetVol;
+      });
+    } else if (!isPlaying && !audio.paused) {
+      const startVol = audio.volume;
       const startTime = performance.now();
       const stepOut = (now: number) => {
         const elapsed = now - startTime;
         const progress = Math.min(1, elapsed / FADE_TIME_MS);
-        active.volume = Math.max(0, Math.min(1, startVol * (1 - progress)));
+        audio.volume = Math.max(0, Math.min(1, startVol * (1 - progress)));
         if (progress < 1 && !usePlayerStore.getState().isPlaying) {
           requestAnimationFrame(stepOut);
         } else {
-          active.pause();
-          active.volume = getTargetVolume();
+          audio.pause();
+          audio.volume = getTargetVolume();
         }
       };
       requestAnimationFrame(stepOut);
     }
-  }, [isPlaying, currentTrack, getActiveDeck, getTargetVolume, setPlaying]);
+  }, [isPlaying, currentTrack, getTargetVolume, setPlaying]);
 
-  // Sincronizar volumen reactivo y modo silencio en decks
+  // Sincronizar volumen reactivo y modo silencio en todo momento
   useEffect(() => {
-    if (fadeAnimationRef.current !== null) {
-      return; // El loop de fade ajusta reactivamente según getTargetVolume()
-    }
-    const target = isMuted ? 0 : volume;
-    const active = getActiveDeck();
-    if (active) {
-      active.volume = target;
-      active.muted = isMuted;
-    }
-    const standby = getStandbyDeck();
-    if (standby) {
-      standby.volume = 0;
-      standby.muted = isMuted;
-    }
-  }, [volume, isMuted, getActiveDeck, getStandbyDeck]);
+    const audio = audioRef.current;
+    if (!audio) return;
 
-  // Sincronizar operaciones de Seek manuales en el deck activo
+    if (fadeAnimationRef.current === null) {
+      audio.volume = isMuted ? 0 : volume;
+      audio.muted = isMuted;
+    }
+  }, [volume, isMuted]);
+
+  // Sincronizar operaciones de Seek manuales
   useEffect(() => {
-    const audio = getActiveDeck();
+    const audio = audioRef.current;
     if (!audio || seekTarget === null) {
       return;
     }
     audio.currentTime = seekTarget;
     clearSeekTarget();
-  }, [seekTarget, clearSeekTarget, getActiveDeck]);
+  }, [seekTarget, clearSeekTarget]);
 
-  const handleTimeUpdate = useCallback(
-    (deck: "A" | "B") => {
-      if (activeDeckKeyRef.current === deck) {
-        const audio = deck === "A" ? deckARef.current : deckBRef.current;
-        if (audio) {
-          setCurrentTime(audio.currentTime);
-        }
-      }
-    },
-    [setCurrentTime],
-  );
+  const handleTimeUpdate = useCallback(() => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  }, [setCurrentTime]);
 
-  const handleLoadedMetadata = useCallback(
-    (deck: "A" | "B") => {
-      if (activeDeckKeyRef.current === deck) {
-        const audio = deck === "A" ? deckARef.current : deckBRef.current;
-        if (audio && Number.isFinite(audio.duration)) {
-          setDuration(audio.duration);
-        }
-      }
-    },
-    [setDuration],
-  );
+  const handleLoadedMetadata = useCallback(() => {
+    if (audioRef.current && Number.isFinite(audioRef.current.duration)) {
+      setDuration(audioRef.current.duration);
+    }
+  }, [setDuration]);
 
-  const handleEnded = useCallback(
-    (deck: "A" | "B") => {
-      if (activeDeckKeyRef.current === deck) {
-        const repeat = usePlayerStore.getState().repeatMode;
-        if (repeat === "one") {
-          const audio = deck === "A" ? deckARef.current : deckBRef.current;
-          if (audio) {
-            audio.currentTime = 0;
-            void audio.play();
-          }
-        } else {
-          playNext();
-        }
+  const handleEnded = useCallback(() => {
+    const repeat = usePlayerStore.getState().repeatMode;
+    if (repeat === "one") {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        void audioRef.current.play();
       }
-    },
-    [playNext],
-  );
+    } else {
+      playNext();
+    }
+  }, [playNext]);
 
   const handleSeekInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -444,19 +355,11 @@ export const PersistentPlayer = React.memo(() => {
 
   return (
     <footer className="relative z-20 border-t border-slate-800 bg-slate-900/95 px-6 py-3 backdrop-blur">
-      {/* Decks duales A/B para crossfade fluido sin cortes y precarga continua (SDD 7.1) */}
       <audio
-        ref={deckARef}
-        onTimeUpdate={() => handleTimeUpdate("A")}
-        onLoadedMetadata={() => handleLoadedMetadata("A")}
-        onEnded={() => handleEnded("A")}
-        preload="auto"
-      />
-      <audio
-        ref={deckBRef}
-        onTimeUpdate={() => handleTimeUpdate("B")}
-        onLoadedMetadata={() => handleLoadedMetadata("B")}
-        onEnded={() => handleEnded("B")}
+        ref={audioRef}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onEnded={handleEnded}
         preload="auto"
       />
 

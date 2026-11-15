@@ -57,37 +57,47 @@ export function useSseProgress(): void {
           const parsedJson: unknown = JSON.parse(String(rawEvent.data));
           const validated = progressEventSchema.safeParse(parsedJson);
           if (!validated.success) {
+            console.warn("SSE event validation warning:", validated.error, rawEvent.data);
             return;
           }
 
           const ev = validated.data;
           upsertProgressEvent(ev);
 
-          if (ev.status === "completed" && ev.metadata) {
+          if (ev.status === "completed" || ev.status === "skipped") {
+            const currentTasks = useDownloadStore.getState().tasks;
+            const existingTask = Object.values(currentTasks).find(
+              (t) => t.youtube_id === ev.youtube_id,
+            );
+            const meta = ev.metadata || existingTask?.metadata;
+            const title = meta?.title || ev.youtube_id;
+            const artist = meta?.artist || "Unknown Artist";
+            const ext = meta?.file_extension || "mp3";
             const dest = useDownloadStore.getState().taskDestinations[ev.task_id];
+
             void tauriApi
               .confirmSseDownload(
                 {
                   youtube_id: ev.youtube_id,
-                  status: "completed",
+                  status: ev.status,
                   metadata: {
-                    youtube_id: ev.metadata.youtube_id,
-                    title: ev.metadata.title,
-                    artist: ev.metadata.artist,
-                    duration: ev.metadata.duration,
-                    published_at: ev.metadata.published_at ?? null,
-                    file_extension: ev.metadata.file_extension,
-                    thumbnail_path: ev.metadata.thumbnail_path,
-                    audio_path: ev.metadata.audio_path,
-                    file_size: ev.metadata.file_size,
-                    playlist_id: ev.metadata.playlist_id ?? null,
-                    playlist_title: ev.metadata.playlist_title ?? null,
+                    youtube_id: ev.youtube_id,
+                    title,
+                    artist,
+                    duration: meta?.duration || 0,
+                    published_at: meta?.published_at ?? null,
+                    file_extension: ext,
+                    thumbnail_path: meta?.thumbnail_path || "",
+                    audio_path: meta?.audio_path || "",
+                    file_size: meta?.file_size || 0,
+                    playlist_id: meta?.playlist_id ?? null,
+                    playlist_title: meta?.playlist_title ?? null,
                   },
-                  audio_path: ev.metadata.audio_path,
-                  thumbnail_path: ev.metadata.thumbnail_path,
-                  file_extension: ev.metadata.file_extension,
-                  file_size: ev.metadata.file_size,
-                  skipped: false,
+                  audio_path: meta?.audio_path || "",
+                  thumbnail_path: meta?.thumbnail_path || "",
+                  file_extension: ext,
+                  file_size: meta?.file_size || 0,
+                  skipped: ev.status === "skipped",
                 },
                 dest?.targetPlaylistId,
                 dest?.skipPlaylist,
@@ -95,10 +105,14 @@ export function useSseProgress(): void {
               .then((savedTrack) => {
                 upsertTrackLocal(savedTrack);
                 void useLibraryStore.getState().refreshDownloadHistory();
+                void useLibraryStore.getState().refreshTracks();
+                void useLibraryStore.getState().refreshMissingTracks();
               })
-              .catch(() => {
+              .catch((err) => {
+                console.error("confirmSseDownload error:", err);
                 void refreshTracks();
                 void useLibraryStore.getState().refreshDownloadHistory();
+                void useLibraryStore.getState().refreshMissingTracks();
               });
           } else if (ev.status === "failed") {
             void useLibraryStore.getState().refreshDownloadHistory();
