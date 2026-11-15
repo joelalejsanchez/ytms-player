@@ -55,6 +55,9 @@ export const PersistentPlayer = React.memo(() => {
   const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
 
   const audioDataUrlCache = useRef<Map<string, string>>(new Map());
+  const isChangingTrackRef = useRef(false);
+  const currentTrackIdRef = useRef<string | null>(null);
+  const prevIsPlayingRef = useRef(isPlaying);
 
   // Referencias para cálculo reactivo de volumen objetivo
   const volumeRef = useRef(volume);
@@ -117,7 +120,7 @@ export const PersistentPlayer = React.memo(() => {
     }
   }, []);
 
-  // Sincronizar cambio de pista con micro-fade suave y garantía total de volumen activo
+  // Sincronizar cambio de pista
   useEffect(() => {
     let isCancelled = false;
     cancelFade();
@@ -128,31 +131,65 @@ export const PersistentPlayer = React.memo(() => {
     if (!currentTrack || currentTrack.is_missing) {
       audio.pause();
       audio.removeAttribute("src");
+      currentTrackIdRef.current = null;
+      isChangingTrackRef.current = false;
       return;
     }
 
-    const loadAndPlayTrack = () => {
-      if (isCancelled || !audioRef.current) return;
+    currentTrackIdRef.current = currentTrack.youtube_id;
+    isChangingTrackRef.current = true;
 
-      const src = toAssetUrl(currentTrack.audio_path);
-      if (!src) return;
+    const loadAndPlayTrack = async () => {
+      try {
+        let src = audioDataUrlCache.current.get(currentTrack.audio_path);
+        if (!src) {
+          try {
+            const dataUrl = await tauriApi.readAudioDataUrl(currentTrack.audio_path);
+            if (dataUrl) {
+              src = dataUrl;
+              if (audioDataUrlCache.current.size >= 15) {
+                const oldestKey = audioDataUrlCache.current.keys().next().value;
+                if (oldestKey) audioDataUrlCache.current.delete(oldestKey);
+              }
+              audioDataUrlCache.current.set(currentTrack.audio_path, dataUrl);
+            }
+          } catch (err) {
+            console.warn("readAudioDataUrl warning, falling back to toAssetUrl:", err);
+          }
+        }
 
-      audio.src = src;
-      audio.currentTime = 0;
+        if (!src) {
+          src = toAssetUrl(currentTrack.audio_path);
+        }
 
-      const tgtVol = getTargetVolume();
-      audio.volume = tgtVol;
-      audio.muted = isMutedRef.current;
+        if (isCancelled || !audioRef.current || currentTrackIdRef.current !== currentTrack.youtube_id) {
+          return;
+        }
 
-      if (usePlayerStore.getState().isPlaying) {
-        audio.play().catch(() => {
-          if (!isCancelled) setPlaying(false);
-        });
+        audio.src = src;
+        audio.currentTime = 0;
+
+        const tgtVol = getTargetVolume();
+        audio.volume = tgtVol;
+        audio.muted = isMutedRef.current;
+
+        if (usePlayerStore.getState().isPlaying) {
+          await audio.play();
+        }
+        preloadNextTrack();
+      } catch (err) {
+        if (!isCancelled && currentTrackIdRef.current === currentTrack.youtube_id) {
+          console.error("Error al iniciar reproducción:", err);
+          setPlaying(false);
+        }
+      } finally {
+        if (!isCancelled) {
+          isChangingTrackRef.current = false;
+        }
       }
-      preloadNextTrack();
     };
 
-    loadAndPlayTrack();
+    void loadAndPlayTrack();
 
     return () => {
       isCancelled = true;
@@ -167,52 +204,37 @@ export const PersistentPlayer = React.memo(() => {
     setPlaying,
   ]);
 
-  // Sincronizar manual play / pause con micro-fade de 70ms
+  // Sincronizar manual play / pause con respuesta inmediata sin interferir con el cambio de pista
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack || !audio.src) {
+      prevIsPlayingRef.current = isPlaying;
       return;
     }
 
-    const FADE_TIME_MS = 70;
+    // Si se está cambiando de pista, Effect 1 gestiona la reproducción directamente
+    if (isChangingTrackRef.current) {
+      prevIsPlayingRef.current = isPlaying;
+      return;
+    }
+
+    // Solo actuar si el estado isPlaying cambió deliberadamente
+    if (prevIsPlayingRef.current === isPlaying) {
+      return;
+    }
+    prevIsPlayingRef.current = isPlaying;
+
     const targetVol = getTargetVolume();
 
     if (isPlaying && audio.paused) {
-      audio.volume = 0;
+      audio.volume = targetVol;
       audio.muted = isMutedRef.current;
-      void audio.play().then(() => {
-        const startTime = performance.now();
-        const stepIn = (now: number) => {
-          const elapsed = now - startTime;
-          const progress = Math.min(1, elapsed / FADE_TIME_MS);
-          const currentTgt = getTargetVolume();
-          audio.volume = Math.max(0, Math.min(1, currentTgt * progress));
-          if (progress < 1 && usePlayerStore.getState().isPlaying) {
-            requestAnimationFrame(stepIn);
-          } else {
-            audio.volume = currentTgt;
-          }
-        };
-        requestAnimationFrame(stepIn);
-      }).catch(() => {
+      audio.play().catch(() => {
         setPlaying(false);
-        audio.volume = targetVol;
       });
     } else if (!isPlaying && !audio.paused) {
-      const startVol = audio.volume;
-      const startTime = performance.now();
-      const stepOut = (now: number) => {
-        const elapsed = now - startTime;
-        const progress = Math.min(1, elapsed / FADE_TIME_MS);
-        audio.volume = Math.max(0, Math.min(1, startVol * (1 - progress)));
-        if (progress < 1 && !usePlayerStore.getState().isPlaying) {
-          requestAnimationFrame(stepOut);
-        } else {
-          audio.pause();
-          audio.volume = getTargetVolume();
-        }
-      };
-      requestAnimationFrame(stepOut);
+      audio.pause();
+      audio.volume = targetVol;
     }
   }, [isPlaying, currentTrack, getTargetVolume, setPlaying]);
 
