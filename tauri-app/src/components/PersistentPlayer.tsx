@@ -106,7 +106,8 @@ export const PersistentPlayer = React.memo(() => {
     if (nextIdx >= 0) {
       const nextTrack = currentQueue[nextIdx];
       if (nextTrack && !nextTrack.is_missing) {
-        const standby = activeDeckKeyRef.current === "A" ? deckBRef.current : deckARef.current;
+        const standby =
+          activeDeckKeyRef.current === "A" ? deckBRef.current : deckARef.current;
 
         const applyPreload = (src: string) => {
           if (standby && standby.src !== src) {
@@ -263,7 +264,10 @@ export const PersistentPlayer = React.memo(() => {
         fadeAnimationRef.current = requestAnimationFrame(crossfadeStep);
       } else {
         // Inicio directo o cambio en pausa sin crossfade requerido
-        const targetDeck = incomingDeck && incomingDeck.src === src ? incomingDeck : (outgoingDeck ?? incomingDeck);
+        const targetDeck =
+          incomingDeck && incomingDeck.src === src
+            ? incomingDeck
+            : (outgoingDeck ?? incomingDeck);
         if (targetDeck) {
           if (targetDeck === incomingDeck) {
             activeDeckKeyRef.current = incomingDeckKey;
@@ -313,23 +317,26 @@ export const PersistentPlayer = React.memo(() => {
     if (isPlaying && active.paused) {
       // Micro-fade in
       active.volume = 0;
-      void active.play().then(() => {
-        const startTime = performance.now();
-        const stepIn = (now: number) => {
-          const elapsed = now - startTime;
-          const progress = Math.min(1, elapsed / FADE_TIME_MS);
-          const currentTgt = getTargetVolume();
-          active.volume = Math.max(0, Math.min(1, currentTgt * progress));
-          if (progress < 1 && usePlayerStore.getState().isPlaying) {
-            requestAnimationFrame(stepIn);
-          } else {
-            active.volume = currentTgt;
-          }
-        };
-        requestAnimationFrame(stepIn);
-      }).catch(() => {
-        setPlaying(false);
-      });
+      void active
+        .play()
+        .then(() => {
+          const startTime = performance.now();
+          const stepIn = (now: number) => {
+            const elapsed = now - startTime;
+            const progress = Math.min(1, elapsed / FADE_TIME_MS);
+            const currentTgt = getTargetVolume();
+            active.volume = Math.max(0, Math.min(1, currentTgt * progress));
+            if (progress < 1 && usePlayerStore.getState().isPlaying) {
+              requestAnimationFrame(stepIn);
+            } else {
+              active.volume = currentTgt;
+            }
+          };
+          requestAnimationFrame(stepIn);
+        })
+        .catch(() => {
+          setPlaying(false);
+        });
     } else if (!isPlaying && !active.paused) {
       // Micro-fade out
       const startVol = active.volume;
@@ -543,6 +550,20 @@ export const PersistentPlayer = React.memo(() => {
             <Button
               variant="ghost"
               size="icon"
+              onClick={cycleRepeatMode}
+              title={`Modo repetición: ${repeatMode}`}
+              className={repeatMode !== "off" ? "text-red-400" : ""}
+            >
+              {repeatMode === "one" ? (
+                <Repeat1 className="h-4 w-4" />
+              ) : (
+                <Repeat className="h-4 w-4" />
+              )}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={playPrevious}
               disabled={!currentTrack}
               title="Anterior"
@@ -568,20 +589,6 @@ export const PersistentPlayer = React.memo(() => {
               title="Siguiente"
             >
               <SkipForward className="h-4 w-4" />
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={cycleRepeatMode}
-              title={`Modo repetición: ${repeatMode}`}
-              className={repeatMode !== "off" ? "text-red-400" : ""}
-            >
-              {repeatMode === "one" ? (
-                <Repeat1 className="h-4 w-4" />
-              ) : (
-                <Repeat className="h-4 w-4" />
-              )}
             </Button>
 
             <Button
