@@ -91,7 +91,9 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
 
     await refreshTracks();
     setIsProcessing(false);
-    setSuccessMsg(`Se actualizó la información de ${success} canción(es) correctamente.`);
+    setSuccessMsg(
+      `Se actualizó la información de ${success} canción(es) correctamente.`,
+    );
     setSelectedIds(new Set());
   };
 
@@ -127,7 +129,8 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
           {/* Mensajes informativos */}
           <div className="rounded-xl border border-border bg-muted/40 p-3.5 text-foreground">
             <p>
-              Consulta YouTube para actualizar los nombres, artistas y duración de las canciones seleccionadas en tu biblioteca.
+              Consulta YouTube para actualizar los nombres, artistas y duración de las
+              canciones seleccionadas en tu biblioteca.
             </p>
           </div>
 
@@ -194,9 +197,14 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
                         disabled={isProcessing}
                       />
                       <div className="min-w-0">
-                        <p className="truncate font-medium text-foreground">{track.title}</p>
+                        <p className="truncate font-medium text-foreground">
+                          {track.title}
+                        </p>
                         <p className="truncate text-[11px] text-muted-foreground">
-                          {track.artist} · <span className="font-mono text-muted-foreground">{track.youtube_id}</span>
+                          {track.artist} ·{" "}
+                          <span className="font-mono text-muted-foreground">
+                            {track.youtube_id}
+                          </span>
                         </p>
                       </div>
                     </div>

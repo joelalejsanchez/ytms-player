@@ -38,11 +38,14 @@ export const CustomSelect = <T extends string = string>({
 
   const selectedOption = options.find((opt) => opt.value === value);
 
-  const toggleOpen = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (disabled) return;
-    setIsOpen((prev) => !prev);
-  }, [disabled]);
+  const toggleOpen = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (disabled) return;
+      setIsOpen((prev) => !prev);
+    },
+    [disabled],
+  );
 
   const closeMenu = useCallback(() => {
     setIsOpen(false);
@@ -61,10 +64,7 @@ export const CustomSelect = <T extends string = string>({
     if (!isOpen) return;
 
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         closeMenu();
       }
     };
@@ -89,7 +89,11 @@ export const CustomSelect = <T extends string = string>({
   return (
     <div
       ref={containerRef}
-      className={cn("relative inline-block text-left select-none", isOpen && "z-[100]", className)}
+      className={cn(
+        "relative inline-block text-left select-none",
+        isOpen && "z-[100]",
+        className,
+      )}
       onClick={(e) => e.stopPropagation()}
     >
       <button
@@ -149,7 +153,9 @@ export const CustomSelect = <T extends string = string>({
                     {opt.icon && <span className="shrink-0">{opt.icon}</span>}
                     <span className="truncate">{opt.label}</span>
                   </span>
-                  {isSelected && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
+                  {isSelected && (
+                    <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+                  )}
                 </button>
               );
             })}

@@ -9,7 +9,7 @@
   :root,
   :root.light {
     /* Paleta base */
-    --onyx: #0A0A0C;
+    --onyx: #0a0a0c;
     --coffee-bean: var(--onyx);
     --platinum: #eef0f2;
 
@@ -96,7 +96,9 @@
   }
 
   :root.blue.dark,
-  :root.dark:not(.teal):not(.ember):not(.midnight):not(.denim):not(.pine):not(.burgundy):not(.amber) {
+  :root.dark:not(.teal):not(.ember):not(.midnight):not(.denim):not(.pine):not(
+      .burgundy
+    ):not(.amber) {
     --primary: #6868c2;
     --primary-foreground: #ffffff;
     --secondary: var(--baltic-blue);
@@ -191,7 +193,7 @@
      FAMILIA 5: DENIM NAVY (:root.denim) - Base: #253C6D
      ========================================================================= */
   :root.denim {
-    --denim-base: #253C6D;
+    --denim-base: #253c6d;
     --denim-secondary: #3b5a96;
     --denim-accent: #5274b5;
 
@@ -209,7 +211,7 @@
     --primary-foreground: #ffffff;
     --secondary: #3b5a96;
     --secondary-foreground: #ffffff;
-    --accent: #253C6D;
+    --accent: #253c6d;
     --accent-foreground: #ffffff;
     --ring: #5c82ca;
   }
@@ -218,7 +220,7 @@
      FAMILIA 6: PINE GREEN (:root.pine) - Base: #123F36
      ========================================================================= */
   :root.pine {
-    --pine-base: #123F36;
+    --pine-base: #123f36;
     --pine-secondary: #1c574b;
     --pine-accent: #297566;
 
@@ -236,7 +238,7 @@
     --primary-foreground: #ffffff;
     --secondary: #226b5d;
     --secondary-foreground: #ffffff;
-    --accent: #123F36;
+    --accent: #123f36;
     --accent-foreground: #ffffff;
     --ring: #38a390;
   }
@@ -274,25 +276,25 @@
   :root.amber {
     --amber-base: #b38600;
     --amber-secondary: #d9a300;
-    --amber-accent: #FFBF00;
+    --amber-accent: #ffbf00;
 
     --primary: var(--amber-base);
     --primary-foreground: #ffffff;
     --secondary: var(--amber-secondary);
-    --secondary-foreground: #0A0A0C;
+    --secondary-foreground: #0a0a0c;
     --accent: var(--amber-accent);
-    --accent-foreground: #0A0A0C;
+    --accent-foreground: #0a0a0c;
     --ring: var(--amber-base);
   }
 
   :root.amber.dark {
-    --primary: #FFBF00;
-    --primary-foreground: #0A0A0C;
+    --primary: #ffbf00;
+    --primary-foreground: #0a0a0c;
     --secondary: #e6ac00;
-    --secondary-foreground: #0A0A0C;
+    --secondary-foreground: #0a0a0c;
     --accent: #ffd24d;
-    --accent-foreground: #0A0A0C;
-    --ring: #FFBF00;
+    --accent-foreground: #0a0a0c;
+    --ring: #ffbf00;
   }
 
   * {

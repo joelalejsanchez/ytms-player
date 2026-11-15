@@ -49,7 +49,11 @@ export interface LibraryStoreState {
   clearDownloadHistory: () => Promise<void>;
   verifyIntegrity: () => Promise<IntegrityReport>;
   recoverTrack: (youtubeId: string) => Promise<Track>;
-  adoptOrphanFile: (youtubeId: string, fileExtension: string, title?: string) => Promise<void>;
+  adoptOrphanFile: (
+    youtubeId: string,
+    fileExtension: string,
+    title?: string,
+  ) => Promise<void>;
   deleteOrphanFile: (youtubeId: string, fileExtension: string) => Promise<void>;
   toggleLike: (youtubeId: string, liked: boolean | null) => Promise<void>;
   deleteTrack: (youtubeId: string, deleteFiles: boolean) => Promise<void>;
@@ -99,13 +103,14 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const ws = await tauriApi.selectWorkspace(path);
-      const [tracks, missingTracks, playlists, playlistTrackMap, appSettings] = await Promise.all([
-        tauriApi.getTracks(),
-        tauriApi.getMissingTracks(),
-        tauriApi.getPlaylists(),
-        tauriApi.getPlaylistTrackMap().catch(() => ({})),
-        tauriApi.getAppSettings(),
-      ]);
+      const [tracks, missingTracks, playlists, playlistTrackMap, appSettings] =
+        await Promise.all([
+          tauriApi.getTracks(),
+          tauriApi.getMissingTracks(),
+          tauriApi.getPlaylists(),
+          tauriApi.getPlaylistTrackMap().catch(() => ({})),
+          tauriApi.getAppSettings(),
+        ]);
       set({
         workspace: ws,
         appSettings,
@@ -261,7 +266,10 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       await get().refreshTracks();
       set({ isLoading: false });
     } catch (err) {
-      const message = extractErrorMessage(err, "No se pudo adoptar el archivo huérfano");
+      const message = extractErrorMessage(
+        err,
+        "No se pudo adoptar el archivo huérfano",
+      );
       set({ isLoading: false, error: message });
       throw err;
     }
@@ -274,7 +282,10 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       await get().verifyIntegrity();
       set({ isLoading: false });
     } catch (err) {
-      const message = extractErrorMessage(err, "No se pudo eliminar el archivo huérfano");
+      const message = extractErrorMessage(
+        err,
+        "No se pudo eliminar el archivo huérfano",
+      );
       set({ isLoading: false, error: message });
       throw err;
     }

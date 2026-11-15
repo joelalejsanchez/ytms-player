@@ -16,7 +16,13 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { CustomSelect, type SelectOption } from "@/components/ui/CustomSelect";
-import { Badge, Button, Checkbox, Input, ProgressBar } from "@/components/ui/Primitives";
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Input,
+  ProgressBar,
+} from "@/components/ui/Primitives";
 import { toAssetUrl } from "@/lib/utils";
 import { downloadFormSchema } from "@/schemas/validation";
 import { useDownloadStore } from "@/stores/useDownloadStore";
@@ -120,7 +126,9 @@ export const DownloadsView = React.memo(() => {
   const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
   const [isClearHistoryModalOpen, setIsClearHistoryModalOpen] = useState(false);
   const [isClearingHistory, setIsClearingHistory] = useState(false);
-  const [collapsedPlaylists, setCollapsedPlaylists] = useState<Record<string, boolean>>({});
+  const [collapsedPlaylists, setCollapsedPlaylists] = useState<Record<string, boolean>>(
+    {},
+  );
 
   const tasks = useDownloadStore((s) => s.tasks);
   const isSubmitting = useDownloadStore((s) => s.isSubmitting);
@@ -162,7 +170,9 @@ export const DownloadsView = React.memo(() => {
   }, [url]);
 
   const isPlaylistUrl = useMemo(() => {
-    return url.includes("list=") && !url.includes("list=RD") && !url.includes("list=UL");
+    return (
+      url.includes("list=") && !url.includes("list=RD") && !url.includes("list=UL")
+    );
   }, [url]);
 
   const shouldOpenPlaylistModal = useMemo(() => {
@@ -173,9 +183,7 @@ export const DownloadsView = React.memo(() => {
 
   const isTaskActive = useCallback((t: DownloadProgressEvent) => {
     return (
-      t.status === "queued" ||
-      t.status === "downloading" ||
-      t.status === "processing"
+      t.status === "queued" || t.status === "downloading" || t.status === "processing"
     );
   }, []);
 
@@ -243,7 +251,9 @@ export const DownloadsView = React.memo(() => {
       } else {
         // Solo mostrar como activo si está en proceso o encolado
         if (isTaskActive(task)) {
-          const existingIdx = singles.findIndex((s) => s.task.youtube_id === task.youtube_id);
+          const existingIdx = singles.findIndex(
+            (s) => s.task.youtube_id === task.youtube_id,
+          );
           if (existingIdx >= 0) {
             singles[existingIdx] = { key, task };
           } else {
@@ -436,7 +446,10 @@ export const DownloadsView = React.memo(() => {
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-500">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-amber-500" />
-              <span>Detectamos un Mix autogenerado de YouTube en la URL. ¿Qué deseas descargar?</span>
+              <span>
+                Detectamos un Mix autogenerado de YouTube en la URL. ¿Qué deseas
+                descargar?
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -537,7 +550,9 @@ export const DownloadsView = React.memo(() => {
                   >
                     <div className="flex items-center gap-2.5">
                       <ListMusic className="h-4 w-4 text-primary" />
-                      <span className="font-semibold text-foreground">{group.title}</span>
+                      <span className="font-semibold text-foreground">
+                        {group.title}
+                      </span>
                       <Badge tone={completedCount === totalCount ? "success" : "info"}>
                         {completedCount} de {totalCount} completadas
                       </Badge>
@@ -647,7 +662,8 @@ export const DownloadsView = React.memo(() => {
                               <ProgressBar
                                 value={task.progress}
                                 tone={
-                                  task.status === "completed" || task.status === "skipped"
+                                  task.status === "completed" ||
+                                  task.status === "skipped"
                                     ? "success"
                                     : task.status === "failed"
                                       ? "danger"
@@ -657,7 +673,9 @@ export const DownloadsView = React.memo(() => {
                                 }
                               />
                               {task.error && (
-                                <p className="text-[11px] text-destructive">{task.error}</p>
+                                <p className="text-[11px] text-destructive">
+                                  {task.error}
+                                </p>
                               )}
                             </div>
                           </div>
@@ -754,7 +772,9 @@ export const DownloadsView = React.memo(() => {
                               : "info"
                       }
                     />
-                    {task.error && <p className="text-xs text-destructive">{task.error}</p>}
+                    {task.error && (
+                      <p className="text-xs text-destructive">{task.error}</p>
+                    )}
                   </div>
                 </div>
               );
@@ -838,10 +858,10 @@ export const DownloadsView = React.memo(() => {
                             <Badge
                               tone={
                                 item.status === "completed" || item.status === "skipped"
-                                ? "success"
-                                : item.status === "failed"
-                                  ? "danger"
-                                  : "info"
+                                  ? "success"
+                                  : item.status === "failed"
+                                    ? "danger"
+                                    : "info"
                               }
                               className="text-[10px]"
                             >

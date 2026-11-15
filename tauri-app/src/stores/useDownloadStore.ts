@@ -89,46 +89,22 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
       if (existingMetadata || event.metadata) {
         mergedMetadata = {
           youtube_id: event.youtube_id,
-          title:
-            event.metadata?.title ||
-            existingMetadata?.title ||
-            event.youtube_id,
+          title: event.metadata?.title || existingMetadata?.title || event.youtube_id,
           artist:
-            event.metadata?.artist ||
-            existingMetadata?.artist ||
-            "Unknown Artist",
-          duration:
-            event.metadata?.duration ??
-            existingMetadata?.duration ??
-            0,
+            event.metadata?.artist || existingMetadata?.artist || "Unknown Artist",
+          duration: event.metadata?.duration ?? existingMetadata?.duration ?? 0,
           published_at:
-            event.metadata?.published_at ??
-            existingMetadata?.published_at ??
-            null,
+            event.metadata?.published_at ?? existingMetadata?.published_at ?? null,
           file_extension:
-            event.metadata?.file_extension ||
-            existingMetadata?.file_extension ||
-            "mp3",
+            event.metadata?.file_extension || existingMetadata?.file_extension || "mp3",
           thumbnail_path:
-            event.metadata?.thumbnail_path ||
-            existingMetadata?.thumbnail_path ||
-            "",
-          audio_path:
-            event.metadata?.audio_path ||
-            existingMetadata?.audio_path ||
-            "",
-          file_size:
-            event.metadata?.file_size ??
-            existingMetadata?.file_size ??
-            0,
+            event.metadata?.thumbnail_path || existingMetadata?.thumbnail_path || "",
+          audio_path: event.metadata?.audio_path || existingMetadata?.audio_path || "",
+          file_size: event.metadata?.file_size ?? existingMetadata?.file_size ?? 0,
           playlist_id:
-            event.metadata?.playlist_id ||
-            existingMetadata?.playlist_id ||
-            null,
+            event.metadata?.playlist_id || existingMetadata?.playlist_id || null,
           playlist_title:
-            event.metadata?.playlist_title ||
-            existingMetadata?.playlist_title ||
-            null,
+            event.metadata?.playlist_title || existingMetadata?.playlist_title || null,
         };
       }
 

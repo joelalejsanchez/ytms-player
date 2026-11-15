@@ -11,7 +11,13 @@ import {
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { CustomSelect } from "@/components/ui/CustomSelect";
-import { Badge, Button, Checkbox, Input, RadioButton } from "@/components/ui/Primitives";
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Input,
+  RadioButton,
+} from "@/components/ui/Primitives";
 import { cn, formatDuration } from "@/lib/utils";
 import { tauriApi } from "@/services/tauriIpc";
 import { useDownloadStore } from "@/stores/useDownloadStore";
@@ -43,7 +49,9 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewData, setPreviewData] = useState<PlaylistPreviewDto | null>(null);
 
-  const [destination, setDestination] = useState<"new" | "existing" | "library_only">("new");
+  const [destination, setDestination] = useState<"new" | "existing" | "library_only">(
+    "new",
+  );
   const [newTitle, setNewTitle] = useState("");
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<number | null>(null);
   const [unlinkRemoved, setUnlinkRemoved] = useState(false);
@@ -148,7 +156,14 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
     }
 
     return null;
-  }, [previewData, totalTracks, selectedCount, tracksUnder7Min, tracksUnder15Min, selectedTrackIds]);
+  }, [
+    previewData,
+    totalTracks,
+    selectedCount,
+    tracksUnder7Min,
+    tracksUnder15Min,
+    selectedTrackIds,
+  ]);
 
   const toggleTrack = useCallback((youtubeId: string) => {
     setSelectedTrackIds((prev) => {
@@ -222,8 +237,12 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
       let targetId: number | null = null;
 
       if (destination === "new") {
-        const titleToUse = newTitle.trim() || previewData.playlist_title?.trim() || "Playlist";
-        const created = await tauriApi.createPlaylist(titleToUse, previewData.target_id);
+        const titleToUse =
+          newTitle.trim() || previewData.playlist_title?.trim() || "Playlist";
+        const created = await tauriApi.createPlaylist(
+          titleToUse,
+          previewData.target_id,
+        );
         targetId = created.id;
       } else if (destination === "existing") {
         targetId = selectedPlaylistId;
@@ -354,9 +373,21 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                         {downloadedCount} ya en biblioteca
                       </span>
                       {pendingCount > 0 ? (
-                        <span> · <strong className="text-amber-500">{pendingCount}</strong> pendientes de descarga</span>
+                        <span>
+                          {" "}
+                          · <strong className="text-amber-500">
+                            {pendingCount}
+                          </strong>{" "}
+                          pendientes de descarga
+                        </span>
                       ) : selectedCount > 0 ? (
-                        <span> · <strong className="text-emerald-500">Todas descargadas</strong></span>
+                        <span>
+                          {" "}
+                          ·{" "}
+                          <strong className="text-emerald-500">
+                            Todas descargadas
+                          </strong>
+                        </span>
                       ) : null}
                     </p>
                   </div>
@@ -368,7 +399,9 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                 {/* Barra de selección rápida */}
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] font-medium text-muted-foreground">Seleccionar:</span>
+                    <span className="text-[11px] font-medium text-muted-foreground">
+                      Seleccionar:
+                    </span>
                     <Button
                       type="button"
                       size="sm"
@@ -376,7 +409,8 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                       onClick={selectAll}
                       className={cn(
                         "h-6 px-2 text-[11px]",
-                        activePreset === "all" && "border-primary text-primary font-semibold shadow-xs",
+                        activePreset === "all" &&
+                          "border-primary text-primary font-semibold shadow-xs",
                       )}
                     >
                       Todas
@@ -388,7 +422,8 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                       onClick={selectUnder15Min}
                       className={cn(
                         "h-6 px-2 text-[11px]",
-                        activePreset === "15min" && "border-primary text-primary font-semibold shadow-xs",
+                        activePreset === "15min" &&
+                          "border-primary text-primary font-semibold shadow-xs",
                       )}
                     >
                       &lt; 15 min
@@ -400,7 +435,8 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                       onClick={selectUnder7Min}
                       className={cn(
                         "h-6 px-2 text-[11px]",
-                        activePreset === "7min" && "border-primary text-primary font-semibold shadow-xs",
+                        activePreset === "7min" &&
+                          "border-primary text-primary font-semibold shadow-xs",
                       )}
                     >
                       &lt; 7 min
@@ -412,7 +448,8 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                       onClick={deselectAll}
                       className={cn(
                         "h-6 px-2 text-[11px]",
-                        activePreset === "none" && "border-primary text-primary font-semibold shadow-xs",
+                        activePreset === "none" &&
+                          "border-primary text-primary font-semibold shadow-xs",
                       )}
                     >
                       Ninguna
@@ -420,7 +457,11 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                   </div>
 
                   <span className="text-[11px] text-muted-foreground">
-                    <strong className={selectedCount > 0 ? "text-foreground" : "text-destructive"}>
+                    <strong
+                      className={
+                        selectedCount > 0 ? "text-foreground" : "text-destructive"
+                      }
+                    >
                       {selectedCount}
                     </strong>{" "}
                     de {previewData.items.length} seleccionadas
@@ -457,10 +498,14 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                             {index + 1}.
                           </span>
                           <div className="truncate">
-                            <p className={`truncate font-medium text-xs ${isSelected ? "text-primary font-semibold" : "text-foreground"}`}>
+                            <p
+                              className={`truncate font-medium text-xs ${isSelected ? "text-primary font-semibold" : "text-foreground"}`}
+                            >
                               {item.title || item.youtube_id}
                             </p>
-                            <p className="truncate text-[11px] text-muted-foreground">{item.artist}</p>
+                            <p className="truncate text-[11px] text-muted-foreground">
+                              {item.artist}
+                            </p>
                           </div>
                         </div>
 
@@ -489,7 +534,9 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
 
               {/* Selector de destino */}
               <div className="space-y-3 rounded-xl border border-border bg-card/40 p-4">
-                <h4 className="font-semibold text-foreground">Destino de las canciones:</h4>
+                <h4 className="font-semibold text-foreground">
+                  Destino de las canciones:
+                </h4>
 
                 <div className="space-y-2">
                   {/* Opción 1: Crear nueva playlist */}
@@ -539,11 +586,14 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                         <div>
                           {playlists.length === 0 ? (
                             <p className="text-[11px] text-amber-500">
-                              No tienes playlists creadas todavía. Elige "Crear nueva playlist".
+                              No tienes playlists creadas todavía. Elige "Crear nueva
+                              playlist".
                             </p>
                           ) : (
                             <CustomSelect
-                              value={selectedPlaylistId ? String(selectedPlaylistId) : ""}
+                              value={
+                                selectedPlaylistId ? String(selectedPlaylistId) : ""
+                              }
                               onChange={(val) => setSelectedPlaylistId(Number(val))}
                               options={playlists.map((pl) => ({
                                 value: String(pl.id),
@@ -576,8 +626,8 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                         </span>
                       </div>
                       <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        Los audios se descargarán en tu biblioteca general sin asociarse a ninguna
-                        lista.
+                        Los audios se descargarán en tu biblioteca general sin asociarse
+                        a ninguna lista.
                       </p>
                     </div>
                   </label>
@@ -596,7 +646,8 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                       </span>
                     </label>
                     <p className="mt-1 pl-6 text-[11px] text-muted-foreground">
-                      Si una canción ya no existe en la lista de YouTube, se quitará de la playlist pero continuará guardada en tu biblioteca.
+                      Si una canción ya no existe en la lista de YouTube, se quitará de
+                      la playlist pero continuará guardada en tu biblioteca.
                     </p>
                   </div>
                 )}
@@ -612,7 +663,9 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
           </Button>
           <Button
             onClick={() => void handleConfirm()}
-            disabled={!previewData || isLoadingPreview || isSubmitting || selectedCount === 0}
+            disabled={
+              !previewData || isLoadingPreview || isSubmitting || selectedCount === 0
+            }
           >
             {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />

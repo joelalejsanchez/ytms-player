@@ -156,7 +156,8 @@ export const MissingFilesView = React.memo(() => {
             Recuperación de Archivos
           </h2>
           <p className="text-xs text-muted-foreground">
-            Comprueba y restaura canciones faltantes o agrega archivos de música a tu biblioteca
+            Comprueba y restaura canciones faltantes o agrega archivos de música a tu
+            biblioteca
           </p>
         </div>
 
@@ -184,13 +185,17 @@ export const MissingFilesView = React.memo(() => {
             </p>
           </div>
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5">
-            <p className="text-xs text-amber-600 dark:text-amber-400">Archivos no encontrados</p>
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              Archivos no encontrados
+            </p>
             <p className="mt-1 text-xl font-bold text-amber-600 dark:text-amber-400">
               {lastReport.newly_missing_ids.length}
             </p>
           </div>
           <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5">
-            <p className="text-xs text-emerald-600 dark:text-emerald-400">Archivos restaurados</p>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400">
+              Archivos restaurados
+            </p>
             <p className="mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-400">
               {lastReport.restored_ids.length}
             </p>
@@ -320,12 +325,15 @@ export const MissingFilesView = React.memo(() => {
 
         {orphanFiles.length === 0 ? (
           <p className="py-2 text-xs text-muted-foreground">
-            No hay archivos sueltos. Todo el audio encontrado en tu carpeta está agregado a tu biblioteca.
+            No hay archivos sueltos. Todo el audio encontrado en tu carpeta está
+            agregado a tu biblioteca.
           </p>
         ) : (
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">
-              Se encontraron canciones en tu carpeta que aún no figuran en tu biblioteca. Puedes agregarlas o eliminarlas del equipo para ahorrar espacio:
+              Se encontraron canciones en tu carpeta que aún no figuran en tu
+              biblioteca. Puedes agregarlas o eliminarlas del equipo para ahorrar
+              espacio:
             </p>
             {orphanFiles.map((file) => {
               const thumbSrc =
@@ -350,63 +358,68 @@ export const MissingFilesView = React.memo(() => {
                         <span className="truncate font-semibold text-foreground">
                           {file.file_name}
                         </span>
-                        <span className="text-muted-foreground">{formatBytes(file.file_size)}</span>
+                        <span className="text-muted-foreground">
+                          {formatBytes(file.file_size)}
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    disabled={
-                      adoptingId === file.youtube_id ||
-                      deletingOrphanId === file.youtube_id ||
-                      isLoading
-                    }
-                    onClick={() =>
-                      void handleAdoptOrphan(file.youtube_id, file.file_extension)
-                    }
-                  >
-                    {adoptingId === file.youtube_id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <PlusCircle className="h-3.5 w-3.5" />
-                    )}
-                    {adoptingId === file.youtube_id
-                      ? "Agregando..."
-                      : "Agregar a biblioteca"}
-                  </Button>
-                  <ActionMenu
-                    isLoading={deletingOrphanId === file.youtube_id}
-                    title="Opciones de archivo"
-                    items={[
-                      {
-                        label: "Eliminar del equipo",
-                        icon: <Trash2 className="h-3.5 w-3.5" />,
-                        variant: "danger",
-                        onClick: () => {
-                          setConfirmModal({
-                            isOpen: true,
-                            title: "¿Eliminar archivo del equipo?",
-                            description: `El archivo "${file.file_name}" (${formatBytes(file.file_size)}) se eliminará permanentemente de tu equipo.`,
-                            confirmLabel: "Eliminar archivo",
-                            tone: "danger",
-                            onConfirm: async () => {
-                              await handleDeleteOrphan(file.youtube_id, file.file_extension);
-                              setConfirmModal((prev) => ({ ...prev, isOpen: false }));
-                            },
-                          });
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      disabled={
+                        adoptingId === file.youtube_id ||
+                        deletingOrphanId === file.youtube_id ||
+                        isLoading
+                      }
+                      onClick={() =>
+                        void handleAdoptOrphan(file.youtube_id, file.file_extension)
+                      }
+                    >
+                      {adoptingId === file.youtube_id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <PlusCircle className="h-3.5 w-3.5" />
+                      )}
+                      {adoptingId === file.youtube_id
+                        ? "Agregando..."
+                        : "Agregar a biblioteca"}
+                    </Button>
+                    <ActionMenu
+                      isLoading={deletingOrphanId === file.youtube_id}
+                      title="Opciones de archivo"
+                      items={[
+                        {
+                          label: "Eliminar del equipo",
+                          icon: <Trash2 className="h-3.5 w-3.5" />,
+                          variant: "danger",
+                          onClick: () => {
+                            setConfirmModal({
+                              isOpen: true,
+                              title: "¿Eliminar archivo del equipo?",
+                              description: `El archivo "${file.file_name}" (${formatBytes(file.file_size)}) se eliminará permanentemente de tu equipo.`,
+                              confirmLabel: "Eliminar archivo",
+                              tone: "danger",
+                              onConfirm: async () => {
+                                await handleDeleteOrphan(
+                                  file.youtube_id,
+                                  file.file_extension,
+                                );
+                                setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+                              },
+                            });
+                          },
                         },
-                      },
-                    ]}
-                  />
+                      ]}
+                    />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <ConfirmationModal

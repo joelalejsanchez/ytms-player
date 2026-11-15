@@ -29,7 +29,11 @@ export interface TrackRowProps {
   onEnqueue: (track: Track) => void;
   onToggleLike: (youtubeId: string, nextLiked: boolean | null) => void;
   onDelete: (youtubeId: string) => void;
-  onTogglePlaylist: (playlistId: number, trackId: number, willAdd: boolean) => void | Promise<void>;
+  onTogglePlaylist: (
+    playlistId: number,
+    trackId: number,
+    willAdd: boolean,
+  ) => void | Promise<void>;
   onAddToPlaylist?: (playlistId: number, trackId: number) => void;
 }
 
@@ -155,9 +159,7 @@ export const TrackRow = React.memo(
             onClick={() => onToggleLike(track.youtube_id, !track.liked)}
             title={likeButtonTitle}
             className={`transition-colors ${
-              !track.liked && isSynced
-                ? "hover:bg-emerald-500/10"
-                : ""
+              !track.liked && isSynced ? "hover:bg-emerald-500/10" : ""
             }`}
           >
             {isSyncingLike ? (

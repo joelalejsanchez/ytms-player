@@ -1,5 +1,14 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowUpDown, ListMusic, Loader2, Play, RefreshCw, Search, ShieldCheck, Sparkles } from "lucide-react";
+import {
+  ArrowUpDown,
+  ListMusic,
+  Loader2,
+  Play,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
@@ -250,7 +259,8 @@ export const LibraryView = React.memo(() => {
               label: "Actualizar información",
               icon: <Sparkles className="h-4 w-4 text-amber-500" />,
               onClick: () => setIsMetadataModalOpen(true),
-              disabled: tracks.length === 0 || isLoading || isVerifying || isSyncingLikes,
+              disabled:
+                tracks.length === 0 || isLoading || isVerifying || isSyncingLikes,
             },
             {
               label: isVerifying ? "Comprobando..." : "Comprobar archivos",
@@ -270,7 +280,8 @@ export const LibraryView = React.memo(() => {
                 <RefreshCw className="h-4 w-4 text-sky-500" />
               ),
               onClick: () => void handleSyncLikes(),
-              disabled: isLoading || isVerifying || isSyncingLikes || tracks.length === 0,
+              disabled:
+                isLoading || isVerifying || isSyncingLikes || tracks.length === 0,
             },
           ]}
         />

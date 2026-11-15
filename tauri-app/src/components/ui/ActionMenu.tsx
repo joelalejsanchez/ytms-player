@@ -55,10 +55,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = React.memo(
       if (!isOpen) return;
 
       const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-        if (
-          containerRef.current &&
-          !containerRef.current.contains(e.target as Node)
-        ) {
+        if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
           closeMenu();
         }
       };

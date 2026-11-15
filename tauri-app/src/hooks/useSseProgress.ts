@@ -57,7 +57,11 @@ export function useSseProgress(): void {
           const parsedJson: unknown = JSON.parse(String(rawEvent.data));
           const validated = progressEventSchema.safeParse(parsedJson);
           if (!validated.success) {
-            console.warn("SSE event validation warning:", validated.error, rawEvent.data);
+            console.warn(
+              "SSE event validation warning:",
+              validated.error,
+              rawEvent.data,
+            );
             return;
           }
 

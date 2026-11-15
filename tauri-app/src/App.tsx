@@ -59,7 +59,8 @@ export const App: React.FC = () => {
           {!workspace && activeTab !== "workspace" && (
             <div className="mb-4 flex items-center justify-between rounded-xl border border-amber-800/60 bg-amber-950/30 px-4 py-3 text-xs text-amber-200">
               <span>
-                No has seleccionado una carpeta activa. Configura una para guardar tus canciones y listas de reproducción.
+                No has seleccionado una carpeta activa. Configura una para guardar tus
+                canciones y listas de reproducción.
               </span>
               <Button
                 variant="secondary"

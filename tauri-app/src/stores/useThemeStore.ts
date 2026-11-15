@@ -2,14 +2,7 @@ import { create } from "zustand";
 
 export type ThemeMode = "light" | "dark" | "system";
 export type ColorFamily =
-  | "blue"
-  | "teal"
-  | "ember"
-  | "midnight"
-  | "denim"
-  | "pine"
-  | "burgundy"
-  | "amber";
+  "blue" | "teal" | "ember" | "midnight" | "denim" | "pine" | "burgundy" | "amber";
 
 export const ALL_COLOR_FAMILIES: ColorFamily[] = [
   "blue",
@@ -37,7 +30,9 @@ const STORAGE_KEY_COLOR = "ytms_theme_color";
 export function getResolvedMode(mode: ThemeMode): "light" | "dark" {
   if (mode === "system") {
     if (typeof window !== "undefined" && window.matchMedia) {
-      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      return window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
     }
     return "light";
   }
@@ -69,7 +64,8 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     if (typeof window === "undefined") return;
 
     const savedMode = (localStorage.getItem(STORAGE_KEY_MODE) as ThemeMode) || "light";
-    const savedColor = (localStorage.getItem(STORAGE_KEY_COLOR) as ColorFamily) || "blue";
+    const savedColor =
+      (localStorage.getItem(STORAGE_KEY_COLOR) as ColorFamily) || "blue";
 
     const validMode: ThemeMode =
       savedMode === "dark" || savedMode === "system" ? savedMode : "light";

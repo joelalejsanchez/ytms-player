@@ -9,6 +9,8 @@ help: ## Muestra los comandos disponibles en la raíz del monorepo
 	@echo "  make check        - Ejecuta fmt-check + lint + test en todo el monorepo"
 	@echo "  make docker-up    - Levanta el microservicio Go en Docker Compose"
 	@echo "  make docker-down  - Detiene el microservicio Go en Docker Compose"
+	@echo "  make build-bin    - Compila el ejecutable nativo de Linux (target/release/ytms-player)"
+	@echo "  make build-appimage - Genera el instalador portable AppImage para Linux"
 
 fmt:
 	$(MAKE) -C go-microservice fmt
@@ -39,3 +41,10 @@ docker-up:
 
 docker-down:
 	docker compose down
+
+build-bin:
+	cd tauri-app && npm run tauri build -- --no-bundle
+
+build-appimage:
+	cd tauri-app && npm run tauri build -- -b appimage
+

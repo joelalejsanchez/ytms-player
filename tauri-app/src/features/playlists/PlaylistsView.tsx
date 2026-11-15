@@ -324,7 +324,9 @@ export const PlaylistsView = React.memo(() => {
                             <div className="flex items-center gap-2">
                               <p
                                 className={`truncate text-sm font-medium ${
-                                  isCurrent ? "font-semibold text-primary" : "text-foreground"
+                                  isCurrent
+                                    ? "font-semibold text-primary"
+                                    : "text-foreground"
                                 }`}
                               >
                                 {track.title}
@@ -336,51 +338,58 @@ export const PlaylistsView = React.memo(() => {
                           </div>
                         </div>
 
-                      <div className="flex items-center gap-2">
-                        <ActionMenu
-                          isLoading={removingTrackId === track.id}
-                          title="Opciones de la pista"
-                          items={[
-                            {
-                              label: "Copiar enlace",
-                              icon: <Link className="h-3.5 w-3.5" />,
-                              onClick: async () => {
-                                try {
-                                  await navigator.clipboard.writeText(
-                                    `https://www.youtube.com/watch?v=${track.youtube_id}`,
-                                  );
-                                } catch (err) {
-                                  console.error("No se pudo copiar el enlace al portapapeles:", err);
-                                }
-                              },
-                            },
-                            {
-                              label: "Quitar de la playlist",
-                              icon: <Trash2 className="h-3.5 w-3.5" />,
-                              variant: "danger",
-                              onClick: () => {
-                                setConfirmModal({
-                                  isOpen: true,
-                                  title: "¿Estás seguro de quitar esta canción?",
-                                  description: `Se desvinculará "${track.title}" de la playlist "${activePlaylist.playlist.title}". Seguirá disponible en tu biblioteca.`,
-                                  confirmLabel: "Sí, quitar de playlist",
-                                  tone: "warning",
-                                  onConfirm: async () => {
-                                    await handleRemoveTrack(
-                                      activePlaylist.playlist.id,
-                                      track.id,
+                        <div className="flex items-center gap-2">
+                          <ActionMenu
+                            isLoading={removingTrackId === track.id}
+                            title="Opciones de la pista"
+                            items={[
+                              {
+                                label: "Copiar enlace",
+                                icon: <Link className="h-3.5 w-3.5" />,
+                                onClick: async () => {
+                                  try {
+                                    await navigator.clipboard.writeText(
+                                      `https://www.youtube.com/watch?v=${track.youtube_id}`,
                                     );
-                                    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
-                                  },
-                                });
+                                  } catch (err) {
+                                    console.error(
+                                      "No se pudo copiar el enlace al portapapeles:",
+                                      err,
+                                    );
+                                  }
+                                },
                               },
-                            },
-                          ]}
-                        />
+                              {
+                                label: "Quitar de la playlist",
+                                icon: <Trash2 className="h-3.5 w-3.5" />,
+                                variant: "danger",
+                                onClick: () => {
+                                  setConfirmModal({
+                                    isOpen: true,
+                                    title: "¿Estás seguro de quitar esta canción?",
+                                    description: `Se desvinculará "${track.title}" de la playlist "${activePlaylist.playlist.title}". Seguirá disponible en tu biblioteca.`,
+                                    confirmLabel: "Sí, quitar de playlist",
+                                    tone: "warning",
+                                    onConfirm: async () => {
+                                      await handleRemoveTrack(
+                                        activePlaylist.playlist.id,
+                                        track.id,
+                                      );
+                                      setConfirmModal((prev) => ({
+                                        ...prev,
+                                        isOpen: false,
+                                      }));
+                                    },
+                                  });
+                                },
+                              },
+                            ]}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  );
-                }))}
+                    );
+                  })
+                )}
               </div>
             </>
           )}

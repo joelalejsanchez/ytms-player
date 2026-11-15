@@ -14,7 +14,8 @@ export const Button = React.memo(
           "bg-primary text-primary-foreground hover:opacity-90 active:opacity-100 shadow-sm",
         secondary:
           "bg-secondary text-secondary-foreground hover:opacity-90 border border-border shadow-xs",
-        ghost: "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
+        ghost:
+          "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
         danger:
           "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm border border-red-700",
         outline:
@@ -72,8 +73,7 @@ export const Badge = React.memo(
       info: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30",
       success:
         "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
-      warning:
-        "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+      warning: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
       danger: "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30",
       primary: "bg-primary/15 text-primary border-primary/30",
     };

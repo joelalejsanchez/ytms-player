@@ -176,7 +176,11 @@ export const PersistentPlayer = React.memo(() => {
           src = toAssetUrl(currentTrack.audio_path);
         }
 
-        if (isCancelled || !audioRef.current || currentTrackIdRef.current !== currentTrack.youtube_id) {
+        if (
+          isCancelled ||
+          !audioRef.current ||
+          currentTrackIdRef.current !== currentTrack.youtube_id
+        ) {
           return;
         }
 
@@ -210,6 +214,7 @@ export const PersistentPlayer = React.memo(() => {
       isCancelled = true;
       cancelFade();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     currentTrack?.youtube_id,
     currentTrack?.audio_path,
@@ -509,7 +514,9 @@ export const PersistentPlayer = React.memo(() => {
                 {/* Relleno hasta el punto actual */}
                 <div
                   className={`h-full transition-none ${
-                    isLoadingTrack ? "bg-muted-foreground/40 animate-pulse" : "bg-primary"
+                    isLoadingTrack
+                      ? "bg-muted-foreground/40 animate-pulse"
+                      : "bg-primary"
                   }`}
                   style={{ width: `${progressPercent}%` }}
                 />

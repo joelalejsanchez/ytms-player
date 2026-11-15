@@ -4,11 +4,11 @@ import {
   Library,
   ListMusic,
   Moon,
-  Radio,
   Settings,
   Sun,
 } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
+import { AppLogo } from "@/components/AppLogo";
 import { CustomSelect, type SelectOption } from "@/components/ui/CustomSelect";
 import { Badge } from "@/components/ui/Primitives";
 import { cn } from "@/lib/utils";
@@ -193,7 +193,7 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
           title={isCollapsed ? "Expandir barra lateral" : "Contraer barra lateral"}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary bg-primary/15 text-primary shadow-xs transition hover:bg-primary/25 cursor-pointer"
         >
-          <Radio className="h-5 w-5" />
+          <AppLogo className="h-5 w-5" />
         </button>
 
         {!isCollapsed && (

@@ -420,10 +420,12 @@ export const WorkspaceSettingsView = React.memo(() => {
   const isHealthy = health?.status === "healthy";
   const ytDlpDep = health?.dependencies?.["yt-dlp"] ?? health?.dependencies?.["ytDlp"];
   const isYtDlpReady =
-    isHealthy && Boolean(ytDlpDep && ytDlpDep !== "missing" && ytDlpDep !== "unavailable");
+    isHealthy &&
+    Boolean(ytDlpDep && ytDlpDep !== "missing" && ytDlpDep !== "unavailable");
   const ffmpegDep = health?.dependencies?.["ffmpeg"];
   const isFfmpegReady =
-    isHealthy && Boolean(ffmpegDep && ffmpegDep !== "missing" && ffmpegDep !== "unavailable");
+    isHealthy &&
+    Boolean(ffmpegDep && ffmpegDep !== "missing" && ffmpegDep !== "unavailable");
 
   return (
     <section className="flex h-full flex-col gap-6 overflow-y-auto pr-1 pb-8">
@@ -594,14 +596,13 @@ export const WorkspaceSettingsView = React.memo(() => {
                 Cuenta de YouTube
               </h3>
               <p className="text-xs text-muted-foreground">
-                Conecta tu cuenta para sincronizar canciones favoritas y acceder a contenido con restricción
+                Conecta tu cuenta para sincronizar canciones favoritas y acceder a
+                contenido con restricción
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {oauthStatus?.mock_mode && (
-              <Badge tone="warning">Modo Prueba</Badge>
-            )}
+            {oauthStatus?.mock_mode && <Badge tone="warning">Modo Prueba</Badge>}
             <Badge tone={oauthStatus?.authenticated ? "success" : "default"}>
               {oauthStatus?.authenticated ? "Conectado" : "No conectado"}
             </Badge>
@@ -615,7 +616,8 @@ export const WorkspaceSettingsView = React.memo(() => {
               Sincronización con YouTube
             </h4>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Sincroniza tus canciones con Me gusta directamente con tu cuenta de YouTube.
+              Sincroniza tus canciones con Me gusta directamente con tu cuenta de
+              YouTube.
             </p>
           </div>
 
@@ -673,7 +675,8 @@ export const WorkspaceSettingsView = React.memo(() => {
                 Archivo de cookies
               </h4>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Permite descargar canciones con restricción de edad o contenido exclusivo de tu cuenta
+                Permite descargar canciones con restricción de edad o contenido
+                exclusivo de tu cuenta
               </p>
             </div>
             <Badge tone={appSettings?.cookies_file_path ? "success" : "default"}>
@@ -691,7 +694,8 @@ export const WorkspaceSettingsView = React.memo(() => {
               aria-label="Ruta de archivo cookies"
               className={cn(
                 "flex-1 w-full font-mono text-xs",
-                !isEditingCookies && "bg-muted/40 cursor-not-allowed opacity-80 text-foreground",
+                !isEditingCookies &&
+                  "bg-muted/40 cursor-not-allowed opacity-80 text-foreground",
               )}
             />
 
@@ -756,11 +760,10 @@ export const WorkspaceSettingsView = React.memo(() => {
           <div className="flex items-center gap-2.5">
             <HardDrive className="h-5 w-5 text-primary" />
             <div>
-              <h3 className="text-base font-semibold text-foreground">
-                Workspaces
-              </h3>
+              <h3 className="text-base font-semibold text-foreground">Workspaces</h3>
               <p className="text-xs text-muted-foreground">
-                Carpetas donde se guardan tus canciones descargadas y listas de reproducción
+                Carpetas donde se guardan tus canciones descargadas y listas de
+                reproducción
               </p>
             </div>
           </div>
@@ -790,7 +793,8 @@ export const WorkspaceSettingsView = React.memo(() => {
                 Aún no tienes ninguna carpeta agregada.
               </p>
               <p className="mt-1">
-                Pulsa en <strong>"Agregar carpeta"</strong> para seleccionar dónde guardar tu música.
+                Pulsa en <strong>"Agregar carpeta"</strong> para seleccionar dónde
+                guardar tu música.
               </p>
             </div>
           ) : (
@@ -820,7 +824,9 @@ export const WorkspaceSettingsView = React.memo(() => {
                   <div className="flex min-w-0 items-center gap-3.5 flex-1">
                     <RadioButton
                       checked={isCurrent}
-                      disabled={!saved.is_available || switchingWorkspace === saved.path}
+                      disabled={
+                        !saved.is_available || switchingWorkspace === saved.path
+                      }
                       onChange={() => {
                         if (!isCurrent && saved.is_available) {
                           void handleSwitchWorkspace(saved.path);
@@ -904,7 +910,9 @@ export const WorkspaceSettingsView = React.memo(() => {
             onClick={() => void handleCheckHealth()}
             title="Comprobar estado del servicio"
           >
-            <RefreshCw className={cn("h-4 w-4", isCheckingHealth && "animate-spin text-primary")} />
+            <RefreshCw
+              className={cn("h-4 w-4", isCheckingHealth && "animate-spin text-primary")}
+            />
             <span>Comprobar</span>
           </Button>
         </div>
@@ -924,7 +932,8 @@ export const WorkspaceSettingsView = React.memo(() => {
               aria-label="URL del servicio de descargas"
               className={cn(
                 "flex-1 w-full font-mono text-xs",
-                !isEditingUrl && "bg-muted/40 cursor-not-allowed opacity-80 text-foreground",
+                !isEditingUrl &&
+                  "bg-muted/40 cursor-not-allowed opacity-80 text-foreground",
               )}
             />
 

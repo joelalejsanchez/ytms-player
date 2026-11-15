@@ -7,7 +7,11 @@ export interface PlaylistBookmarkMenuProps {
   trackId: number;
   playlists: Playlist[];
   assignedPlaylistIds?: number[];
-  onTogglePlaylist: (playlistId: number, trackId: number, willAdd: boolean) => void | Promise<void>;
+  onTogglePlaylist: (
+    playlistId: number,
+    trackId: number,
+    willAdd: boolean,
+  ) => void | Promise<void>;
   className?: string;
   triggerClassName?: string;
 }
@@ -38,10 +42,7 @@ export const PlaylistBookmarkMenu = React.memo(
       if (!isOpen) return;
 
       const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-        if (
-          containerRef.current &&
-          !containerRef.current.contains(e.target as Node)
-        ) {
+        if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
           closeMenu();
         }
       };
@@ -135,7 +136,8 @@ export const PlaylistBookmarkMenu = React.memo(
                       }}
                       className={cn(
                         "flex w-full items-center justify-between gap-2.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground text-left",
-                        isAssigned && "bg-primary/10 text-primary font-semibold hover:bg-primary/15",
+                        isAssigned &&
+                          "bg-primary/10 text-primary font-semibold hover:bg-primary/15",
                       )}
                     >
                       <div className="flex min-w-0 items-center gap-2">
