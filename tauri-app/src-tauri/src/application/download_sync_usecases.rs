@@ -130,10 +130,10 @@ pub fn persist_single_downloaded_item(
         );
     }
 
-    if !skip_playlist {
-        if let Some(target_id) = target_playlist_id {
-            let _ = playlist_repo.add_track_to_playlist(target_id, saved_track.id);
-        } else if let Some(yt_playlist_id) = &item.metadata.playlist_id {
+    if let Some(target_id) = target_playlist_id {
+        let _ = playlist_repo.add_track_to_playlist(target_id, saved_track.id);
+    } else if !skip_playlist {
+        if let Some(yt_playlist_id) = &item.metadata.playlist_id {
             if !yt_playlist_id.trim().is_empty() {
                 let title = item
                     .metadata
@@ -159,10 +159,10 @@ fn persist_downloaded_items(
     track_repo: &dyn TrackRepository,
     playlist_repo: &dyn PlaylistRepository,
 ) -> DomainResult<Vec<Track>> {
-    let maybe_playlist = if skip_playlist {
-        None
-    } else if let Some(target_id) = target_playlist_id {
+    let maybe_playlist = if let Some(target_id) = target_playlist_id {
         Some(target_id)
+    } else if skip_playlist {
+        None
     } else if let Some(pl_id) = &response.playlist_id {
         if pl_id.trim().is_empty() {
             None

@@ -169,7 +169,7 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
           force_overwrite: forceOverwrite,
           async_mode: true,
           target_playlist_id: targetId,
-          skip_playlist: true,
+          skip_playlist: targetId === null,
         });
       }
 

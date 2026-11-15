@@ -107,12 +107,14 @@ export function useSseProgress(): void {
                 void useLibraryStore.getState().refreshDownloadHistory();
                 void useLibraryStore.getState().refreshTracks();
                 void useLibraryStore.getState().refreshMissingTracks();
+                void useLibraryStore.getState().refreshPlaylists();
               })
               .catch((err) => {
                 console.error("confirmSseDownload error:", err);
                 void refreshTracks();
                 void useLibraryStore.getState().refreshDownloadHistory();
                 void useLibraryStore.getState().refreshMissingTracks();
+                void useLibraryStore.getState().refreshPlaylists();
               });
           } else if (ev.status === "failed") {
             void useLibraryStore.getState().refreshDownloadHistory();
