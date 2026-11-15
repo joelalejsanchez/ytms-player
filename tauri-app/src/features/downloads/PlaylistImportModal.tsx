@@ -139,9 +139,17 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
         });
       }
 
+      const finalUrl =
+        destination !== "library_only" &&
+        (previewData.target_id.startsWith("PL") ||
+          previewData.target_id.startsWith("OLAK") ||
+          previewData.target_id.startsWith("RD"))
+          ? `https://www.youtube.com/playlist?list=${previewData.target_id}`
+          : url.trim();
+
       // Iniciar descarga asíncrona de los archivos de audio
       await startDownloadTask({
-        url: url.trim(),
+        url: finalUrl,
         audio_format: audioFormat,
         force_overwrite: forceOverwrite,
         async_mode: true,

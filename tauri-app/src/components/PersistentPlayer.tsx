@@ -131,104 +131,28 @@ export const PersistentPlayer = React.memo(() => {
       return;
     }
 
-    const loadAndPlayTrack = async () => {
-      // 1. Si estaba sonando, atenuar brevemente (60ms) para evitar chasquido acústico
-      if (!audio.paused && audio.currentTime > 0 && audio.volume > 0) {
-        const startVol = audio.volume;
-        const fadeOutDuration = 60;
-        const startTime = performance.now();
-        await new Promise<void>((resolve) => {
-          const stepOut = (now: number) => {
-            if (isCancelled) {
-              resolve();
-              return;
-            }
-            const progress = Math.min(1, (now - startTime) / fadeOutDuration);
-            audio.volume = Math.max(0, startVol * (1 - progress));
-            if (progress < 1) {
-              requestAnimationFrame(stepOut);
-            } else {
-              resolve();
-            }
-          };
-          requestAnimationFrame(stepOut);
-        });
-      }
-
-      if (isCancelled) return;
-
-      // 2. Resolver fuente de audio (caché en RAM o carga asíncrona)
-      let src = audioDataUrlCache.current.get(currentTrack.audio_path);
-      if (!src) {
-        try {
-          const dataUrl = await tauriApi.readAudioDataUrl(currentTrack.audio_path);
-          if (dataUrl) {
-            src = dataUrl;
-            if (audioDataUrlCache.current.size >= 15) {
-              const oldestKey = audioDataUrlCache.current.keys().next().value;
-              if (oldestKey) {
-                audioDataUrlCache.current.delete(oldestKey);
-              }
-            }
-            audioDataUrlCache.current.set(currentTrack.audio_path, dataUrl);
-          }
-        } catch {
-          // Fallback a toAssetUrl
-        }
-      }
-      if (!src) {
-        src = toAssetUrl(currentTrack.audio_path);
-      }
-
+    const loadAndPlayTrack = () => {
       if (isCancelled || !audioRef.current) return;
+
+      const src = toAssetUrl(currentTrack.audio_path);
+      if (!src) return;
 
       audio.src = src;
       audio.currentTime = 0;
-      audio.load();
 
-      const currentTgt = getTargetVolume();
+      const tgtVol = getTargetVolume();
+      audio.volume = tgtVol;
+      audio.muted = isMutedRef.current;
 
       if (usePlayerStore.getState().isPlaying) {
-        audio.volume = 0;
-        audio.muted = isMutedRef.current;
-
-        try {
-          await audio.play();
-        } catch {
+        audio.play().catch(() => {
           if (!isCancelled) setPlaying(false);
-          audio.volume = currentTgt;
-          return;
-        }
-
-        if (isCancelled) return;
-
-        // 3. Fade-in suave de entrada (90ms) hasta el volumen objetivo real
-        const fadeInDuration = 90;
-        const fadeInStart = performance.now();
-        const stepIn = (now: number) => {
-          if (isCancelled) return;
-          const progress = Math.min(1, (now - fadeInStart) / fadeInDuration);
-          const tgt = getTargetVolume();
-          audio.volume = Math.max(0, Math.min(1, tgt * progress));
-          if (progress < 1) {
-            fadeAnimationRef.current = requestAnimationFrame(stepIn);
-          } else {
-            fadeAnimationRef.current = null;
-            // Garantizar firmemente el volumen objetivo sin quedarse silenciado
-            audio.volume = tgt;
-            audio.muted = isMutedRef.current;
-            preloadNextTrack();
-          }
-        };
-        fadeAnimationRef.current = requestAnimationFrame(stepIn);
-      } else {
-        audio.volume = currentTgt;
-        audio.muted = isMutedRef.current;
-        preloadNextTrack();
+        });
       }
+      preloadNextTrack();
     };
 
-    void loadAndPlayTrack();
+    loadAndPlayTrack();
 
     return () => {
       isCancelled = true;

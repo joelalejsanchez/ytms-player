@@ -4,6 +4,7 @@ import {
   DownloadCloud,
   FileAudio,
   Loader2,
+  Music2,
   PlusCircle,
   RefreshCw,
   Trash2,
@@ -11,8 +12,33 @@ import {
 import React, { useCallback, useState } from "react";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Badge, Button } from "@/components/ui/Primitives";
-import { formatBytes } from "@/lib/utils";
+import { formatBytes, toAssetUrl } from "@/lib/utils";
 import { useLibraryStore } from "@/stores/useLibraryStore";
+
+const RecoveryThumbnail = React.memo(
+  ({ src, alt }: { src?: string | null; alt: string }) => {
+    const [failed, setFailed] = useState(false);
+
+    if (!src || failed) {
+      return (
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-500 ring-1 ring-slate-700/50">
+          <Music2 className="h-5 w-5" />
+        </div>
+      );
+    }
+
+    return (
+      <img
+        src={src}
+        alt={alt}
+        onError={() => setFailed(true)}
+        loading="lazy"
+        className="h-11 w-11 shrink-0 rounded-lg object-cover ring-1 ring-slate-700/50"
+      />
+    );
+  },
+);
+RecoveryThumbnail.displayName = "RecoveryThumbnail";
 
 /**
  * Panel dedicado de recuperación de archivos extraviados (`is_missing = 1`, SDD 3.5)
@@ -190,23 +216,32 @@ export const MissingFilesView = React.memo(() => {
         ) : (
           missingTracks.map((track) => {
             const isRecoveringThis = recoveringId === track.youtube_id;
+            const thumbSrc =
+              toAssetUrl(track.thumbnail_path) ||
+              (track.youtube_id
+                ? `https://i.ytimg.com/vi/${track.youtube_id}/mqdefault.jpg`
+                : null);
+
             return (
               <div
                 key={track.youtube_id}
-                className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-amber-800/50 bg-amber-950/15 p-4"
+                className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-amber-800/50 bg-amber-950/15 p-3.5"
               >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-amber-400" />
-                    <span className="truncate text-sm font-semibold text-slate-100">
-                      {track.title}
-                    </span>
-                    <Badge tone="warning">is_missing = 1</Badge>
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <RecoveryThumbnail src={thumbSrc} alt={track.title} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+                      <span className="truncate text-sm font-semibold text-slate-100">
+                        {track.title}
+                      </span>
+                      <Badge tone="warning">is_missing = 1</Badge>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Artista: {track.artist} · Ruta esperada:{" "}
+                      <code className="text-amber-300">{track.audio_path}</code>
+                    </p>
                   </div>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Artista: {track.artist} · Ruta esperada:{" "}
-                    <code className="text-amber-300">{track.audio_path}</code>
-                  </p>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -301,19 +336,37 @@ export const MissingFilesView = React.memo(() => {
               biblioteca (por ejemplo descargas previas de Mixes). Puedes adoptarlos
               directamente o borrarlos para liberar espacio:
             </p>
-            {orphanFiles.map((file) => (
-              <div
-                key={file.full_path}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950/70 p-3 text-xs"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-slate-200">{file.file_name}</span>
-                    <Badge tone="default">.{file.file_extension}</Badge>
-                    <span className="text-slate-500">{formatBytes(file.file_size)}</span>
+            {orphanFiles.map((file) => {
+              const thumbSrc =
+                toAssetUrl(
+                  file.full_path
+                    .replace("/tracks/", "/thumbnails/")
+                    .replace(/\.[^.]+$/, ".jpg"),
+                ) ||
+                (file.youtube_id
+                  ? `https://i.ytimg.com/vi/${file.youtube_id}/mqdefault.jpg`
+                  : null);
+
+              return (
+                <div
+                  key={file.full_path}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950/70 p-3 text-xs"
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <RecoveryThumbnail src={thumbSrc} alt={file.file_name} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate font-semibold text-slate-200">
+                          {file.file_name}
+                        </span>
+                        <Badge tone="default">.{file.file_extension}</Badge>
+                        <span className="text-slate-500">{formatBytes(file.file_size)}</span>
+                      </div>
+                      <span className="font-mono text-[11px] text-slate-500">
+                        {file.youtube_id}
+                      </span>
+                    </div>
                   </div>
-                  <span className="font-mono text-[11px] text-slate-500">{file.youtube_id}</span>
-                </div>
 
                 <div className="flex items-center gap-2">
                   <Button
@@ -370,9 +423,10 @@ export const MissingFilesView = React.memo(() => {
                   </Button>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </div>
+      )}
       </div>
 
       <ConfirmationModal

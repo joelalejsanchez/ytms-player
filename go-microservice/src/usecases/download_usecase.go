@@ -290,6 +290,21 @@ func (uc *DownloadUseCase) executeDownload(ctx context.Context, taskID string, r
 		playlistID = targetID
 	}
 
+	if contentType == domain.ContentPlaylist {
+		uc.publishEvent(domain.ProgressEvent{
+			TaskID:    taskID,
+			YouTubeID: targetID,
+			Status:    overallStatus,
+			Progress:  100,
+			Metadata: &domain.TrackMetadata{
+				YouTubeID:     targetID,
+				Title:         playlistTitle,
+				PlaylistID:    playlistID,
+				PlaylistTitle: playlistTitle,
+			},
+		})
+	}
+
 	return domain.DownloadResponse{
 		TaskID:        taskID,
 		Status:        overallStatus,

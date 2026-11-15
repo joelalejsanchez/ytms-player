@@ -26,7 +26,9 @@ export interface DownloadStoreState {
     input: DownloadCommandInput,
   ) => Promise<MicroserviceDownloadResponse>;
   removeTask: (taskKey: string) => void;
+  removePlaylistGroup: (groupKeyOrPlaylistId: string) => void;
   clearCompletedTasks: () => void;
+  clearAllTasks: () => void;
   clearError: () => void;
 }
 
@@ -200,6 +202,25 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
     });
   },
 
+  removePlaylistGroup: (groupKeyOrPlaylistId) => {
+    set((state) => {
+      const next: Record<string, DownloadProgressEvent> = {};
+      for (const [key, task] of Object.entries(state.tasks)) {
+        const plId = task.metadata?.playlist_id;
+        const plTitle = task.metadata?.playlist_title;
+        const matchesGroup =
+          plId === groupKeyOrPlaylistId ||
+          plTitle === groupKeyOrPlaylistId ||
+          task.youtube_id === groupKeyOrPlaylistId ||
+          task.task_id === groupKeyOrPlaylistId;
+        if (!matchesGroup) {
+          next[key] = task;
+        }
+      }
+      return { tasks: next };
+    });
+  },
+
   clearCompletedTasks: () => {
     set((state) => {
       const next: Record<string, DownloadProgressEvent> = {};
@@ -211,6 +232,8 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
       return { tasks: next };
     });
   },
+
+  clearAllTasks: () => set({ tasks: {} }),
 
   clearError: () => set({ lastError: null }),
 }));

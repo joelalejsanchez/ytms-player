@@ -4,8 +4,10 @@ import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Badge, Button, Input } from "@/components/ui/Primitives";
 import { formatDuration, toAssetUrl } from "@/lib/utils";
 import { playlistFormSchema } from "@/schemas/validation";
+import { tauriApi } from "@/services/tauriIpc";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
+import type { Track } from "@/types/models";
 
 export const PlaylistsView = React.memo(() => {
   const [title, setTitle] = useState("");
@@ -37,6 +39,8 @@ export const PlaylistsView = React.memo(() => {
   const removeTrackFromPlaylist = useLibraryStore((s) => s.removeTrackFromPlaylist);
   const deletePlaylist = useLibraryStore((s) => s.deletePlaylist);
 
+  const currentTrack = usePlayerStore((s) => s.currentTrack);
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
   const playTrack = usePlayerStore((s) => s.playTrack);
 
   const handleCreate = useCallback(
@@ -108,6 +112,27 @@ export const PlaylistsView = React.memo(() => {
     }
   }, [activePlaylist, playTrack]);
 
+  const handlePlayPlaylistById = useCallback(
+    async (playlistId: number) => {
+      let tracksToPlay: Track[] = [];
+      if (activePlaylist?.playlist.id === playlistId) {
+        tracksToPlay = activePlaylist.tracks;
+      } else {
+        try {
+          const details = await tauriApi.getPlaylistDetails(playlistId);
+          tracksToPlay = details.tracks;
+        } catch {
+          return;
+        }
+      }
+      const firstPlayable = tracksToPlay.find((t) => !t.is_missing);
+      if (firstPlayable) {
+        playTrack(firstPlayable, tracksToPlay);
+      }
+    },
+    [activePlaylist, playTrack],
+  );
+
   return (
     <section className="flex h-full flex-col gap-5">
       <header>
@@ -167,6 +192,19 @@ export const PlaylistsView = React.memo(() => {
                       : "border-slate-800 bg-slate-900/60 hover:border-slate-700"
                   }`}
                 >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handlePlayPlaylistById(pl.id);
+                    }}
+                    title={`Reproducir playlist ${pl.title}`}
+                    className="mr-2 shrink-0 text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                  >
+                    <Play className="h-4 w-4 fill-current" />
+                  </Button>
+
                   <button
                     type="button"
                     onClick={() => void selectPlaylist(pl.id)}
@@ -257,13 +295,20 @@ export const PlaylistsView = React.memo(() => {
                 ) : (
                   activePlaylist.tracks.map((track) => {
                     const thumbUrl = toAssetUrl(track.thumbnail_path);
+                    const isCurrent = track.youtube_id === currentTrack?.youtube_id;
                     return (
                       <div
                         key={track.youtube_id}
-                        className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2"
+                        className={`group flex items-center justify-between gap-3 rounded-xl border px-3 py-2 transition-colors ${
+                          track.is_missing
+                            ? "border-amber-800 bg-amber-950/20"
+                            : isCurrent
+                              ? "border-red-500/50 bg-red-950/20"
+                              : "border-slate-800 bg-slate-900/70 hover:border-slate-700 hover:bg-slate-800/50"
+                        }`}
                       >
                         <div className="flex min-w-0 flex-1 items-center gap-3">
-                          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-slate-800">
+                          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-800 transform-gpu">
                             {thumbUrl ? (
                               <img
                                 src={thumbUrl}
@@ -276,12 +321,33 @@ export const PlaylistsView = React.memo(() => {
                                 <Music className="h-4 w-4" />
                               </div>
                             )}
+                            {!track.is_missing && (
+                              <button
+                                type="button"
+                                onClick={() => playTrack(track, activePlaylist.tracks)}
+                                aria-label={`Reproducir ${track.title}`}
+                                className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity duration-150 transform-gpu will-change-opacity group-hover:opacity-100"
+                              >
+                                <Play className="h-4 w-4 fill-white text-white" />
+                              </button>
+                            )}
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-slate-100">
-                              {track.title}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p
+                                className={`truncate text-sm font-medium ${
+                                  isCurrent ? "font-semibold text-red-400" : "text-slate-100"
+                                }`}
+                              >
+                                {track.title}
+                              </p>
+                              {isCurrent && isPlaying && (
+                                <Badge tone="info" className="text-[10px]">
+                                  Reproduciendo
+                                </Badge>
+                              )}
+                            </div>
                             <p className="truncate text-xs text-slate-400">
                               {track.artist} · {formatDuration(track.duration)}
                             </p>
@@ -290,14 +356,6 @@ export const PlaylistsView = React.memo(() => {
 
                       <div className="flex items-center gap-2">
                         <Badge tone="default">{track.file_extension}</Badge>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          disabled={track.is_missing}
-                          onClick={() => playTrack(track, activePlaylist.tracks)}
-                        >
-                          <Play className="h-4 w-4" />
-                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"

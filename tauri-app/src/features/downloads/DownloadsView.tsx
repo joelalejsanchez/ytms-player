@@ -116,6 +116,9 @@ export const DownloadsView = React.memo(() => {
   const lastError = useDownloadStore((s) => s.lastError);
   const startDownloadTask = useDownloadStore((s) => s.startDownloadTask);
   const removeTask = useDownloadStore((s) => s.removeTask);
+  const removePlaylistGroup = useDownloadStore((s) => s.removePlaylistGroup);
+  const clearCompletedTasks = useDownloadStore((s) => s.clearCompletedTasks);
+  const clearAllTasks = useDownloadStore((s) => s.clearAllTasks);
 
   // Sincronizar formato con preferencia persistente
   useEffect(() => {
@@ -165,6 +168,23 @@ export const DownloadsView = React.memo(() => {
     );
   }, []);
 
+  const isPlaylistContainer = useCallback(
+    (id: string, metadata?: DownloadProgressEvent["metadata"]) => {
+      return (
+        id.length > 11 ||
+        id.startsWith("PL") ||
+        id.startsWith("RD") ||
+        id.startsWith("UL") ||
+        id.startsWith("OLAK") ||
+        id.startsWith("TL") ||
+        id.startsWith("CL") ||
+        id.startsWith("FL") ||
+        Boolean(metadata?.playlist_id && metadata.playlist_id === id)
+      );
+    },
+    [],
+  );
+
   const { activePlaylistGroups, activeIndividualTasks } = useMemo(() => {
     const plMap: Record<
       string,
@@ -177,11 +197,7 @@ export const DownloadsView = React.memo(() => {
 
     for (const [key, task] of taskEntries) {
       // Ignorar tarea padre cruda de playlist si sus hijos ya están presentes
-      if (
-        task.youtube_id.startsWith("PL") ||
-        task.youtube_id.startsWith("RD") ||
-        task.youtube_id.startsWith("UL")
-      ) {
+      if (isPlaylistContainer(task.youtube_id, task.metadata)) {
         continue;
       }
 
@@ -226,16 +242,23 @@ export const DownloadsView = React.memo(() => {
       }
     }
 
-    // Mantener los grupos de playlist que tengan al menos una tarea activa
-    const activeGroups = Object.entries(plMap).filter(([_, group]) =>
-      group.tasks.some(({ task }) => isTaskActive(task)),
-    );
+    // Mantener los grupos de playlist que tengan al menos una tarea activa y no hayan completado al 100%
+    const activeGroups = Object.entries(plMap).filter(([_, group]) => {
+      const completedCount = group.tasks.filter(
+        (t) => t.task.status === "completed" || t.task.status === "skipped",
+      ).length;
+      const totalCount = group.tasks.length;
+      if (totalCount > 0 && completedCount === totalCount) {
+        return false;
+      }
+      return group.tasks.some(({ task }) => isTaskActive(task));
+    });
 
     return {
       activePlaylistGroups: activeGroups,
       activeIndividualTasks: singles,
     };
-  }, [taskEntries, isTaskActive]);
+  }, [taskEntries, isTaskActive, isPlaylistContainer]);
 
   const hasActiveDownloads =
     activePlaylistGroups.length > 0 || activeIndividualTasks.length > 0;
@@ -483,6 +506,26 @@ export const DownloadsView = React.memo(() => {
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Descargas en curso ({totalActiveTasksCount})
               </h3>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => clearCompletedTasks()}
+                  className="text-[11px] text-slate-400 transition hover:text-slate-200"
+                  title="Limpiar descargas finalizadas"
+                >
+                  Limpiar finalizadas
+                </button>
+                <span className="text-slate-600">·</span>
+                <button
+                  type="button"
+                  onClick={() => clearAllTasks()}
+                  className="text-[11px] text-slate-400 transition hover:text-rose-400"
+                  title="Eliminar todas las tareas de descargas"
+                >
+                  Eliminar lista
+                </button>
+              </div>
             </div>
 
             {/* Playlists agrupadas en tarjetas desplegables (Collapsible) */}
@@ -512,10 +555,22 @@ export const DownloadsView = React.memo(() => {
                       </Badge>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5">
                       <span className="font-mono text-xs text-slate-400">
                         {overallProgress.toFixed(0)}%
                       </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removePlaylistGroup(groupKey);
+                        }}
+                        className="rounded p-1 text-slate-400 transition hover:bg-slate-800 hover:text-rose-400"
+                        title="Eliminar esta lista de descargas"
+                        aria-label="Eliminar lista de descargas"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                       <button
                         type="button"
                         className="rounded p-1 text-slate-400 hover:text-white"
