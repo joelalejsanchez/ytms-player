@@ -57,15 +57,15 @@ export const TrackRow = React.memo(
       <div
         className={`group flex h-[60px] max-h-[60px] box-border select-none items-center justify-between gap-4 rounded-xl border px-4 py-2 transition-colors ${
           track.is_missing
-            ? "border-amber-800 bg-amber-950/20"
+            ? "border-amber-500/50 bg-amber-500/10"
             : isCurrent
-              ? "border-red-500/50 bg-red-950/20"
-              : "border-slate-800 bg-slate-900/50 hover:border-slate-700 hover:bg-slate-800/50"
+              ? "border-primary/50 bg-primary/10"
+              : "border-border bg-card/60 hover:border-primary/30 hover:bg-muted/60"
         }`}
       >
         {/* Miniatura + Título + Artista */}
         <div className="flex min-w-0 flex-1 items-center gap-3.5">
-          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-slate-800 transform-gpu">
+          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-muted transform-gpu">
             {thumbUrl ? (
               <img
                 src={thumbUrl}
@@ -74,7 +74,7 @@ export const TrackRow = React.memo(
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-slate-500">
+              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                 <Music className="h-4 w-4" />
               </div>
             )}
@@ -94,7 +94,7 @@ export const TrackRow = React.memo(
             <div className="flex items-center gap-2">
               <p
                 className={`truncate text-sm font-medium ${
-                  isCurrent ? "text-red-400" : "text-slate-100"
+                  isCurrent ? "text-primary" : "text-foreground"
                 }`}
               >
                 {track.title}
@@ -111,10 +111,10 @@ export const TrackRow = React.memo(
                 </Badge>
               )}
             </div>
-            <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-400">
+            <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
               <span className="truncate">{track.artist}</span>
               <span>·</span>
-              <code className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-300">
+              <code className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
                 {track.youtube_id}
               </code>
             </div>
@@ -122,7 +122,7 @@ export const TrackRow = React.memo(
         </div>
 
         {/* Metadatos técnicos + Indicador de sincronización con YouTube */}
-        <div className="hidden items-center gap-4 text-xs text-slate-400 md:flex">
+        <div className="hidden items-center gap-4 text-xs text-muted-foreground md:flex">
           <Badge tone="default" className="uppercase">
             {track.file_extension}
           </Badge>
@@ -137,21 +137,21 @@ export const TrackRow = React.memo(
           <div className="flex items-center justify-center w-5">
             {isSyncingLike ? (
               <span title="Sincronizando like con tu cuenta de YouTube...">
-                <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
+                <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
               </span>
             ) : isSyncError ? (
               <span
                 title={`Error al sincronizar con YouTube: ${syncStatus?.error ?? "Fallo desconocido"}`}
               >
-                <AlertCircle className="h-4 w-4 text-rose-500" />
+                <AlertCircle className="h-4 w-4 text-destructive" />
               </span>
             ) : isSynced ? (
               <span title="Sincronizado con tu cuenta de YouTube (Algoritmo actualizado)">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
               </span>
             ) : (
               <span title="Solo local (no sincronizado con YouTube)">
-                <CheckCircle2 className="h-4 w-4 text-slate-600" />
+                <CheckCircle2 className="h-4 w-4 text-muted-foreground/40" />
               </span>
             )}
           </div>
@@ -173,11 +173,11 @@ export const TrackRow = React.memo(
             }
           >
             {isSyncingLike ? (
-              <Loader2 className="h-4 w-4 animate-spin text-red-400" />
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
             ) : (
               <Heart
                 className={`h-4 w-4 ${
-                  track.liked ? "fill-red-500 text-red-500" : "text-slate-400"
+                  track.liked ? "fill-rose-500 text-rose-500" : "text-muted-foreground"
                 }`}
               />
             )}
@@ -205,7 +205,7 @@ export const TrackRow = React.memo(
                     e.target.value = "";
                   }
                 }}
-                className="h-8 cursor-pointer rounded-md border border-slate-700 bg-slate-900 px-2 text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-red-500"
+                className="h-8 cursor-pointer rounded-md border border-border bg-card px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               >
                 <option value="" disabled>
                   + Playlist

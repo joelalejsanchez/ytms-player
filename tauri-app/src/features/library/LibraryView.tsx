@@ -161,10 +161,10 @@ export const LibraryView = React.memo(() => {
     <section className="flex h-full flex-col gap-4">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white">Biblioteca Multimedia</h2>
-          <p className="text-xs text-slate-400">
+          <h2 className="text-xl font-bold text-foreground">Biblioteca Multimedia</h2>
+          <p className="text-xs text-muted-foreground">
             Almacenamiento local indexado por{" "}
-            <code className="text-slate-300">youtube_id</code> en SQLite
+            <code className="text-foreground">youtube_id</code> en SQLite
           </p>
         </div>
 
@@ -175,7 +175,7 @@ export const LibraryView = React.memo(() => {
             onClick={() => setIsMetadataModalOpen(true)}
             disabled={tracks.length === 0 || isLoading || isVerifying || isSyncingLikes}
           >
-            <Sparkles className="h-4 w-4 text-amber-400" />
+            <Sparkles className="h-4 w-4 text-amber-500" />
             Actualizar Metadatos
           </Button>
 
@@ -186,9 +186,9 @@ export const LibraryView = React.memo(() => {
             disabled={isLoading || isVerifying || isSyncingLikes}
           >
             {isVerifying ? (
-              <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+              <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
             ) : (
-              <ShieldCheck className="h-4 w-4 text-emerald-400" />
+              <ShieldCheck className="h-4 w-4 text-emerald-500" />
             )}
             {isVerifying ? "Verificando..." : "Verificar Integridad"}
           </Button>
@@ -200,7 +200,7 @@ export const LibraryView = React.memo(() => {
             disabled={isLoading || isVerifying || isSyncingLikes || tracks.length === 0}
           >
             {isSyncingLikes ? (
-              <Loader2 className="h-4 w-4 animate-spin text-red-400" />
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
@@ -220,9 +220,9 @@ export const LibraryView = React.memo(() => {
       </header>
 
       {/* Barra de búsqueda y filtros */}
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/70 p-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-3">
         <div className="relative min-w-[240px] flex-1">
-          <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+          <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -244,7 +244,7 @@ export const LibraryView = React.memo(() => {
           aria-label="Filtrar por formato"
           value={formatFilter}
           onChange={(e) => setFormatFilter(e.target.value)}
-          className="h-8 rounded-md border border-slate-700 bg-slate-900 px-2.5 text-xs text-slate-200"
+          className="h-8 rounded-md border border-input bg-card px-2.5 text-xs text-foreground focus:ring-1 focus:ring-ring"
         >
           <option value="all">Todos los formatos</option>
           <option value="mp3">MP3</option>
@@ -256,7 +256,7 @@ export const LibraryView = React.memo(() => {
           aria-label="Ordenar por"
           value={sortField}
           onChange={(e) => setSortField(e.target.value as SortField)}
-          className="h-8 rounded-md border border-slate-700 bg-slate-900 px-2.5 text-xs text-slate-200"
+          className="h-8 rounded-md border border-input bg-card px-2.5 text-xs text-foreground focus:ring-1 focus:ring-ring"
         >
           <option value="created_at">Fecha de registro</option>
           <option value="title">Título</option>
@@ -281,14 +281,14 @@ export const LibraryView = React.memo(() => {
       {/* Contenedor virtualizado */}
       <div
         ref={parentRef}
-        className="flex-1 overflow-y-auto rounded-xl border border-slate-800/80 bg-slate-950/60 p-3"
+        className="flex-1 overflow-y-auto rounded-xl border border-border bg-card/40 p-3"
       >
         {filteredTracks.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center text-center">
-            <p className="text-sm font-medium text-slate-300">
+            <p className="text-sm font-medium text-foreground">
               No se encontraron pistas en la biblioteca
             </p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               Descarga contenido desde la pestaña Descargas o selecciona un Workspace
               existente.
             </p>

@@ -332,7 +332,7 @@ export const PersistentPlayer = React.memo(() => {
   const volumePercent = Math.min(100, Math.max(0, volumeValue * 100));
 
   return (
-    <footer className="relative z-20 border-t border-slate-800 bg-slate-900/95 px-6 py-3 backdrop-blur">
+    <footer className="relative z-20 border-t border-border bg-card px-6 py-3 backdrop-blur">
       <audio
         ref={audioRef}
         onTimeUpdate={handleTimeUpdate}
@@ -344,16 +344,16 @@ export const PersistentPlayer = React.memo(() => {
       />
 
       {showQueue && (
-        <div className="absolute bottom-full right-6 mb-2 w-96 rounded-xl border border-slate-700 bg-slate-900 p-4 shadow-2xl">
-          <div className="mb-3 flex items-center justify-between border-b border-slate-800 pb-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+        <div className="absolute bottom-full right-6 mb-2 w-96 rounded-xl border border-border bg-popover text-popover-foreground p-4 shadow-2xl">
+          <div className="mb-3 flex items-center justify-between border-b border-border pb-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Cola de Reproducción ({queue.length})
             </h3>
             {queue.length > 0 && (
               <button
                 type="button"
                 onClick={clearQueue}
-                className="text-xs text-rose-400 hover:text-rose-300"
+                className="text-xs text-destructive hover:opacity-80"
               >
                 Vaciar cola
               </button>
@@ -361,7 +361,7 @@ export const PersistentPlayer = React.memo(() => {
           </div>
           <div className="max-h-60 space-y-1.5 overflow-y-auto">
             {queue.length === 0 ? (
-              <p className="py-4 text-center text-xs text-slate-500">
+              <p className="py-4 text-center text-xs text-muted-foreground">
                 No hay pistas en la cola
               </p>
             ) : (
@@ -372,8 +372,8 @@ export const PersistentPlayer = React.memo(() => {
                     key={item.youtube_id}
                     className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs ${
                       isCurrent
-                        ? "bg-red-600/20 text-red-300"
-                        : "text-slate-300 hover:bg-slate-800"
+                        ? "bg-primary/15 text-primary"
+                        : "text-foreground hover:bg-muted"
                     }`}
                   >
                     <button
@@ -382,12 +382,12 @@ export const PersistentPlayer = React.memo(() => {
                       className="flex-1 truncate text-left"
                     >
                       <span className="font-medium">{item.title}</span>
-                      <span className="ml-2 text-slate-500">{item.artist}</span>
+                      <span className="ml-2 text-muted-foreground">{item.artist}</span>
                     </button>
                     <ActionMenu
                       title="Opciones de la cola"
                       direction="down"
-                      triggerClassName="h-6 w-6 ml-2 text-slate-500 hover:text-white"
+                      triggerClassName="h-6 w-6 ml-2 text-muted-foreground hover:text-foreground"
                       items={[
                         {
                           label: "Quitar de la cola",
@@ -412,19 +412,19 @@ export const PersistentPlayer = React.memo(() => {
             <img
               src={thumbnailSrc}
               alt={currentTrack?.title ?? "Miniatura"}
-              className="h-12 w-12 rounded-lg object-cover ring-1 ring-slate-700"
+              className="h-12 w-12 rounded-lg object-cover ring-1 ring-border"
             />
           ) : (
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-800 text-slate-500">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">
               <Music className="h-5 w-5" />
             </div>
           )}
 
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-slate-100">
+            <p className="truncate text-sm font-semibold text-foreground">
               {currentTrack ? currentTrack.title : "Sin pista seleccionada"}
             </p>
-            <p className="truncate text-xs text-slate-400">
+            <p className="truncate text-xs text-muted-foreground">
               {currentTrack
                 ? `${currentTrack.artist} · .${currentTrack.file_extension}`
                 : "Selecciona un track de la biblioteca"}
@@ -484,13 +484,13 @@ export const PersistentPlayer = React.memo(() => {
               size="icon"
               onClick={toggleShuffle}
               title={`Aleatorio: ${isShuffle ? "Activado" : "Desactivado"}`}
-              className={isShuffle ? "text-primary" : "text-slate-400"}
+              className={isShuffle ? "text-primary" : "text-muted-foreground"}
             >
               <Shuffle className="h-4 w-4" />
             </Button>
           </div>
 
-          <div className="flex w-full items-center gap-3 text-xs text-slate-400">
+          <div className="flex w-full items-center gap-3 text-xs text-muted-foreground">
             <span className="w-10 text-right tabular-nums">
               {formatDuration(currentTime)}
             </span>
@@ -505,11 +505,11 @@ export const PersistentPlayer = React.memo(() => {
               title={isLoadingTrack ? "Cargando pista..." : undefined}
             >
               {/* Fondo de la barra */}
-              <div className="relative h-1 w-full overflow-hidden rounded-full bg-slate-800 transition-all duration-150 group-hover:h-1.5">
+              <div className="relative h-1 w-full overflow-hidden rounded-full bg-muted transition-all duration-150 group-hover:h-1.5">
                 {/* Relleno hasta el punto actual */}
                 <div
                   className={`h-full transition-none ${
-                    isLoadingTrack ? "bg-slate-600 animate-pulse" : "bg-primary"
+                    isLoadingTrack ? "bg-muted-foreground/40 animate-pulse" : "bg-primary"
                   }`}
                   style={{ width: `${progressPercent}%` }}
                 />
@@ -519,8 +519,8 @@ export const PersistentPlayer = React.memo(() => {
               <div
                 className={`pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full shadow-md transition-all duration-150 ${
                   isLoadingTrack
-                    ? "bg-slate-500 opacity-40"
-                    : "bg-white group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-primary"
+                    ? "bg-muted-foreground opacity-40"
+                    : "bg-foreground group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-primary"
                 }`}
                 style={{ left: `${progressPercent}%` }}
               />
@@ -562,7 +562,7 @@ export const PersistentPlayer = React.memo(() => {
           {/* Selector de volumen con relleno visual exacto e indicador dinámico */}
           <div className="group relative flex h-4 w-28 cursor-pointer select-none items-center">
             {/* Pista de fondo */}
-            <div className="relative h-1 w-full overflow-hidden rounded-full bg-slate-800 transition-all duration-150 group-hover:h-1.5">
+            <div className="relative h-1 w-full overflow-hidden rounded-full bg-muted transition-all duration-150 group-hover:h-1.5">
               {/* Relleno hasta el valor de volumen */}
               <div
                 className="h-full bg-primary transition-none"
@@ -572,7 +572,7 @@ export const PersistentPlayer = React.memo(() => {
 
             {/* Indicador / Thumb pequeño que crece al acercar el ratón */}
             <div
-              className="pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full bg-white shadow-md transition-all duration-150 group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-primary"
+              className="pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full bg-foreground shadow-md transition-all duration-150 group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-primary"
               style={{ left: `${volumePercent}%` }}
             />
 
@@ -589,7 +589,7 @@ export const PersistentPlayer = React.memo(() => {
             />
           </div>
 
-          <span className="w-8 text-right font-mono text-[11px] tabular-nums text-slate-400">
+          <span className="w-8 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
             {Math.round(volumePercent)}%
           </span>
 

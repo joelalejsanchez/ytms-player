@@ -90,14 +90,14 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
   const isGoOnline = health?.status === "healthy";
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-r border-slate-800 bg-slate-900/75">
-      <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-4">
+    <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-card">
+      <div className="flex items-center gap-3 border-b border-border px-5 py-4">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/20 text-primary ring-1 ring-primary/30">
           <Radio className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-base font-bold tracking-tight text-white">ytms-player</h1>
-          <p className="text-xs text-slate-400">YouTube Audio Desktop</p>
+          <h1 className="text-base font-bold tracking-tight text-foreground">ytms-player</h1>
+          <p className="text-xs text-muted-foreground">YouTube Audio Desktop</p>
         </div>
       </div>
 
@@ -114,7 +114,7 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
                 "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 isActive
                   ? "bg-primary/15 text-primary ring-1 ring-primary/30"
-                  : "text-slate-300 hover:bg-slate-800/70 hover:text-white",
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
               <span className="flex items-center gap-3">
@@ -136,7 +136,7 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
               "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
               activeTab === "workspace"
                 ? "bg-primary/15 text-primary ring-1 ring-primary/30"
-                : "text-slate-300 hover:bg-slate-800/70 hover:text-white",
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
             <span className="flex items-center gap-3">
@@ -148,10 +148,10 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
       </nav>
 
       {/* Selector rápido de Tema y Modo */}
-      <div className="flex items-center justify-between border-t border-slate-800 px-4 py-2.5 text-xs">
+      <div className="flex items-center justify-between border-t border-border px-4 py-2.5 text-xs">
         <div className="flex items-center gap-1.5">
-          <Palette className="h-3.5 w-3.5 text-slate-400" />
-          <span className="text-[11px] font-medium text-slate-400">Tema:</span>
+          <Palette className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-[11px] font-medium text-muted-foreground">Tema:</span>
           <button
             type="button"
             title="Paleta Azul / Lavanda"
@@ -159,8 +159,8 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
             className={cn(
               "h-5 rounded px-1.5 text-[10px] font-semibold transition border",
               colorFamily === "blue"
-                ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                : "bg-slate-800 text-slate-300 border-slate-700 hover:text-white",
+                ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                : "bg-muted text-muted-foreground border-border hover:text-foreground",
             )}
           >
             Blue
@@ -172,8 +172,8 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
             className={cn(
               "h-5 rounded px-1.5 text-[10px] font-semibold transition border",
               colorFamily === "teal"
-                ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                : "bg-slate-800 text-slate-300 border-slate-700 hover:text-white",
+                ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                : "bg-muted text-muted-foreground border-border hover:text-foreground",
             )}
           >
             Teal
@@ -184,26 +184,26 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
           type="button"
           title={mode === "dark" ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro"}
           onClick={toggleMode}
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-700 bg-slate-800/80 text-slate-300 transition hover:bg-slate-700 hover:text-white"
+          className="flex h-7 w-7 items-center justify-center rounded-lg border border-border bg-muted/80 text-foreground transition hover:bg-muted"
         >
           {mode === "dark" ? (
-            <Sun className="h-3.5 w-3.5 text-amber-300" />
+            <Sun className="h-3.5 w-3.5 text-amber-400" />
           ) : (
-            <Moon className="h-3.5 w-3.5 text-sky-400" />
+            <Moon className="h-3.5 w-3.5 text-primary" />
           )}
         </button>
       </div>
 
-      <div className="space-y-2 border-t border-slate-800 p-4 text-xs">
+      <div className="space-y-2 border-t border-border p-4 text-xs">
         <div className="flex items-center justify-between">
-          <span className="text-slate-400">Microservicio Go</span>
+          <span className="text-muted-foreground">Microservicio Go</span>
           <Badge tone={isGoOnline ? "success" : "danger"}>
             {isGoOnline ? "Online" : "Offline"}
           </Badge>
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-slate-400">Stream SSE</span>
+          <span className="text-muted-foreground">Stream SSE</span>
           <Badge
             tone={
               connectionState === "connected"
@@ -220,7 +220,7 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
         <div className="pt-1">
           {appSettings && appSettings.recent_workspaces.length > 0 ? (
             <div className="space-y-1">
-              <span className="text-[11px] font-medium text-slate-400">
+              <span className="text-[11px] font-medium text-muted-foreground">
                 Cambiar Workspace:
               </span>
               <select
@@ -231,7 +231,7 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
                     void selectWorkspace(e.target.value);
                   }
                 }}
-                className="h-8 w-full truncate rounded-lg border border-slate-700 bg-slate-950 px-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500"
+                className="h-8 w-full truncate rounded-lg border border-input bg-card px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               >
                 {!workspace && (
                   <option value="" disabled>
@@ -247,7 +247,7 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
             </div>
           ) : (
             <p
-              className="truncate text-[11px] text-slate-500"
+              className="truncate text-[11px] text-muted-foreground"
               title={workspace?.root_path}
             >
               {workspace ? `WS: ${workspace.root_path}` : "Sin Workspace seleccionado"}

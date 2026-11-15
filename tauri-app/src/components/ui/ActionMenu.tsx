@@ -94,13 +94,13 @@ export const ActionMenu: React.FC<ActionMenuProps> = React.memo(
           aria-expanded={isOpen}
           title={title}
           className={cn(
-            "flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-800 hover:text-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:pointer-events-none disabled:opacity-50",
-            isOpen && "bg-slate-800 text-white",
+            "flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+            isOpen && "bg-muted text-foreground",
             triggerClassName,
           )}
         >
           {isLoading ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
           ) : (
             triggerIcon || <MoreVertical className="h-4 w-4" />
           )}
@@ -111,7 +111,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = React.memo(
             role="menu"
             aria-orientation="vertical"
             className={cn(
-              "absolute z-50 min-w-[170px] rounded-lg border border-slate-700 bg-slate-900/95 p-1 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100",
+              "absolute z-50 min-w-[170px] rounded-lg border border-border bg-popover text-popover-foreground p-1 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100",
               align === "right" ? "right-0" : "left-0",
               direction === "down" ? "top-full mt-1" : "bottom-full mb-1",
               menuClassName,
@@ -131,10 +131,10 @@ export const ActionMenu: React.FC<ActionMenuProps> = React.memo(
                     await item.onClick();
                   }}
                   className={cn(
-                    "flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-red-500 disabled:pointer-events-none disabled:opacity-50",
+                    "flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
                     isDanger
-                      ? "text-rose-400 hover:bg-rose-950/60 hover:text-rose-300"
-                      : "text-slate-300 hover:bg-slate-800 hover:text-white",
+                      ? "text-destructive hover:bg-destructive/15 hover:text-destructive"
+                      : "text-foreground hover:bg-accent hover:text-accent-foreground",
                   )}
                 >
                   {item.icon && (

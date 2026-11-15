@@ -73,7 +73,7 @@ const ItemThumbnail = React.memo(
 
     if (!src || failed) {
       return (
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-400 ring-1 ring-slate-700/50">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground ring-1 ring-border/50">
           <Music2 className="h-5 w-5" />
         </div>
       );
@@ -85,7 +85,7 @@ const ItemThumbnail = React.memo(
         alt={alt}
         onError={() => setFailed(true)}
         loading="lazy"
-        className="h-12 w-12 shrink-0 rounded-lg object-cover ring-1 ring-slate-700/50"
+        className="h-12 w-12 shrink-0 rounded-lg object-cover ring-1 ring-border/50"
       />
     );
   },
@@ -392,10 +392,10 @@ export const DownloadsView = React.memo(() => {
     <section className="flex h-full flex-col gap-5">
       <header className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-white">
+          <h2 className="text-xl font-bold text-foreground">
             Gestor de Descargas & Stream SSE
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-muted-foreground">
             Descargas activas en tiempo real e historial histórico unificado por día
           </p>
         </div>
@@ -411,7 +411,7 @@ export const DownloadsView = React.memo(() => {
       {/* Formulario de descarga validado con Zod */}
       <form
         onSubmit={(e) => void handleSubmit(e)}
-        className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/75 p-4"
+        className="space-y-4 rounded-xl border border-border bg-card p-4"
       >
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-[260px] flex-1">
@@ -427,7 +427,7 @@ export const DownloadsView = React.memo(() => {
             aria-label="Formato de audio"
             value={audioFormat}
             onChange={(e) => handleFormatChange(e.target.value as AudioFormat)}
-            className="h-9 rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100"
+            className="h-9 rounded-lg border border-input bg-card px-3 text-sm text-foreground focus:ring-1 focus:ring-ring"
           >
             <option value="mp3">MP3 (ID3v2 + Carátula)</option>
             <option value="m4a">M4A (AAC + Átomos iTunes)</option>
@@ -440,7 +440,7 @@ export const DownloadsView = React.memo(() => {
               variant="secondary"
               onClick={() => setIsPlaylistModalOpen(true)}
             >
-              <ListMusic className="h-4 w-4 text-red-500" />
+              <ListMusic className="h-4 w-4 text-primary" />
               Previsualizar e Importar
             </Button>
           )}
@@ -457,9 +457,9 @@ export const DownloadsView = React.memo(() => {
 
         {/* Alerta y Selector inteligente si se pega un Mix de YouTube (list=RD...) */}
         {isMixUrl && (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-500">
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-amber-400" />
+              <AlertCircle className="h-4 w-4 text-amber-500" />
               <span>Detectamos un Mix autogenerado de YouTube en la URL. ¿Qué deseas descargar?</span>
             </div>
             <div className="flex items-center gap-2">
@@ -468,8 +468,8 @@ export const DownloadsView = React.memo(() => {
                 onClick={() => setMixOption("track")}
                 className={`rounded px-2.5 py-1 text-xs font-semibold ${
                   mixOption === "track"
-                    ? "bg-amber-500 text-slate-950"
-                    : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                    ? "bg-amber-500 text-black font-semibold"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
               >
                 <Music2 className="mr-1 inline h-3 w-3" />
@@ -480,8 +480,8 @@ export const DownloadsView = React.memo(() => {
                 onClick={() => setMixOption("mix")}
                 className={`rounded px-2.5 py-1 text-xs font-semibold ${
                   mixOption === "mix"
-                    ? "bg-amber-500 text-slate-950"
-                    : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                    ? "bg-amber-500 text-black font-semibold"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
               >
                 <List className="mr-1 inline h-3 w-3" />
@@ -491,30 +491,30 @@ export const DownloadsView = React.memo(() => {
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-between gap-4 text-xs text-slate-300">
+        <div className="flex flex-wrap items-center justify-between gap-4 text-xs text-muted-foreground">
           <label className="flex cursor-pointer items-center gap-2">
             <input
               type="checkbox"
               checked={forceOverwrite}
               onChange={(e) => setForceOverwrite(e.target.checked)}
-              className="rounded border-slate-700 bg-slate-900 accent-red-500"
+              className="rounded border-input bg-card text-primary focus:ring-ring"
             />
             <span>Forzar re-descarga si el archivo ya existe en el Workspace</span>
           </label>
-          <span className="text-[11px] text-slate-500">
+          <span className="text-[11px] text-muted-foreground">
             Descarga asíncrona mediante streaming SSE y transcodificación FFmpeg activa
           </span>
         </div>
 
         {(validationError || lastError) && (
-          <div className="rounded-lg border border-rose-800/70 bg-rose-950/50 px-3 py-2 text-xs text-rose-300">
+          <div className="rounded-lg border border-destructive/30 bg-destructive/15 px-3 py-2 text-xs text-destructive">
             {validationError ?? lastError}
           </div>
         )}
       </form>
 
       {/* Panel unificado: Descargas en curso arriba + Historial por día abajo */}
-      <div className="flex-1 space-y-6 overflow-y-auto rounded-xl border border-slate-800/80 bg-slate-950/60 p-4">
+      <div className="flex-1 space-y-6 overflow-y-auto rounded-xl border border-border bg-card/40 p-4">
         {/* SECCIÓN 1: Descargas en curso (solo si hay tareas activas) */}
         {hasActiveDownloads && (
           <div className="space-y-3">
@@ -528,16 +528,16 @@ export const DownloadsView = React.memo(() => {
                 <button
                   type="button"
                   onClick={() => clearCompletedTasks()}
-                  className="text-[11px] text-slate-400 transition hover:text-slate-200"
+                  className="text-[11px] text-muted-foreground transition hover:text-foreground"
                   title="Limpiar descargas finalizadas"
                 >
                   Limpiar finalizadas
                 </button>
-                <span className="text-slate-600">·</span>
+                <span className="text-border">·</span>
                 <button
                   type="button"
                   onClick={() => clearAllTasks()}
-                  className="text-[11px] text-slate-400 transition hover:text-rose-400"
+                  className="text-[11px] text-muted-foreground transition hover:text-destructive"
                   title="Eliminar todas las tareas de descargas"
                 >
                   Eliminar lista
@@ -558,22 +558,22 @@ export const DownloadsView = React.memo(() => {
               return (
                 <div
                   key={groupKey}
-                  className="rounded-xl border border-slate-800 bg-slate-900/90 shadow-md transition"
+                  className="rounded-xl border border-border bg-card shadow-sm transition"
                 >
                   <div
                     onClick={() => togglePlaylistCollapse(groupKey)}
-                    className="flex cursor-pointer items-center justify-between border-b border-slate-800/80 p-3.5 hover:bg-slate-800/50"
+                    className="flex cursor-pointer items-center justify-between border-b border-border p-3.5 hover:bg-muted/50"
                   >
                     <div className="flex items-center gap-2.5">
-                      <ListMusic className="h-4 w-4 text-red-500" />
-                      <span className="font-semibold text-white">{group.title}</span>
+                      <ListMusic className="h-4 w-4 text-primary" />
+                      <span className="font-semibold text-foreground">{group.title}</span>
                       <Badge tone={completedCount === totalCount ? "success" : "info"}>
                         {completedCount} de {totalCount} completadas
                       </Badge>
                     </div>
 
                     <div className="flex items-center gap-2.5">
-                      <span className="font-mono text-xs text-slate-400">
+                      <span className="font-mono text-xs text-muted-foreground">
                         {overallProgress.toFixed(0)}%
                       </span>
                       <ActionMenu
@@ -589,7 +589,7 @@ export const DownloadsView = React.memo(() => {
                       />
                       <button
                         type="button"
-                        className="rounded p-1 text-slate-400 hover:text-white"
+                        className="rounded p-1 text-muted-foreground hover:text-foreground"
                         aria-label="Alternar vista de playlist"
                       >
                         {isCollapsed ? (
@@ -627,7 +627,7 @@ export const DownloadsView = React.memo(() => {
                         return (
                           <div
                             key={taskKey}
-                            className="flex items-center gap-3 rounded-lg border border-slate-800/70 bg-slate-950/70 p-2.5"
+                            className="flex items-center gap-3 rounded-lg border border-border bg-card p-2.5"
                           >
                             <ItemThumbnail
                               src={thumbSrc}
@@ -640,21 +640,21 @@ export const DownloadsView = React.memo(() => {
                                   <Badge tone={tone} className="text-[10px] uppercase">
                                     {isProcessing ? "FFmpeg" : task.status}
                                   </Badge>
-                                  <span className="truncate text-xs font-medium text-slate-200">
+                                  <span className="truncate text-xs font-medium text-foreground">
                                     {task.metadata?.title ?? task.youtube_id}
                                   </span>
                                 </div>
 
-                                <div className="flex shrink-0 items-center gap-2 text-[11px] text-slate-400">
+                                <div className="flex shrink-0 items-center gap-2 text-[11px] text-muted-foreground">
                                   {isProcessing ? (
-                                    <span className="flex items-center gap-1 text-amber-300">
-                                      <Loader2 className="h-3 w-3 animate-spin text-amber-400" />
+                                    <span className="flex items-center gap-1 text-amber-500">
+                                      <Loader2 className="h-3 w-3 animate-spin text-amber-500" />
                                       Post-procesando
                                     </span>
                                   ) : (
                                     <>
                                       {task.speed && <span>{task.speed}</span>}
-                                      <span className="font-semibold text-slate-200">
+                                      <span className="font-semibold text-foreground">
                                         {task.progress.toFixed(0)}%
                                       </span>
                                     </>
@@ -675,7 +675,7 @@ export const DownloadsView = React.memo(() => {
                               </div>
                               <ProgressBar value={task.progress} />
                               {task.error && (
-                                <p className="text-[11px] text-rose-400">{task.error}</p>
+                                <p className="text-[11px] text-destructive">{task.error}</p>
                               )}
                             </div>
                           </div>
@@ -712,7 +712,7 @@ export const DownloadsView = React.memo(() => {
               return (
                 <div
                   key={taskKey}
-                  className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/80 p-3"
+                  className="flex items-center gap-3 rounded-xl border border-border bg-card p-3"
                 >
                   <ItemThumbnail
                     src={thumbSrc}
@@ -725,22 +725,22 @@ export const DownloadsView = React.memo(() => {
                         <Badge tone={tone} className="text-[10px] uppercase">
                           {isProcessing ? "FFmpeg Post-procesando" : task.status}
                         </Badge>
-                        <span className="truncate text-xs font-semibold text-slate-100">
+                        <span className="truncate text-xs font-semibold text-foreground">
                           {task.metadata?.title ?? task.youtube_id}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2.5 text-xs text-slate-400">
+                      <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
                         {isProcessing ? (
-                          <span className="flex items-center gap-1 font-medium text-amber-300">
-                            <Loader2 className="h-3 w-3 animate-spin text-amber-400" />
+                          <span className="flex items-center gap-1 font-medium text-amber-500">
+                            <Loader2 className="h-3 w-3 animate-spin text-amber-500" />
                             Transcodificando audio...
                           </span>
                         ) : (
                           <>
                             {task.speed && <span>{task.speed}</span>}
                             {task.eta && <span>ETA: {task.eta}</span>}
-                            <span className="font-semibold text-slate-200">
+                            <span className="font-semibold text-foreground">
                               {task.progress.toFixed(0)}%
                             </span>
                           </>
@@ -761,7 +761,7 @@ export const DownloadsView = React.memo(() => {
                     </div>
 
                     <ProgressBar value={task.progress} />
-                    {task.error && <p className="text-xs text-rose-400">{task.error}</p>}
+                    {task.error && <p className="text-xs text-destructive">{task.error}</p>}
                   </div>
                 </div>
               );
@@ -771,10 +771,10 @@ export const DownloadsView = React.memo(() => {
 
         {/* SECCIÓN 2: Historial completo unificado separado por día (Estilo WhatsApp) */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+          <div className="flex items-center justify-between border-b border-border pb-2">
             <div className="flex items-center gap-3">
-              <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-300">
-                <History className="h-3.5 w-3.5 text-slate-400" />
+              <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-foreground">
+                <History className="h-3.5 w-3.5 text-muted-foreground" />
                 Historial de Descargas ({downloadHistory.length})
               </h3>
               {downloadHistory.length > 0 && (
@@ -792,18 +792,18 @@ export const DownloadsView = React.memo(() => {
               )}
             </div>
             {hasActiveDownloads && (
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-muted-foreground">
                 Las descargas finalizadas se integran automáticamente aquí
               </span>
             )}
           </div>
 
           {groupedHistory.length === 0 ? (
-            <div className="py-10 text-center text-xs text-slate-500">
-              <p className="font-medium text-slate-400">
+            <div className="py-10 text-center text-xs text-muted-foreground">
+              <p className="font-medium text-foreground">
                 Aún no hay descargas registradas en este Workspace.
               </p>
-              <p className="mt-1 text-[11px] text-slate-500">
+              <p className="mt-1 text-[11px] text-muted-foreground">
                 Introduce una URL arriba para comenzar a descargar.
               </p>
             </div>
@@ -812,7 +812,7 @@ export const DownloadsView = React.memo(() => {
               <div key={group.label} className="space-y-2">
                 {/* Separador de fecha estilo WhatsApp */}
                 <div className="my-3 flex items-center justify-center">
-                  <span className="rounded-full border border-slate-700/80 bg-slate-800/90 px-3.5 py-1 text-[11px] font-semibold text-slate-200 shadow-sm backdrop-blur">
+                  <span className="rounded-full border border-border bg-muted px-3.5 py-1 text-[11px] font-semibold text-muted-foreground shadow-xs">
                     {group.label}
                   </span>
                 </div>
@@ -830,34 +830,34 @@ export const DownloadsView = React.memo(() => {
                     return (
                       <div
                         key={item.id}
-                        className="flex items-center gap-3 rounded-lg border border-slate-800/60 bg-slate-900/60 p-2.5 transition hover:bg-slate-900/90"
+                        className="flex items-center gap-3 rounded-lg border border-border bg-card p-2.5 transition hover:bg-muted/50"
                       >
                         <ItemThumbnail src={thumbSrc} alt={item.title} />
 
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="truncate text-xs font-semibold text-slate-100">
+                            <span className="truncate text-xs font-semibold text-foreground">
                               {item.title}
                             </span>
                             <Badge
                               tone={
                                 item.status === "completed" || item.status === "skipped"
-                                  ? "success"
-                                  : item.status === "failed"
-                                    ? "danger"
-                                    : "info"
+                                ? "success"
+                                : item.status === "failed"
+                                  ? "danger"
+                                  : "info"
                               }
                               className="text-[10px]"
                             >
                               {item.status}
                             </Badge>
-                            <span className="font-mono text-[10px] text-slate-400">
+                            <span className="font-mono text-[10px] text-muted-foreground">
                               .{item.audio_format}
                             </span>
                           </div>
 
-                          <div className="mt-0.5 flex items-center gap-2 text-[11px] text-slate-400">
-                            <span className="font-mono text-[10px] text-slate-500">
+                          <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+                            <span className="font-mono text-[10px] text-muted-foreground">
                               {item.youtube_id}
                             </span>
                             <span>·</span>

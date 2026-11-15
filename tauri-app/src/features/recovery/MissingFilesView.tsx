@@ -22,7 +22,7 @@ const RecoveryThumbnail = React.memo(
 
     if (!src || failed) {
       return (
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-500 ring-1 ring-slate-700/50">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground ring-1 ring-border/50">
           <Music2 className="h-5 w-5" />
         </div>
       );
@@ -34,7 +34,7 @@ const RecoveryThumbnail = React.memo(
         alt={alt}
         onError={() => setFailed(true)}
         loading="lazy"
-        className="h-11 w-11 shrink-0 rounded-lg object-cover ring-1 ring-slate-700/50"
+        className="h-11 w-11 shrink-0 rounded-lg object-cover ring-1 ring-border/50"
       />
     );
   },
@@ -152,12 +152,12 @@ export const MissingFilesView = React.memo(() => {
     <section className="flex h-full flex-col gap-5">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white">
+          <h2 className="text-xl font-bold text-foreground">
             Panel de Recuperación de Archivos Extraviados
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-muted-foreground">
             Reconciliación automática entre registros de SQLite y archivos físicos en{" "}
-            <code className="text-slate-300">
+            <code className="font-mono text-foreground">
               /tracks/&lt;youtube_id&gt;.&lt;ext&gt;
             </code>{" "}
             (SDD 3.5)
@@ -181,37 +181,37 @@ export const MissingFilesView = React.memo(() => {
 
       {lastReport && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3.5">
-            <p className="text-xs text-slate-400">Registros Verificados</p>
-            <p className="mt-1 text-xl font-bold text-white">
+          <div className="rounded-xl border border-border bg-card p-3.5">
+            <p className="text-xs text-muted-foreground">Registros Verificados</p>
+            <p className="mt-1 text-xl font-bold text-foreground">
               {lastReport.checked_count}
             </p>
           </div>
-          <div className="rounded-xl border border-amber-800/40 bg-amber-950/20 p-3.5">
-            <p className="text-xs text-amber-300">Nuevos Extraviados Detectados</p>
-            <p className="mt-1 text-xl font-bold text-amber-400">
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5">
+            <p className="text-xs text-amber-600 dark:text-amber-400">Nuevos Extraviados Detectados</p>
+            <p className="mt-1 text-xl font-bold text-amber-600 dark:text-amber-400">
               {lastReport.newly_missing_ids.length}
             </p>
           </div>
-          <div className="rounded-xl border border-emerald-800/40 bg-emerald-950/20 p-3.5">
-            <p className="text-xs text-emerald-300">Archivos Restaurados</p>
-            <p className="mt-1 text-xl font-bold text-emerald-400">
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5">
+            <p className="text-xs text-emerald-600 dark:text-emerald-400">Archivos Restaurados</p>
+            <p className="mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-400">
               {lastReport.restored_ids.length}
             </p>
           </div>
         </div>
       )}
 
-      <div className="flex-1 space-y-2.5 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+      <div className="flex-1 space-y-2.5 overflow-y-auto rounded-xl border border-border bg-card/40 p-4">
         {missingTracks.length === 0 ? (
           <div className="flex h-60 flex-col items-center justify-center text-center">
-            <CheckCircle2 className="mb-2 h-10 w-10 text-emerald-400" />
-            <p className="text-sm font-semibold text-slate-200">
+            <CheckCircle2 className="mb-2 h-10 w-10 text-emerald-500" />
+            <p className="text-sm font-semibold text-foreground">
               Integridad verificada: 0 archivos extraviados
             </p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               Todos los registros en SQLite cuentan con su archivo físico
-              correspondiente en <code className="text-slate-300">/tracks</code>.
+              correspondiente en <code className="text-foreground">/tracks</code>.
             </p>
           </div>
         ) : (
@@ -226,21 +226,21 @@ export const MissingFilesView = React.memo(() => {
             return (
               <div
                 key={track.youtube_id}
-                className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-amber-800/50 bg-amber-950/15 p-3.5"
+                className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <RecoveryThumbnail src={thumbSrc} alt={track.title} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
-                      <span className="truncate text-sm font-semibold text-slate-100">
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+                      <span className="truncate text-sm font-semibold text-foreground">
                         {track.title}
                       </span>
                       <Badge tone="warning">is_missing = 1</Badge>
                     </div>
-                    <p className="mt-1 text-xs text-slate-400">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       Artista: {track.artist} · Ruta esperada:{" "}
-                      <code className="text-amber-300">{track.audio_path}</code>
+                      <code className="font-mono text-amber-600 dark:text-amber-400">{track.audio_path}</code>
                     </p>
                   </div>
                 </div>
@@ -292,11 +292,11 @@ export const MissingFilesView = React.memo(() => {
       </div>
 
       {/* Sección de Archivos Huérfanos en /tracks (archivos físicos que no están en SQLite) */}
-      <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div className="space-y-3 rounded-xl border border-border bg-card p-5">
+        <div className="flex items-center justify-between border-b border-border pb-3">
           <div className="flex items-center gap-2">
-            <FileAudio className="h-4 w-4 text-sky-400" />
-            <h3 className="text-sm font-semibold text-white">
+            <FileAudio className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">
               Archivos Huérfanos en /tracks ({orphanFiles.length})
             </h3>
           </div>
@@ -325,13 +325,13 @@ export const MissingFilesView = React.memo(() => {
         </div>
 
         {orphanFiles.length === 0 ? (
-          <p className="py-2 text-xs text-slate-500">
+          <p className="py-2 text-xs text-muted-foreground">
             No hay archivos huérfanos. Todos los archivos de audio en el disco están
             registrados en la biblioteca.
           </p>
         ) : (
           <div className="space-y-2">
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-muted-foreground">
               Se encontraron archivos en tu carpeta física que no figuran en tu
               biblioteca (por ejemplo descargas previas de Mixes). Puedes adoptarlos
               directamente o borrarlos para liberar espacio:
@@ -350,19 +350,19 @@ export const MissingFilesView = React.memo(() => {
               return (
                 <div
                   key={file.full_path}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950/70 p-3 text-xs"
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card/60 p-3 text-xs hover:border-border/80"
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
                     <RecoveryThumbnail src={thumbSrc} alt={file.file_name} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="truncate font-semibold text-slate-200">
+                        <span className="truncate font-semibold text-foreground">
                           {file.file_name}
                         </span>
                         <Badge tone="default">.{file.file_extension}</Badge>
-                        <span className="text-slate-500">{formatBytes(file.file_size)}</span>
+                        <span className="text-muted-foreground">{formatBytes(file.file_size)}</span>
                       </div>
-                      <span className="font-mono text-[11px] text-slate-500">
+                      <span className="font-mono text-[11px] text-muted-foreground">
                         {file.youtube_id}
                       </span>
                     </div>

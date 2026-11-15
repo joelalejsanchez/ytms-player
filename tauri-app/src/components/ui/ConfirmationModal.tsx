@@ -37,15 +37,15 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = React.memo(
           }
         }}
       >
-        <div className="w-full max-w-md space-y-4 rounded-2xl border border-slate-800 bg-slate-900/95 p-6 shadow-2xl">
+        <div className="w-full max-w-md space-y-4 rounded-2xl border border-border bg-card text-card-foreground p-6 shadow-2xl">
           <div className="flex items-start gap-3.5">
             <div
               className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
                 tone === "danger"
-                  ? "bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20"
+                  ? "bg-destructive/10 text-destructive ring-1 ring-destructive/20"
                   : tone === "warning"
-                    ? "bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20"
-                    : "bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/20"
+                    ? "bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/20"
+                    : "bg-primary/10 text-primary ring-1 ring-primary/20"
               }`}
             >
               {tone === "danger" ? (
@@ -58,14 +58,14 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = React.memo(
             </div>
 
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-semibold text-white">{title}</h3>
-              <p className="mt-1.5 text-xs leading-relaxed text-slate-300">
+              <h3 className="text-base font-semibold text-foreground">{title}</h3>
+              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
                 {description}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2.5 border-t border-slate-800/80 pt-3">
+          <div className="flex items-center justify-end gap-2.5 border-t border-border pt-3">
             <Button
               type="button"
               variant="secondary"

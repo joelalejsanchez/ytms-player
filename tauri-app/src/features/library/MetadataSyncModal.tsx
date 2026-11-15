@@ -98,16 +98,16 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
-      <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl">
-        <header className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+      <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
+        <header className="flex items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-2.5">
-            <Sparkles className="h-5 w-5 text-amber-400" />
+            <Sparkles className="h-5 w-5 text-amber-500" />
             <div>
-              <h3 className="text-base font-semibold text-white">
+              <h3 className="text-base font-semibold text-foreground">
                 Actualizar Metadatos desde YouTube
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 Vuelve a consultar los títulos y artistas oficiales de las canciones ya guardadas
               </p>
             </div>
@@ -116,7 +116,7 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
             type="button"
             onClick={onClose}
             disabled={isProcessing}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+            className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
             aria-label="Cerrar modal"
           >
             <X className="h-5 w-5" />
@@ -125,24 +125,24 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
 
         <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4 text-xs">
           {/* Mensajes informativos */}
-          <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 text-slate-300">
+          <div className="rounded-xl border border-border bg-muted/40 p-3.5 text-foreground">
             <p>
               Esta herramienta consulta la API de YouTube usando el{" "}
-              <code className="text-amber-300 font-mono">youtube_id</code> de cada canción
+              <code className="text-primary font-mono">youtube_id</code> de cada canción
               para renombrarla con su título, artista y duración oficiales actuales en tu biblioteca.
             </p>
           </div>
 
           {errorMsg && (
-            <div className="flex items-center gap-2 rounded-xl border border-rose-800/80 bg-rose-950/50 p-3 text-rose-300">
-              <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+            <div className="flex items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/15 p-3 text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {successMsg && (
-            <div className="flex items-center gap-2 rounded-xl border border-emerald-800/80 bg-emerald-950/50 p-3 text-emerald-300">
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/15 p-3 text-emerald-500">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
               <span>{successMsg}</span>
             </div>
           )}
@@ -150,7 +150,7 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
           {/* Barra de búsqueda y selector masivo */}
           <div className="flex items-center justify-between gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-500" />
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -172,9 +172,9 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
           </div>
 
           {/* Lista de canciones */}
-          <div className="max-h-60 space-y-1.5 overflow-y-auto rounded-lg border border-slate-800 bg-slate-950/50 p-2">
+          <div className="max-h-60 space-y-1.5 overflow-y-auto rounded-lg border border-border bg-card/60 p-2">
             {filtered.length === 0 ? (
-              <p className="py-8 text-center text-slate-500">
+              <p className="py-8 text-center text-muted-foreground">
                 No se encontraron canciones que coincidan con la búsqueda.
               </p>
             ) : (
@@ -185,8 +185,8 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
                     key={track.youtube_id}
                     className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-2.5 transition ${
                       isSelected
-                        ? "border-amber-500/40 bg-amber-500/10"
-                        : "border-slate-800 bg-slate-900/60 hover:bg-slate-800/50"
+                        ? "border-primary/40 bg-primary/10"
+                        : "border-border bg-card hover:bg-muted/50"
                     }`}
                   >
                     <div className="flex min-w-0 items-center gap-3">
@@ -195,17 +195,17 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
                         checked={isSelected}
                         onChange={() => toggleSelectOne(track.youtube_id)}
                         disabled={isProcessing}
-                        className="rounded border-slate-700 bg-slate-800 text-amber-500 focus:ring-amber-500"
+                        className="rounded border-border bg-card text-primary focus:ring-ring"
                       />
                       <div className="min-w-0">
-                        <p className="truncate font-medium text-slate-200">{track.title}</p>
-                        <p className="truncate text-[11px] text-slate-400">
-                          {track.artist} · <span className="font-mono text-slate-500">{track.youtube_id}</span>
+                        <p className="truncate font-medium text-foreground">{track.title}</p>
+                        <p className="truncate text-[11px] text-muted-foreground">
+                          {track.artist} · <span className="font-mono text-muted-foreground">{track.youtube_id}</span>
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-2 text-slate-400 font-mono text-[11px]">
+                    <div className="flex shrink-0 items-center gap-2 text-muted-foreground font-mono text-[11px]">
                       <Clock className="h-3 w-3" />
                       {formatDuration(track.duration)}
                     </div>
@@ -216,8 +216,8 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
           </div>
         </div>
 
-        <footer className="flex items-center justify-between border-t border-slate-800 px-6 py-4">
-          <span className="text-xs text-slate-400">
+        <footer className="flex items-center justify-between border-t border-border px-6 py-4">
+          <span className="text-xs text-muted-foreground">
             {selectedIds.size} canción(es) seleccionada(s)
           </span>
 
@@ -232,7 +232,7 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
             >
               {isProcessing ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin text-white" />
+                  <Loader2 className="h-4 w-4 animate-spin text-primary-foreground" />
                   Actualizando ({processedCount}/{selectedIds.size})...
                 </>
               ) : (

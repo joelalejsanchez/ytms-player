@@ -10,14 +10,15 @@ export const Button = React.memo(
   React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, variant = "primary", size = "md", ...props }, ref) => {
       const variants: Record<NonNullable<ButtonProps["variant"]>, string> = {
-        primary: "bg-primary text-primary-foreground hover:opacity-90 active:opacity-100 shadow-sm",
+        primary:
+          "bg-primary text-primary-foreground hover:opacity-90 active:opacity-100 shadow-sm",
         secondary:
-          "bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-700",
-        ghost: "bg-transparent text-slate-300 hover:bg-slate-800/70 hover:text-white",
+          "bg-secondary text-secondary-foreground hover:opacity-90 border border-border shadow-xs",
+        ghost: "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
         danger:
-          "bg-rose-950/80 text-rose-200 border border-rose-800/70 hover:bg-rose-900",
+          "bg-destructive/15 text-destructive border border-destructive/30 hover:bg-destructive/25",
         outline:
-          "bg-transparent border border-slate-700 text-slate-200 hover:bg-slate-800/50",
+          "bg-transparent border border-border text-foreground hover:bg-muted hover:text-foreground",
       };
 
       const sizes: Record<NonNullable<ButtonProps["size"]>, string> = {
@@ -51,7 +52,7 @@ export const Input = React.memo(
     <input
       ref={ref}
       className={cn(
-        "flex h-9 w-full rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-1.5 text-sm text-slate-100 placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-9 w-full rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       {...props}
@@ -67,11 +68,13 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 export const Badge = React.memo(
   ({ className, tone = "default", ...props }: BadgeProps) => {
     const tones: Record<NonNullable<BadgeProps["tone"]>, string> = {
-      default: "bg-slate-800 text-slate-300 border-slate-700",
-      success: "bg-emerald-950/80 text-emerald-300 border-emerald-800/60",
-      warning: "bg-amber-950/80 text-amber-300 border-amber-800/60",
-      danger: "bg-rose-950/80 text-rose-300 border-rose-800/60",
-      info: "bg-sky-950/80 text-sky-300 border-sky-800/60",
+      default: "bg-muted text-muted-foreground border-border",
+      success:
+        "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+      warning:
+        "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+      danger: "bg-destructive/15 text-destructive border-destructive/30",
+      info: "bg-primary/15 text-primary border-primary/30",
     };
 
     return (
@@ -97,10 +100,10 @@ export const ProgressBar = React.memo(({ value, className }: ProgressBarProps) =
   const clamped = Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
   return (
     <div
-      className={cn("h-2 w-full overflow-hidden rounded-full bg-slate-800", className)}
+      className={cn("h-2 w-full overflow-hidden rounded-full bg-muted", className)}
     >
       <div
-        className="h-full bg-gradient-to-r from-red-600 to-rose-500 transition-all duration-200"
+        className="h-full bg-primary transition-all duration-200"
         style={{ width: `${clamped}%` }}
       />
     </div>

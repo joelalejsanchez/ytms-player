@@ -137,18 +137,18 @@ export const PlaylistsView = React.memo(() => {
   return (
     <section className="flex h-full flex-col gap-5">
       <header>
-        <h2 className="text-xl font-bold text-white">Gestión de Playlists</h2>
-        <p className="text-xs text-slate-400">
+        <h2 className="text-xl font-bold text-foreground">Gestión de Playlists</h2>
+        <p className="text-xs text-muted-foreground">
           Relación muchos a muchos (
-          <code className="text-slate-300">playlist_tracks</code>) con integridad
-          referencial <code className="text-slate-300">ON DELETE CASCADE</code>
+          <code className="text-foreground">playlist_tracks</code>) con integridad
+          referencial <code className="text-foreground">ON DELETE CASCADE</code>
         </p>
       </header>
 
       {/* Formulario de nueva playlist */}
       <form
         onSubmit={(e) => void handleCreate(e)}
-        className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/75 p-4"
+        className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4"
       >
         <Input
           value={title}
@@ -171,14 +171,14 @@ export const PlaylistsView = React.memo(() => {
           {isCreating ? "Creando..." : "Crear Playlist"}
         </Button>
 
-        {formError && <p className="w-full text-xs text-rose-400">{formError}</p>}
+        {formError && <p className="w-full text-xs text-destructive">{formError}</p>}
       </form>
 
       <div className="grid flex-1 grid-cols-1 gap-4 overflow-hidden lg:grid-cols-3">
         {/* Lista de Playlists */}
-        <div className="space-y-2 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+        <div className="space-y-2 overflow-y-auto rounded-xl border border-border bg-card/40 p-3">
           {playlists.length === 0 ? (
-            <p className="py-8 text-center text-xs text-slate-500">
+            <p className="py-8 text-center text-xs text-muted-foreground">
               No hay playlists creadas todavía
             </p>
           ) : (
@@ -189,8 +189,8 @@ export const PlaylistsView = React.memo(() => {
                   key={pl.id}
                   className={`flex items-center justify-between rounded-xl border p-3 transition-colors ${
                     isSelected
-                      ? "border-red-500/40 bg-red-950/20"
-                      : "border-slate-800 bg-slate-900/60 hover:border-slate-700"
+                      ? "border-primary/40 bg-primary/10"
+                      : "border-border bg-card hover:border-primary/30 hover:bg-muted/60"
                   }`}
                 >
                   <Button
@@ -201,7 +201,7 @@ export const PlaylistsView = React.memo(() => {
                       void handlePlayPlaylistById(pl.id);
                     }}
                     title={`Reproducir playlist ${pl.title}`}
-                    className="mr-2 shrink-0 text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                    className="mr-2 shrink-0 text-foreground hover:bg-muted"
                   >
                     <Play className="h-4 w-4 fill-current" />
                   </Button>
@@ -212,15 +212,15 @@ export const PlaylistsView = React.memo(() => {
                     className="min-w-0 flex-1 text-left"
                   >
                     <div className="flex items-center gap-2">
-                      <ListMusic className="h-4 w-4 text-red-400" />
-                      <span className="truncate text-sm font-semibold text-slate-100">
+                      <ListMusic className="h-4 w-4 text-primary" />
+                      <span className="truncate text-sm font-semibold text-foreground">
                         {pl.title}
                       </span>
                     </div>
-                    <div className="mt-1 flex items-center gap-2 text-xs text-slate-400">
+                    <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                       <span>{pl.track_count} pistas</span>
                       {pl.youtube_playlist_id && (
-                        <code className="rounded bg-slate-800 px-1 text-[10px]">
+                        <code className="rounded bg-muted px-1 text-[10px] text-muted-foreground">
                           {pl.youtube_playlist_id}
                         </code>
                       )}
@@ -258,19 +258,19 @@ export const PlaylistsView = React.memo(() => {
         </div>
 
         {/* Detalle de la Playlist seleccionada */}
-        <div className="flex flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-950/60 p-4 lg:col-span-2">
+        <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-card/60 p-4 lg:col-span-2">
           {!activePlaylist ? (
-            <div className="flex flex-1 items-center justify-center text-xs text-slate-500">
+            <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
               Selecciona una playlist para ver y reproducir sus pistas
             </div>
           ) : (
             <>
-              <div className="mb-4 flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="mb-4 flex items-center justify-between border-b border-border pb-3">
                 <div>
-                  <h3 className="text-lg font-bold text-white">
+                  <h3 className="text-lg font-bold text-foreground">
                     {activePlaylist.playlist.title}
                   </h3>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-muted-foreground">
                     {activePlaylist.tracks.length} pistas asociadas
                   </p>
                 </div>
@@ -288,7 +288,7 @@ export const PlaylistsView = React.memo(() => {
 
               <div className="flex-1 space-y-2 overflow-y-auto">
                 {activePlaylist.tracks.length === 0 ? (
-                  <p className="py-12 text-center text-xs text-slate-500">
+                  <p className="py-12 text-center text-xs text-muted-foreground">
                     Esta playlist aún no tiene pistas. Puedes agregarlas desde la
                     Biblioteca.
                   </p>
@@ -301,14 +301,14 @@ export const PlaylistsView = React.memo(() => {
                         key={track.youtube_id}
                         className={`group flex items-center justify-between gap-3 rounded-xl border px-3 py-2 transition-colors ${
                           track.is_missing
-                            ? "border-amber-800 bg-amber-950/20"
+                            ? "border-amber-500/50 bg-amber-500/10"
                             : isCurrent
-                              ? "border-red-500/50 bg-red-950/20"
-                              : "border-slate-800 bg-slate-900/70 hover:border-slate-700 hover:bg-slate-800/50"
+                              ? "border-primary/50 bg-primary/10"
+                              : "border-border bg-card hover:border-primary/30 hover:bg-muted/60"
                         }`}
                       >
                         <div className="flex min-w-0 flex-1 items-center gap-3">
-                          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-800 transform-gpu">
+                          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-muted transform-gpu">
                             {thumbUrl ? (
                               <img
                                 src={thumbUrl}
@@ -317,7 +317,7 @@ export const PlaylistsView = React.memo(() => {
                                 className="h-full w-full object-cover"
                               />
                             ) : (
-                              <div className="flex h-full w-full items-center justify-center text-slate-500">
+                              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                                 <Music className="h-4 w-4" />
                               </div>
                             )}
@@ -337,7 +337,7 @@ export const PlaylistsView = React.memo(() => {
                             <div className="flex items-center gap-2">
                               <p
                                 className={`truncate text-sm font-medium ${
-                                  isCurrent ? "font-semibold text-red-400" : "text-slate-100"
+                                  isCurrent ? "font-semibold text-primary" : "text-foreground"
                                 }`}
                               >
                                 {track.title}
@@ -348,7 +348,7 @@ export const PlaylistsView = React.memo(() => {
                                 </Badge>
                               )}
                             </div>
-                            <p className="truncate text-xs text-slate-400">
+                            <p className="truncate text-xs text-muted-foreground">
                               {track.artist} · {formatDuration(track.duration)}
                             </p>
                           </div>

@@ -197,24 +197,24 @@ export const WorkspaceSettingsView = React.memo(() => {
   return (
     <section className="flex h-full flex-col gap-5 overflow-y-auto pr-1">
       <header>
-        <h2 className="text-xl font-bold text-white">
+        <h2 className="text-xl font-bold text-foreground">
           Configuración General & Workspaces
         </h2>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-muted-foreground">
           Ajustes del sistema, autenticación de YouTube OAuth, cookies y gestión de directorios de música.
         </p>
       </header>
 
       {/* Selector de Tema y Apariencia (Modo Claro/Oscuro y Familias de Colores) */}
-      <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/75 p-5">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div className="space-y-4 rounded-xl border border-border bg-card p-5">
+        <div className="flex items-center justify-between border-b border-border pb-3">
           <div className="flex items-center gap-2.5">
             <Palette className="h-5 w-5 text-primary" />
             <div>
-              <h3 className="text-sm font-semibold text-white">
+              <h3 className="text-sm font-semibold text-foreground">
                 Personalización de Tema y Colores
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 Variables CSS en :root según convención Shadcn UI con inyección dinámica de clases.
               </p>
             </div>
@@ -225,7 +225,7 @@ export const WorkspaceSettingsView = React.memo(() => {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Selector de Modo: Claro vs Oscuro */}
           <div className="space-y-2">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Modo de Luminosidad
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -235,11 +235,11 @@ export const WorkspaceSettingsView = React.memo(() => {
                 className={cn(
                   "flex items-center justify-center gap-2 rounded-lg border p-3 text-xs font-medium transition",
                   mode === "light"
-                    ? "border-primary bg-primary/10 text-white ring-1 ring-primary shadow-sm"
-                    : "border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700 hover:text-white",
+                    ? "border-primary bg-primary/15 text-primary font-semibold ring-1 ring-primary shadow-sm"
+                    : "border-border bg-card/60 text-muted-foreground hover:border-border/80 hover:text-foreground",
                 )}
               >
-                <Sun className={cn("h-4 w-4", mode === "light" ? "text-amber-400" : "text-slate-400")} />
+                <Sun className={cn("h-4 w-4", mode === "light" ? "text-amber-500" : "text-muted-foreground")} />
                 <span>Modo Claro (Por defecto)</span>
               </button>
 
@@ -249,11 +249,11 @@ export const WorkspaceSettingsView = React.memo(() => {
                 className={cn(
                   "flex items-center justify-center gap-2 rounded-lg border p-3 text-xs font-medium transition",
                   mode === "dark"
-                    ? "border-primary bg-primary/10 text-white ring-1 ring-primary shadow-sm"
-                    : "border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700 hover:text-white",
+                    ? "border-primary bg-primary/15 text-primary font-semibold ring-1 ring-primary shadow-sm"
+                    : "border-border bg-card/60 text-muted-foreground hover:border-border/80 hover:text-foreground",
                 )}
               >
-                <Moon className={cn("h-4 w-4", mode === "dark" ? "text-sky-400" : "text-slate-400")} />
+                <Moon className={cn("h-4 w-4", mode === "dark" ? "text-primary" : "text-muted-foreground")} />
                 <span>Modo Oscuro</span>
               </button>
             </div>
@@ -261,7 +261,7 @@ export const WorkspaceSettingsView = React.memo(() => {
 
           {/* Selector de Familia de Colores */}
           <div className="space-y-2">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Familia de Colores (Paleta)
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -272,12 +272,12 @@ export const WorkspaceSettingsView = React.memo(() => {
                 className={cn(
                   "flex flex-col gap-2 rounded-lg border p-3 text-left transition",
                   colorFamily === "blue"
-                    ? "border-primary bg-primary/10 ring-1 ring-primary shadow-sm"
-                    : "border-slate-800 bg-slate-950/60 hover:border-slate-700",
+                    ? "border-primary bg-primary/15 ring-1 ring-primary shadow-sm"
+                    : "border-border bg-card/60 hover:border-border/80",
                 )}
               >
                 <div className="flex items-center justify-between">
-                  <span className={cn("text-xs font-semibold", colorFamily === "blue" ? "text-white" : "text-slate-300")}>
+                  <span className={cn("text-xs font-semibold", colorFamily === "blue" ? "text-primary" : "text-foreground")}>
                     Blue & Lavender
                   </span>
                   {colorFamily === "blue" && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
@@ -299,12 +299,12 @@ export const WorkspaceSettingsView = React.memo(() => {
                 className={cn(
                   "flex flex-col gap-2 rounded-lg border p-3 text-left transition",
                   colorFamily === "teal"
-                    ? "border-primary bg-primary/10 ring-1 ring-primary shadow-sm"
-                    : "border-slate-800 bg-slate-950/60 hover:border-slate-700",
+                    ? "border-primary bg-primary/15 ring-1 ring-primary shadow-sm"
+                    : "border-border bg-card/60 hover:border-border/80",
                 )}
               >
                 <div className="flex items-center justify-between">
-                  <span className={cn("text-xs font-semibold", colorFamily === "teal" ? "text-white" : "text-slate-300")}>
+                  <span className={cn("text-xs font-semibold", colorFamily === "teal" ? "text-primary" : "text-foreground")}>
                     Teal & Spruce
                   </span>
                   {colorFamily === "teal" && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
@@ -325,10 +325,10 @@ export const WorkspaceSettingsView = React.memo(() => {
 
       <form
         onSubmit={(e) => void handleSaveConfig(e)}
-        className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/75 p-5"
+        className="space-y-4 rounded-xl border border-border bg-card p-5"
       >
         <div className="space-y-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Directorio Raíz del Workspace
           </label>
           <div className="flex gap-2">
@@ -350,7 +350,7 @@ export const WorkspaceSettingsView = React.memo(() => {
         </div>
 
         <div className="space-y-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             URL del Microservicio Go (Docker)
           </label>
           <div className="flex gap-2">
@@ -388,13 +388,13 @@ export const WorkspaceSettingsView = React.memo(() => {
         </div>
 
         {formError && (
-          <div className="rounded-lg border border-rose-800 bg-rose-950/40 p-3 text-xs text-rose-300">
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-xs text-destructive">
             {formError}
           </div>
         )}
 
         {statusMessage && (
-          <div className="flex items-center gap-2 rounded-lg border border-emerald-800 bg-emerald-950/40 p-3 text-xs text-emerald-300">
+          <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 className="h-4 w-4" />
             {statusMessage}
           </div>
@@ -402,17 +402,17 @@ export const WorkspaceSettingsView = React.memo(() => {
       </form>
 
       {/* Memoria Persistente de Workspaces (Cambio rápido con 1 clic) */}
-      <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+      <div className="space-y-3 rounded-xl border border-border bg-card p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <History className="h-4 w-4 text-red-400" />
-            <h3 className="text-sm font-semibold text-white">
+            <History className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">
               Workspaces Guardados en Memoria de la Aplicación
             </h3>
           </div>
           {appSettings?.config_file_path && (
             <code
-              className="rounded bg-slate-950 px-2 py-0.5 text-[11px] text-slate-400"
+              className="rounded bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
               title="Ubicación del archivo settings.json en el SO"
             >
               {appSettings.config_file_path}
@@ -421,7 +421,7 @@ export const WorkspaceSettingsView = React.memo(() => {
         </div>
 
         {!appSettings || appSettings.recent_workspaces.length === 0 ? (
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             Aún no hay Workspaces guardados. Al inicializar cualquier carpeta quedará
             registrada aquí para cambiar con un clic.
           </p>
@@ -434,19 +434,19 @@ export const WorkspaceSettingsView = React.memo(() => {
                   key={saved.path}
                   className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-2.5 text-xs ${
                     isCurrent
-                      ? "border-red-500/40 bg-red-950/20"
-                      : "border-slate-800 bg-slate-950/60"
+                      ? "border-primary/40 bg-primary/10"
+                      : "border-border bg-card/60"
                   }`}
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-slate-100">{saved.name}</span>
+                      <span className="font-semibold text-foreground">{saved.name}</span>
                       {isCurrent && <Badge tone="info">Activo</Badge>}
                       {!saved.is_available && (
                         <Badge tone="warning">No encontrado en disco</Badge>
                       )}
                     </div>
-                    <p className="mt-0.5 truncate font-mono text-slate-400">
+                    <p className="mt-0.5 truncate font-mono text-muted-foreground">
                       {saved.path}
                     </p>
                   </div>
@@ -501,11 +501,11 @@ export const WorkspaceSettingsView = React.memo(() => {
       </div>
 
       {/* Actualización en caliente de cookies.txt desde UI Tauri */}
-      <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+      <div className="space-y-3 rounded-xl border border-border bg-card p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Cookie className="h-4 w-4 text-amber-400" />
-            <h3 className="text-sm font-semibold text-white">
+            <Cookie className="h-4 w-4 text-amber-500" />
+            <h3 className="text-sm font-semibold text-foreground">
               Gestión de Cookies de YouTube (Sin Re-build)
             </h3>
           </div>
@@ -514,12 +514,12 @@ export const WorkspaceSettingsView = React.memo(() => {
           </Badge>
         </div>
 
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-muted-foreground">
           Importa o actualiza tu archivo{" "}
-          <code className="text-slate-300">cookies.txt</code> directamente desde aquí.
+          <code className="font-mono text-foreground">cookies.txt</code> directamente desde aquí.
           Rust lo copia de forma segura con permisos restringidos (
-          <code className="text-slate-300">0600</code>) a la ruta montada por Docker en
-          modo solo lectura (<code className="text-slate-300">:ro</code>), surtiendo
+          <code className="font-mono text-foreground">0600</code>) a la ruta montada por Docker en
+          modo solo lectura (<code className="font-mono text-foreground">:ro</code>), surtiendo
           efecto de inmediato en la siguiente descarga sin recompilar.
         </p>
 
@@ -553,11 +553,11 @@ export const WorkspaceSettingsView = React.memo(() => {
       </div>
 
       {/* Conexión OAuth 2.0 con Google / YouTube (Redirección Navegador <-> App) */}
-      <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+      <div className="space-y-3 rounded-xl border border-border bg-card p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <KeyRound className="h-4 w-4 text-sky-400" />
-            <h3 className="text-sm font-semibold text-white">
+            <KeyRound className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">
               Cuenta de YouTube OAuth 2.0 (Sincronización de Likes)
             </h3>
           </div>
@@ -573,12 +573,12 @@ export const WorkspaceSettingsView = React.memo(() => {
           </div>
         </div>
 
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-muted-foreground">
           Al pulsar <strong>Conectar con Google</strong>, se abrirá la pantalla de
           consentimiento oficial de Google en tu navegador y, tras autorizar el acceso
-          de solo lectura (<code className="text-slate-300">youtube.readonly</code>),
+          de solo lectura (<code className="font-mono text-foreground">youtube.readonly</code>),
           redirigirá automáticamente de vuelta al callback local (
-          <code className="text-slate-300">
+          <code className="font-mono text-foreground">
             {oauthStatus?.redirect_uri ?? "http://127.0.0.1:8080/api/oauth/callback"}
           </code>
           ) guardando el token de forma segura en el microservicio.
@@ -629,9 +629,9 @@ export const WorkspaceSettingsView = React.memo(() => {
 
       {/* Estado actual del Workspace */}
       {workspace && (
-        <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+        <div className="space-y-3 rounded-xl border border-border bg-card p-5">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-white">
+            <h3 className="text-sm font-semibold text-foreground">
               Estructura del Workspace Activo
             </h3>
             <Badge tone={workspace.is_valid ? "success" : "danger"}>
@@ -639,24 +639,24 @@ export const WorkspaceSettingsView = React.memo(() => {
             </Badge>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 text-xs text-slate-300 md:grid-cols-2">
-            <div className="rounded-lg bg-slate-950/70 p-3">
-              <span className="text-slate-500">Workspace Root:</span>
-              <p className="mt-1 font-mono text-slate-200">{workspace.root_path}</p>
+          <div className="grid grid-cols-1 gap-3 text-xs text-foreground md:grid-cols-2">
+            <div className="rounded-lg border border-border/50 bg-card/40 p-3">
+              <span className="text-muted-foreground">Workspace Root:</span>
+              <p className="mt-1 font-mono text-foreground">{workspace.root_path}</p>
             </div>
-            <div className="rounded-lg bg-slate-950/70 p-3">
-              <span className="text-slate-500">SQLite Database:</span>
-              <p className="mt-1 font-mono text-slate-200">{workspace.database_path}</p>
+            <div className="rounded-lg border border-border/50 bg-card/40 p-3">
+              <span className="text-muted-foreground">SQLite Database:</span>
+              <p className="mt-1 font-mono text-foreground">{workspace.database_path}</p>
             </div>
-            <div className="rounded-lg bg-slate-950/70 p-3">
-              <span className="text-slate-500">Carpeta de Audio (/tracks):</span>
-              <p className="mt-1 font-mono text-slate-200">{workspace.tracks_dir}</p>
+            <div className="rounded-lg border border-border/50 bg-card/40 p-3">
+              <span className="text-muted-foreground">Carpeta de Audio (/tracks):</span>
+              <p className="mt-1 font-mono text-foreground">{workspace.tracks_dir}</p>
             </div>
-            <div className="rounded-lg bg-slate-950/70 p-3">
-              <span className="text-slate-500">
+            <div className="rounded-lg border border-border/50 bg-card/40 p-3">
+              <span className="text-muted-foreground">
                 Carpeta de Miniaturas (/thumbnails):
               </span>
-              <p className="mt-1 font-mono text-slate-200">
+              <p className="mt-1 font-mono text-foreground">
                 {workspace.thumbnails_dir}
               </p>
             </div>
@@ -666,9 +666,9 @@ export const WorkspaceSettingsView = React.memo(() => {
 
       {/* Estado del Microservicio Go */}
       {health && (
-        <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-900/60 p-5 text-xs">
+        <div className="space-y-2 rounded-xl border border-border bg-card p-5 text-xs">
           <div className="flex items-center justify-between">
-            <span className="font-semibold text-slate-200">
+            <span className="font-semibold text-foreground">
               Estado de {health.service} (v{health.version})
             </span>
             <Badge tone={health.status === "healthy" ? "success" : "danger"}>
@@ -676,10 +676,10 @@ export const WorkspaceSettingsView = React.memo(() => {
             </Badge>
           </div>
           {health.dependencies && (
-            <div className="flex gap-4 pt-2 text-slate-400">
+            <div className="flex gap-4 pt-2 text-muted-foreground">
               {Object.entries(health.dependencies).map(([dep, state]) => (
                 <span key={dep}>
-                  {dep}: <strong className="text-slate-200">{state}</strong>
+                  {dep}: <strong className="text-foreground">{state}</strong>
                 </span>
               ))}
             </div>

@@ -238,17 +238,17 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
-      <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+      <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
         {/* Encabezado */}
-        <header className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
+        <header className="flex items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-2.5">
-            <ListMusic className="h-5 w-5 text-red-500" />
+            <ListMusic className="h-5 w-5 text-primary" />
             <div>
-              <h3 className="text-base font-semibold text-white">
+              <h3 className="text-base font-semibold text-foreground">
                 Previsualización e Importación de Lista
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 Selecciona cómo organizar las canciones en tu biblioteca local
               </p>
             </div>
@@ -256,7 +256,7 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+            className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
             aria-label="Cerrar modal"
           >
             <X className="h-5 w-5" />
@@ -266,15 +266,15 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
         {/* Contenido principal */}
         <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4 text-xs">
           {isLoadingPreview && (
-            <div className="flex flex-col items-center justify-center gap-3 py-12 text-slate-400">
-              <Loader2 className="h-8 w-8 animate-spin text-red-500" />
+            <div className="flex flex-col items-center justify-center gap-3 py-12 text-muted-foreground">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p>Consultando lista de YouTube sin descargar audio...</p>
             </div>
           )}
 
           {previewError && (
-            <div className="flex items-start gap-3 rounded-xl border border-rose-800/80 bg-rose-950/40 p-4 text-rose-200">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-400" />
+            <div className="flex items-start gap-3 rounded-xl border border-destructive/40 bg-destructive/15 p-4 text-destructive">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <div className="space-y-2">
                 <p>{previewError}</p>
                 <Button variant="outline" size="sm" onClick={() => void loadPreview()}>
@@ -290,18 +290,18 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-semibold text-slate-200">
+                    <h4 className="font-semibold text-foreground">
                       {previewData.playlist_title || "Lista sin título"} (
                       {previewData.items.length} canciones)
                     </h4>
-                    <p className="mt-0.5 text-xs text-slate-400">
-                      <span className="font-medium text-emerald-400">
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      <span className="font-medium text-emerald-500">
                         {downloadedCount} ya en biblioteca
                       </span>
                       {pendingCount > 0 ? (
-                        <span> · <strong className="text-amber-400">{pendingCount}</strong> pendientes de descarga</span>
+                        <span> · <strong className="text-amber-500">{pendingCount}</strong> pendientes de descarga</span>
                       ) : selectedCount > 0 ? (
-                        <span> · <strong className="text-emerald-300">Todas disponibles en local</strong></span>
+                        <span> · <strong className="text-emerald-500">Todas disponibles en local</strong></span>
                       ) : null}
                     </p>
                   </div>
@@ -311,41 +311,41 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                 </div>
 
                 {/* Barra de selección rápida */}
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] font-medium text-slate-400">Seleccionar:</span>
+                    <span className="text-[11px] font-medium text-muted-foreground">Seleccionar:</span>
                     <button
                       type="button"
                       onClick={selectAll}
-                      className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 text-[11px] text-slate-200 transition hover:bg-slate-700 hover:text-white"
+                      className="rounded border border-border bg-muted px-2 py-0.5 text-[11px] text-foreground transition hover:bg-muted/80"
                     >
                       Todas
                     </button>
                     <button
                       type="button"
                       onClick={selectUnder7Min}
-                      className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 text-[11px] text-slate-200 transition hover:bg-slate-700 hover:text-white"
+                      className="rounded border border-border bg-muted px-2 py-0.5 text-[11px] text-foreground transition hover:bg-muted/80"
                     >
                       &lt; 7 min (Por defecto)
                     </button>
                     <button
                       type="button"
                       onClick={deselectAll}
-                      className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 text-[11px] text-slate-200 transition hover:bg-slate-700 hover:text-white"
+                      className="rounded border border-border bg-muted px-2 py-0.5 text-[11px] text-foreground transition hover:bg-muted/80"
                     >
                       Ninguna
                     </button>
                   </div>
 
-                  <span className="text-[11px] text-slate-400">
-                    <strong className={selectedCount > 0 ? "text-slate-100" : "text-rose-400"}>
+                  <span className="text-[11px] text-muted-foreground">
+                    <strong className={selectedCount > 0 ? "text-foreground" : "text-destructive"}>
                       {selectedCount}
                     </strong>{" "}
                     de {previewData.items.length} seleccionadas
                   </span>
                 </div>
 
-                <div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-slate-800 bg-slate-950/60 p-2">
+                <div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-border bg-card/60 p-2">
                   {previewData.items.map((item, index) => {
                     const isAlreadyDownloaded = existingTrackIds.has(item.youtube_id);
                     const isSelected = selectedTrackIds.has(item.youtube_id);
@@ -357,8 +357,8 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                         onClick={() => toggleTrack(item.youtube_id)}
                         className={`flex cursor-pointer items-center justify-between gap-3 rounded px-2.5 py-1.5 transition select-none ${
                           isSelected
-                            ? "bg-slate-900/90 hover:bg-slate-800/80"
-                            : "opacity-50 hover:opacity-80 hover:bg-slate-900/40"
+                            ? "bg-primary/10 hover:bg-primary/15"
+                            : "opacity-60 hover:opacity-100 hover:bg-muted/40"
                         }`}
                       >
                         <div className="flex min-w-0 items-center gap-2.5">
@@ -369,16 +369,16 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                               e.stopPropagation();
                               toggleTrack(item.youtube_id);
                             }}
-                            className="h-4 w-4 rounded border-slate-700 bg-slate-800 text-red-600 focus:ring-red-500 focus:ring-offset-slate-900"
+                            className="h-4 w-4 rounded border-border bg-card text-primary focus:ring-ring"
                           />
-                          <span className="w-5 text-right font-mono text-[11px] text-slate-500">
+                          <span className="w-5 text-right font-mono text-[11px] text-muted-foreground">
                             {index + 1}.
                           </span>
                           <div className="truncate">
-                            <p className={`truncate font-medium text-xs ${isSelected ? "text-slate-200" : "text-slate-400"}`}>
+                            <p className={`truncate font-medium text-xs ${isSelected ? "text-primary font-semibold" : "text-foreground"}`}>
                               {item.title || item.youtube_id}
                             </p>
-                            <p className="truncate text-[11px] text-slate-500">{item.artist}</p>
+                            <p className="truncate text-[11px] text-muted-foreground">{item.artist}</p>
                           </div>
                         </div>
 
@@ -394,7 +394,7 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                               Descargada
                             </Badge>
                           )}
-                          <span className="flex items-center gap-1 font-mono text-[11px] text-slate-400">
+                          <span className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
                             <Clock className="h-3 w-3" />
                             {formatDuration(item.duration)}
                           </span>
@@ -406,24 +406,24 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
               </div>
 
               {/* Selector de destino */}
-              <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4">
-                <h4 className="font-semibold text-slate-200">Destino de las canciones:</h4>
+              <div className="space-y-3 rounded-xl border border-border bg-card/40 p-4">
+                <h4 className="font-semibold text-foreground">Destino de las canciones:</h4>
 
                 <div className="space-y-2">
                   {/* Opción 1: Crear nueva playlist */}
-                  <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-800 p-2.5 transition hover:bg-slate-900/60">
+                  <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-2.5 transition hover:bg-muted/50">
                     <input
                       type="radio"
                       name="destination"
                       value="new"
                       checked={destination === "new"}
                       onChange={() => setDestination("new")}
-                      className="mt-1 text-red-600 focus:ring-red-500"
+                      className="mt-1 text-primary focus:ring-ring"
                     />
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2">
-                        <FolderPlus className="h-4 w-4 text-red-400" />
-                        <span className="font-medium text-slate-200">
+                        <FolderPlus className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-foreground">
                           Crear nueva playlist local
                         </span>
                       </div>
@@ -439,33 +439,33 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                   </label>
 
                   {/* Opción 2: Agregar a playlist existente */}
-                  <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-800 p-2.5 transition hover:bg-slate-900/60">
+                  <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-2.5 transition hover:bg-muted/50">
                     <input
                       type="radio"
                       name="destination"
                       value="existing"
                       checked={destination === "existing"}
                       onChange={() => setDestination("existing")}
-                      className="mt-1 text-red-600 focus:ring-red-500"
+                      className="mt-1 text-primary focus:ring-ring"
                     />
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2">
-                        <ListMusic className="h-4 w-4 text-sky-400" />
-                        <span className="font-medium text-slate-200">
+                        <ListMusic className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-foreground">
                           Agregar a una playlist existente
                         </span>
                       </div>
                       {destination === "existing" && (
                         <div>
                           {playlists.length === 0 ? (
-                            <p className="text-[11px] text-amber-400">
+                            <p className="text-[11px] text-amber-500">
                               No tienes playlists creadas todavía. Elige "Crear nueva playlist".
                             </p>
                           ) : (
                             <select
                               value={selectedPlaylistId ?? ""}
                               onChange={(e) => setSelectedPlaylistId(Number(e.target.value))}
-                              className="h-8 w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 text-xs text-slate-200 focus:border-red-500 focus:outline-none"
+                              className="h-8 w-full rounded-lg border border-input bg-card px-2.5 text-xs text-foreground focus:ring-1 focus:ring-ring focus:outline-none"
                             >
                               {playlists.map((pl) => (
                                 <option key={pl.id} value={pl.id}>
@@ -480,23 +480,23 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                   </label>
 
                   {/* Opción 3: Solo biblioteca */}
-                  <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-800 p-2.5 transition hover:bg-slate-900/60">
+                  <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-2.5 transition hover:bg-muted/50">
                     <input
                       type="radio"
                       name="destination"
                       value="library_only"
                       checked={destination === "library_only"}
                       onChange={() => setDestination("library_only")}
-                      className="mt-1 text-red-600 focus:ring-red-500"
+                      className="mt-1 text-primary focus:ring-ring"
                     />
                     <div>
                       <div className="flex items-center gap-2">
-                        <Library className="h-4 w-4 text-emerald-400" />
-                        <span className="font-medium text-slate-200">
+                        <Library className="h-4 w-4 text-emerald-500" />
+                        <span className="font-medium text-foreground">
                           Solo importar a mi biblioteca (sin playlist)
                         </span>
                       </div>
-                      <p className="mt-0.5 text-[11px] text-slate-400">
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
                         Los audios se descargarán en tu biblioteca general sin asociarse a ninguna
                         lista.
                       </p>
@@ -506,19 +506,19 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
 
                 {/* Sincronización y desvinculación bulk de eliminados */}
                 {destination !== "library_only" && (
-                  <div className="mt-3 rounded-lg border border-slate-800 bg-slate-900/70 p-3">
-                    <label className="flex cursor-pointer items-center gap-2.5 text-slate-300">
+                  <div className="mt-3 rounded-lg border border-border bg-card/60 p-3">
+                    <label className="flex cursor-pointer items-center gap-2.5 text-foreground">
                       <input
                         type="checkbox"
                         checked={unlinkRemoved}
                         onChange={(e) => setUnlinkRemoved(e.target.checked)}
-                        className="rounded border-slate-700 bg-slate-800 text-red-600 focus:ring-red-500"
+                        className="rounded border-input bg-card text-primary focus:ring-ring"
                       />
                       <span className="font-medium">
                         Sincronizar y desvincular canciones eliminadas de YouTube
                       </span>
                     </label>
-                    <p className="mt-1 pl-6 text-[11px] text-slate-400">
+                    <p className="mt-1 pl-6 text-[11px] text-muted-foreground">
                       Si una canción de tu playlist local ya no existe en la lista de YouTube, se
                       removerá de la lista (el archivo físico permanece seguro en tu biblioteca).
                     </p>
@@ -530,7 +530,7 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
         </div>
 
         {/* Acciones */}
-        <footer className="flex items-center justify-end gap-2.5 border-t border-slate-800 px-6 py-4">
+        <footer className="flex items-center justify-end gap-2.5 border-t border-border px-6 py-4">
           <Button variant="secondary" onClick={onClose} disabled={isSubmitting}>
             Cancelar
           </Button>
