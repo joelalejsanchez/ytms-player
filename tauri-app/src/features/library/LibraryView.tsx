@@ -1,8 +1,10 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowUpDown, Heart, Loader2, Play, RefreshCw, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowUpDown, Loader2, Play, RefreshCw, Search, ShieldCheck, Sparkles } from "lucide-react";
 import React, { useCallback, useMemo, useRef, useState } from "react";
+import { ActionMenu } from "@/components/ui/ActionMenu";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
-import { Badge, Button, Input } from "@/components/ui/Primitives";
+import { CustomSelect, type SelectOption } from "@/components/ui/CustomSelect";
+import { Button, Input } from "@/components/ui/Primitives";
 import { MetadataSyncModal } from "@/features/library/MetadataSyncModal";
 import { TrackRow } from "@/features/library/TrackRow";
 import { useLibraryStore } from "@/stores/useLibraryStore";
@@ -11,11 +13,25 @@ import type { Track } from "@/types/models";
 
 type SortField = "created_at" | "title" | "artist" | "duration" | "file_size";
 
+const FORMAT_OPTIONS: SelectOption[] = [
+  { value: "all", label: "Todos los formatos" },
+  { value: "mp3", label: "MP3" },
+  { value: "m4a", label: "M4A" },
+  { value: "opus", label: "OPUS" },
+];
+
+const SORT_OPTIONS: SelectOption<SortField>[] = [
+  { value: "created_at", label: "Fecha de registro" },
+  { value: "title", label: "Título" },
+  { value: "artist", label: "Artista" },
+  { value: "duration", label: "Duración" },
+  { value: "file_size", label: "Tamaño" },
+];
+
 export const LibraryView = React.memo(() => {
   const parentRef = useRef<HTMLDivElement | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [onlyLiked, setOnlyLiked] = useState(false);
   const [formatFilter, setFormatFilter] = useState<string>("all");
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortAsc, setSortAsc] = useState(false);
@@ -47,9 +63,6 @@ export const LibraryView = React.memo(() => {
     const query = searchQuery.trim().toLowerCase();
 
     const filtered = tracks.filter((track) => {
-      if (onlyLiked && !track.liked) {
-        return false;
-      }
       if (formatFilter !== "all" && track.file_extension !== formatFilter) {
         return false;
       }
@@ -85,7 +98,7 @@ export const LibraryView = React.memo(() => {
       }
       return sortAsc ? comparison : -comparison;
     });
-  }, [tracks, searchQuery, onlyLiked, formatFilter, sortField, sortAsc]);
+  }, [tracks, searchQuery, formatFilter, sortField, sortAsc]);
 
   // Callbacks estables para hijos memoizados (SDD 7.2 useCallback)
   const handlePlay = useCallback(
@@ -164,124 +177,91 @@ export const LibraryView = React.memo(() => {
   });
 
   return (
-    <section className="flex h-full flex-col gap-4">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-foreground">Biblioteca Multimedia</h2>
-          <p className="text-xs text-muted-foreground">
-            Almacenamiento local indexado por{" "}
-            <code className="text-foreground">youtube_id</code> en SQLite
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setIsMetadataModalOpen(true)}
-            disabled={tracks.length === 0 || isLoading || isVerifying || isSyncingLikes}
-          >
-            <Sparkles className="h-4 w-4 text-amber-500" />
-            Actualizar Metadatos
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => void handleVerifyIntegrity()}
-            disabled={isLoading || isVerifying || isSyncingLikes}
-          >
-            {isVerifying ? (
-              <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
-            ) : (
-              <ShieldCheck className="h-4 w-4 text-emerald-500" />
-            )}
-            {isVerifying ? "Verificando..." : "Verificar Integridad"}
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => void handleSyncLikes()}
-            disabled={isLoading || isVerifying || isSyncingLikes || tracks.length === 0}
-          >
-            {isSyncingLikes ? (
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-            {isSyncingLikes ? "Sincronizando..." : "Sincronizar Likes"}
-          </Button>
-
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handlePlayAll}
-            disabled={filteredTracks.length === 0}
-          >
-            <Play className="h-4 w-4" />
-            Reproducir Todo ({filteredTracks.length})
-          </Button>
-        </div>
-      </header>
-
-      {/* Barra de búsqueda y filtros */}
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-3">
-        <div className="relative min-w-[240px] flex-1">
+    <section className="flex h-full flex-col gap-3">
+      {/* 1. Contenedor transparente superior: Búsqueda de ancho completo + Menú dropdown de 3 puntos */}
+      <div className="flex items-center gap-2 w-full">
+        <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar por título, artista o youtube_id..."
-            className="pl-9"
+            className="h-9 w-full pl-9 bg-card"
           />
         </div>
 
+        <ActionMenu
+          title="Opciones de biblioteca"
+          triggerClassName="h-9 w-9 rounded-lg border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground shadow-xs shrink-0 flex items-center justify-center"
+          items={[
+            {
+              label: "Actualizar Metadatos",
+              icon: <Sparkles className="h-4 w-4 text-amber-500" />,
+              onClick: () => setIsMetadataModalOpen(true),
+              disabled: tracks.length === 0 || isLoading || isVerifying || isSyncingLikes,
+            },
+            {
+              label: isVerifying ? "Verificando..." : "Verificar Integridad",
+              icon: isVerifying ? (
+                <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+              ) : (
+                <ShieldCheck className="h-4 w-4 text-emerald-500" />
+              ),
+              onClick: () => void handleVerifyIntegrity(),
+              disabled: isLoading || isVerifying || isSyncingLikes,
+            },
+            {
+              label: isSyncingLikes ? "Sincronizando..." : "Sincronizar Likes",
+              icon: isSyncingLikes ? (
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              ) : (
+                <RefreshCw className="h-4 w-4 text-sky-500" />
+              ),
+              onClick: () => void handleSyncLikes(),
+              disabled: isLoading || isVerifying || isSyncingLikes || tracks.length === 0,
+            },
+          ]}
+        />
+      </div>
+
+      {/* 2. Contenedor flex sin fondo: Reproducir todo a la izquierda + Filtros a la derecha */}
+      <div className="flex flex-wrap items-center justify-between gap-3 w-full">
         <Button
-          variant={onlyLiked ? "primary" : "secondary"}
+          variant="primary"
           size="sm"
-          onClick={() => setOnlyLiked((prev) => !prev)}
+          onClick={handlePlayAll}
+          disabled={filteredTracks.length === 0}
         >
-          <Heart className="h-3.5 w-3.5" />
-          Favoritos
+          <Play className="h-4 w-4" />
+          Reproducir Todo ({filteredTracks.length})
         </Button>
 
-        <select
-          aria-label="Filtrar por formato"
-          value={formatFilter}
-          onChange={(e) => setFormatFilter(e.target.value)}
-          className="h-8 rounded-md border border-input bg-card px-2.5 text-xs text-foreground focus:ring-1 focus:ring-ring"
-        >
-          <option value="all">Todos los formatos</option>
-          <option value="mp3">MP3</option>
-          <option value="m4a">M4A</option>
-          <option value="opus">OPUS</option>
-        </select>
+        <div className="flex items-center gap-2">
+          <CustomSelect
+            value={formatFilter}
+            onChange={setFormatFilter}
+            options={FORMAT_OPTIONS}
+            ariaLabel="Filtrar por formato"
+          />
 
-        <select
-          aria-label="Ordenar por"
-          value={sortField}
-          onChange={(e) => setSortField(e.target.value as SortField)}
-          className="h-8 rounded-md border border-input bg-card px-2.5 text-xs text-foreground focus:ring-1 focus:ring-ring"
-        >
-          <option value="created_at">Fecha de registro</option>
-          <option value="title">Título</option>
-          <option value="artist">Artista</option>
-          <option value="duration">Duración</option>
-          <option value="file_size">Tamaño</option>
-        </select>
+          <CustomSelect
+            value={sortField}
+            onChange={(v) => setSortField(v as SortField)}
+            options={SORT_OPTIONS}
+            ariaLabel="Ordenar por"
+          />
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setSortAsc((prev) => !prev)}
-          title="Invertir orden"
-        >
-          <ArrowUpDown className="h-3.5 w-3.5" />
-          {sortAsc ? "ASC" : "DESC"}
-        </Button>
-
-        <Badge tone="default">{filteredTracks.length} pistas</Badge>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSortAsc((prev) => !prev)}
+            title={`Orden: ${sortAsc ? "Ascendente" : "Descendente"}`}
+            className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground border border-border bg-card"
+          >
+            <ArrowUpDown className="h-3.5 w-3.5" />
+            <span>{sortAsc ? "ASC" : "DESC"}</span>
+          </Button>
+        </div>
       </div>
 
       {/* Contenedor virtualizado */}
