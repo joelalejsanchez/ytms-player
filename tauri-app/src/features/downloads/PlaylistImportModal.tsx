@@ -53,6 +53,18 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
     return new Set(libraryTracks.map((t) => t.youtube_id));
   }, [libraryTracks]);
 
+  const downloadedCount = useMemo(() => {
+    if (!previewData) return 0;
+    return previewData.items.filter((i) => existingTrackIds.has(i.youtube_id)).length;
+  }, [previewData, existingTrackIds]);
+
+  const pendingCount = useMemo(() => {
+    if (!previewData) return 0;
+    return forceOverwrite
+      ? previewData.items.length
+      : previewData.items.length - downloadedCount;
+  }, [previewData, forceOverwrite, downloadedCount]);
+
   // Cargar preview masivo al abrir el modal
   const loadPreview = useCallback(async () => {
     if (!url.trim()) return;
@@ -117,8 +129,21 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
         await tauriApi.syncPlaylistTracks(targetId, allIds, unlinkRemoved);
       }
 
-      // Precargar todos los ítems en la UI en estado encolado con su título y artista real
-      for (const item of previewData.items) {
+      // Descartar aquellos temas que ya están descargados en local (salvo que se fuerce sobreescritura)
+      const pendingItems = forceOverwrite
+        ? previewData.items
+        : previewData.items.filter((i) => !existingTrackIds.has(i.youtube_id));
+
+      // Si todas las canciones de la lista ya estaban descargadas:
+      // Se vinculan inmediatamente a la playlist sin lanzar descargas ni registrar duplicados en el historial
+      if (pendingItems.length === 0) {
+        await onSuccess();
+        onClose();
+        return;
+      }
+
+      // Encolar y descargar únicamente los temas verdaderamente pendientes
+      for (const item of pendingItems) {
         useDownloadStore.getState().upsertProgressEvent({
           task_id: previewData.target_id,
           youtube_id: item.youtube_id,
@@ -137,25 +162,16 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
             playlist_title: previewData.playlist_title || "Playlist",
           },
         });
+
+        await startDownloadTask({
+          url: `https://www.youtube.com/watch?v=${item.youtube_id}`,
+          audio_format: audioFormat,
+          force_overwrite: forceOverwrite,
+          async_mode: true,
+          target_playlist_id: targetId,
+          skip_playlist: true,
+        });
       }
-
-      const finalUrl =
-        destination !== "library_only" &&
-        (previewData.target_id.startsWith("PL") ||
-          previewData.target_id.startsWith("OLAK") ||
-          previewData.target_id.startsWith("RD"))
-          ? `https://www.youtube.com/playlist?list=${previewData.target_id}`
-          : url.trim();
-
-      // Iniciar descarga asíncrona de los archivos de audio
-      await startDownloadTask({
-        url: finalUrl,
-        audio_format: audioFormat,
-        force_overwrite: forceOverwrite,
-        async_mode: true,
-        target_playlist_id: targetId,
-        skip_playlist: destination === "library_only",
-      });
 
       await onSuccess();
       onClose();
@@ -226,10 +242,22 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
               {/* Información y lista de canciones */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-semibold text-slate-200">
-                    {previewData.playlist_title || "Lista sin título"} (
-                    {previewData.items.length} canciones)
-                  </h4>
+                  <div>
+                    <h4 className="font-semibold text-slate-200">
+                      {previewData.playlist_title || "Lista sin título"} (
+                      {previewData.items.length} canciones)
+                    </h4>
+                    <p className="mt-0.5 text-xs text-slate-400">
+                      <span className="font-medium text-emerald-400">
+                        {downloadedCount} ya en biblioteca
+                      </span>
+                      {pendingCount > 0 ? (
+                        <span> · <strong className="text-amber-400">{pendingCount}</strong> pendientes de descarga</span>
+                      ) : (
+                        <span> · <strong className="text-emerald-300">Todas disponibles en local</strong></span>
+                      )}
+                    </p>
+                  </div>
                   <Badge tone={previewData.content_type === "mix" ? "warning" : "info"}>
                     {previewData.content_type === "mix" ? "Mix Autogenerado" : "Playlist"}
                   </Badge>
@@ -408,10 +436,16 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
           >
             {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
+            ) : pendingCount === 0 ? (
+              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
             ) : (
               <Download className="h-4 w-4" />
             )}
-            Confirmar e Importar
+            {isSubmitting
+              ? "Sincronizando..."
+              : pendingCount === 0
+                ? "Sincronizar a Playlist (0 descargas)"
+                : `Descargar ${pendingCount} y Sincronizar`}
           </Button>
         </footer>
       </div>

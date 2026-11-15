@@ -55,6 +55,9 @@ pub fn execute_download_and_persist(
             playlist_repo,
         )?;
         for item in &response.items {
+            if item.status == "skipped" || item.skipped {
+                continue;
+            }
             let _ = track_repo.record_download_history(
                 &response.task_id,
                 &input.url,
@@ -66,15 +69,17 @@ pub fn execute_download_and_persist(
             );
         }
     } else {
-        let _ = track_repo.record_download_history(
-            &response.task_id,
-            &input.url,
-            &response.youtube_id,
-            &response.youtube_id,
-            &response.status,
-            &format,
-            response.message.as_deref(),
-        );
+        if response.status != "skipped" {
+            let _ = track_repo.record_download_history(
+                &response.task_id,
+                &input.url,
+                &response.youtube_id,
+                &response.youtube_id,
+                &response.status,
+                &format,
+                response.message.as_deref(),
+            );
+        }
     }
 
     Ok(response)
@@ -113,15 +118,17 @@ pub fn persist_single_downloaded_item(
     let saved_track =
         register_or_update_track(workspace_path, new_track, workspace_manager, track_repo)?;
 
-    let _ = track_repo.record_download_history(
-        "sse-task",
-        "",
-        &item.youtube_id,
-        &item.metadata.title,
-        &item.status,
-        &item.file_extension,
-        item.error.as_deref(),
-    );
+    if item.status != "skipped" && !item.skipped {
+        let _ = track_repo.record_download_history(
+            "sse-task",
+            "",
+            &item.youtube_id,
+            &item.metadata.title,
+            &item.status,
+            &item.file_extension,
+            item.error.as_deref(),
+        );
+    }
 
     if !skip_playlist {
         if let Some(target_id) = target_playlist_id {
