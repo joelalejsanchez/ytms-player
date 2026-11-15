@@ -55,13 +55,83 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
   setConnectionState: (connectionState) => set({ connectionState }),
 
   upsertProgressEvent: (event) => {
-    const key = buildTaskKey(event.task_id, event.youtube_id);
-    set((state) => ({
-      tasks: {
-        ...state.tasks,
-        [key]: event,
-      },
-    }));
+    set((state) => {
+      const nextTasks = { ...state.tasks };
+      const canonicalKey = buildTaskKey(event.task_id, event.youtube_id);
+
+      // Buscar si ya existía una tarea para este youtube_id (ej. precargada con otro task_id como el ID de la playlist)
+      let existingKey: string | null = null;
+      for (const k of Object.keys(nextTasks)) {
+        if (nextTasks[k]?.youtube_id === event.youtube_id) {
+          existingKey = k;
+          break;
+        }
+      }
+
+      const existingTask = existingKey ? nextTasks[existingKey] : null;
+
+      // Preservar y fusionar metadatos para nunca perder playlist_id, playlist_title, título ni artista
+      let mergedMetadata: DownloadProgressEvent["metadata"] = undefined;
+      if (existingTask?.metadata || event.metadata) {
+        mergedMetadata = {
+          youtube_id: event.youtube_id,
+          title:
+            event.metadata?.title ||
+            existingTask?.metadata?.title ||
+            event.youtube_id,
+          artist:
+            event.metadata?.artist ||
+            existingTask?.metadata?.artist ||
+            "Unknown Artist",
+          duration:
+            event.metadata?.duration ??
+            existingTask?.metadata?.duration ??
+            0,
+          published_at:
+            event.metadata?.published_at ??
+            existingTask?.metadata?.published_at ??
+            null,
+          file_extension:
+            event.metadata?.file_extension ||
+            existingTask?.metadata?.file_extension ||
+            "mp3",
+          thumbnail_path:
+            event.metadata?.thumbnail_path ||
+            existingTask?.metadata?.thumbnail_path ||
+            "",
+          audio_path:
+            event.metadata?.audio_path ||
+            existingTask?.metadata?.audio_path ||
+            "",
+          file_size:
+            event.metadata?.file_size ??
+            existingTask?.metadata?.file_size ??
+            0,
+          playlist_id:
+            event.metadata?.playlist_id ||
+            existingTask?.metadata?.playlist_id ||
+            null,
+          playlist_title:
+            event.metadata?.playlist_title ||
+            existingTask?.metadata?.playlist_title ||
+            null,
+        };
+      }
+
+      const updatedEvent: DownloadProgressEvent = {
+        ...existingTask,
+        ...event,
+        metadata: mergedMetadata,
+      };
+
+      // Si la clave previa tenía otro task_id (ej. el ID de la playlist), eliminarla para evitar duplicación
+      if (existingKey && existingKey !== canonicalKey) {
+        delete nextTasks[existingKey];
+      }
+
+      nextTasks[canonicalKey] = updatedEvent;
+      return { tasks: nextTasks };
+    });
   },
 
   startDownloadTask: async (input) => {

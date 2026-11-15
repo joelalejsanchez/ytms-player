@@ -257,12 +257,21 @@ func (uc *DownloadUseCase) executeDownload(ctx context.Context, taskID string, r
 		failedCount   int
 	)
 
+	if contentType == domain.ContentPlaylist && playlistID == "" {
+		playlistID = targetID
+	}
 	for _, item := range rawItems {
-		if item.PlaylistID != "" {
-			playlistID = item.PlaylistID
-		}
-		if item.PlaylistTitle != "" {
+		if playlistTitle == "" && item.PlaylistTitle != "" {
 			playlistTitle = item.PlaylistTitle
+		}
+	}
+
+	for _, item := range rawItems {
+		if item.PlaylistID == "" && contentType == domain.ContentPlaylist {
+			item.PlaylistID = playlistID
+		}
+		if item.PlaylistTitle == "" && playlistTitle != "" {
+			item.PlaylistTitle = playlistTitle
 		}
 
 		res := uc.processSingleItem(ctx, taskID, req, item, resolvedTracksDir, resolvedThumbsDir)
@@ -362,16 +371,32 @@ func (uc *DownloadUseCase) processSingleItem(
 		_ = os.RemoveAll(tmpDir)
 	}()
 
+	initialMeta := domain.TrackMetadata{
+		YouTubeID:     ytID,
+		Title:         nonEmpty(item.Title, ytID),
+		Artist:        nonEmpty(item.Artist, "Unknown Artist"),
+		Duration:      item.Duration,
+		FileExtension: ext,
+		AudioPath:     hostAudio,
+		ThumbnailPath: hostThumb,
+		PlaylistID:    item.PlaylistID,
+		PlaylistTitle: item.PlaylistTitle,
+	}
+
 	uc.publishEvent(domain.ProgressEvent{
 		TaskID:    taskID,
 		YouTubeID: ytID,
 		Status:    domain.StatusDownloading,
 		Progress:  0,
+		Metadata:  &initialMeta,
 	})
 
 	downloaded, err := uc.downloader.DownloadTrack(ctx, ytID, req.AudioFormat, tmpDir, taskID, func(ev domain.ProgressEvent) {
 		ev.TaskID = taskID
 		ev.YouTubeID = ytID
+		if ev.Metadata == nil {
+			ev.Metadata = &initialMeta
+		}
 		uc.publishEvent(ev)
 	})
 	if err != nil {
@@ -380,6 +405,7 @@ func (uc *DownloadUseCase) processSingleItem(
 			YouTubeID: ytID,
 			Status:    domain.StatusFailed,
 			Error:     err.Error(),
+			Metadata:  &initialMeta,
 		})
 		return domain.DownloadItemResult{
 			YouTubeID:    ytID,
@@ -406,6 +432,7 @@ func (uc *DownloadUseCase) processSingleItem(
 		YouTubeID: ytID,
 		Status:    domain.StatusProcessing,
 		Progress:  95,
+		Metadata:  &meta,
 	})
 
 	fileSize, err := uc.processor.ProcessAndTag(

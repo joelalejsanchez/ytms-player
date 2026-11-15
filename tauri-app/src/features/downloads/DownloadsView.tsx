@@ -195,11 +195,33 @@ export const DownloadsView = React.memo(() => {
             tasks: [],
           };
         }
-        plMap[groupKey].tasks.push({ key, task });
+        // Deduplicar tareas por youtube_id dentro del grupo para conteo exacto
+        const existingIdx = plMap[groupKey].tasks.findIndex(
+          (t) => t.task.youtube_id === task.youtube_id,
+        );
+        if (existingIdx >= 0) {
+          const existing = plMap[groupKey].tasks[existingIdx];
+          if (
+            task.status === "completed" ||
+            task.status === "skipped" ||
+            task.status === "processing" ||
+            (task.status === "downloading" && existing?.task.status === "queued") ||
+            task.progress > (existing?.task.progress ?? 0)
+          ) {
+            plMap[groupKey].tasks[existingIdx] = { key, task };
+          }
+        } else {
+          plMap[groupKey].tasks.push({ key, task });
+        }
       } else {
         // Solo mostrar como activo si está en proceso o encolado
         if (isTaskActive(task)) {
-          singles.push({ key, task });
+          const existingIdx = singles.findIndex((s) => s.task.youtube_id === task.youtube_id);
+          if (existingIdx >= 0) {
+            singles[existingIdx] = { key, task };
+          } else {
+            singles.push({ key, task });
+          }
         }
       }
     }

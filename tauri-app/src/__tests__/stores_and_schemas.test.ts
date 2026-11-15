@@ -137,6 +137,50 @@ describe("useDownloadStore & Utility Helpers", () => {
     expect(useDownloadStore.getState().tasks[key]).toBeUndefined();
   });
 
+  it("updates precached playlist item with worker task event without duplicating entries", () => {
+    const store = useDownloadStore.getState();
+    // 1. Precarga desde modal de playlist
+    store.upsertProgressEvent({
+      task_id: "PL123456789",
+      youtube_id: "track_abc123",
+      status: "queued",
+      progress: 0,
+      metadata: {
+        youtube_id: "track_abc123",
+        title: "Test Song",
+        artist: "Test Artist",
+        duration: 180,
+        file_extension: "mp3",
+        thumbnail_path: "",
+        audio_path: "",
+        file_size: 0,
+        playlist_id: "PL123456789",
+        playlist_title: "My Rock Playlist",
+      },
+    });
+
+    const precachedKey = buildTaskKey("PL123456789", "track_abc123");
+    expect(useDownloadStore.getState().tasks[precachedKey]?.status).toBe("queued");
+
+    // 2. Llega evento de descarga del worker con task_id generado
+    store.upsertProgressEvent({
+      task_id: "task-999",
+      youtube_id: "track_abc123",
+      status: "completed",
+      progress: 100,
+    });
+
+    const activeTasks = Object.values(useDownloadStore.getState().tasks);
+    const matching = activeTasks.filter((t) => t.youtube_id === "track_abc123");
+    expect(matching.length).toBe(1);
+    expect(matching[0]?.status).toBe("completed");
+    expect(matching[0]?.progress).toBe(100);
+    expect(matching[0]?.metadata?.playlist_id).toBe("PL123456789");
+    expect(matching[0]?.metadata?.title).toBe("Test Song");
+
+    useDownloadStore.getState().clearCompletedTasks();
+  });
+
   it("formats duration and byte sizes accurately", () => {
     expect(formatDuration(213)).toBe("03:33");
     expect(formatDuration(3665)).toBe("1:01:05");
