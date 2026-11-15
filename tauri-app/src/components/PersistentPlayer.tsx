@@ -69,9 +69,15 @@ export const PersistentPlayer = React.memo(() => {
     isMutedRef.current = isMuted;
   }, [volume, isMuted]);
 
-  const getTargetVolume = useCallback(() => {
-    return isMutedRef.current ? 0 : volumeRef.current;
+  // Conversión de volumen perceptual (curva cúbica de PulseAudio / PipeWire) a ganancia lineal para HTML5 Audio
+  const toLinearGain = useCallback((perceptualVolume: number) => {
+    const clamped = Math.max(0, Math.min(1, perceptualVolume));
+    return Math.pow(clamped, 3);
   }, []);
+
+  const getTargetVolume = useCallback(() => {
+    return isMutedRef.current ? 0 : toLinearGain(volumeRef.current);
+  }, [toLinearGain]);
 
   const cancelFade = useCallback(() => {
     if (fadeAnimationRef.current !== null) {
@@ -248,16 +254,16 @@ export const PersistentPlayer = React.memo(() => {
     }
   }, [isPlaying, currentTrack, getTargetVolume, setPlaying]);
 
-  // Sincronizar volumen reactivo y modo silencio en todo momento
+  // Sincronizar volumen reactivo y modo silencio en todo momento con curva logarítmica/cúbica
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
     if (fadeAnimationRef.current === null) {
-      audio.volume = isMuted ? 0 : volume;
+      audio.volume = isMuted ? 0 : toLinearGain(volume);
       audio.muted = isMuted;
     }
-  }, [volume, isMuted]);
+  }, [volume, isMuted, toLinearGain]);
 
   // Sincronizar operaciones de Seek manuales (bloqueadas durante carga)
   useEffect(() => {
