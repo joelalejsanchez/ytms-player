@@ -83,7 +83,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = React.memo(
     return (
       <div
         ref={containerRef}
-        className="relative inline-block text-left"
+        className={cn("relative inline-block text-left", isOpen && "z-50")}
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -111,7 +111,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = React.memo(
             role="menu"
             aria-orientation="vertical"
             className={cn(
-              "absolute z-50 min-w-[170px] rounded-lg border border-border bg-popover text-popover-foreground p-1 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100",
+              "absolute z-[100] min-w-[170px] rounded-lg border border-border bg-popover text-popover-foreground p-1 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100",
               align === "right" ? "right-0" : "left-0",
               direction === "down" ? "top-full mt-1" : "bottom-full mb-1",
               menuClassName,

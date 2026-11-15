@@ -90,9 +90,9 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
   const isGoOnline = health?.status === "healthy";
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-card">
+    <aside className="flex w-64 shrink-0 flex-col border-r border-primary bg-card">
       <div className="flex items-center gap-3 border-b border-border px-5 py-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/20 text-primary ring-1 ring-primary/30">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary bg-primary/15 text-primary shadow-xs">
           <Radio className="h-5 w-5" />
         </div>
         <div>

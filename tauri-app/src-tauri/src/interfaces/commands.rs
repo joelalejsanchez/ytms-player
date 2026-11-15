@@ -273,6 +273,15 @@ pub fn get_playlists(state: State<'_, AppState>) -> DomainResult<Vec<Playlist>> 
     playlist_usecases::list_playlists(ctx.store.as_ref())
 }
 
+/// Obtiene el mapa completo de tracks asociados a playlists.
+#[tauri::command]
+pub fn get_playlist_track_map(
+    state: State<'_, AppState>,
+) -> DomainResult<std::collections::HashMap<i64, Vec<i64>>> {
+    let ctx = state.active_workspace()?;
+    playlist_usecases::get_playlist_track_map(ctx.store.as_ref())
+}
+
 /// Obtiene el detalle de una playlist junto con sus tracks asociados (SDD 4.3).
 #[tauri::command]
 pub fn get_playlist_details(

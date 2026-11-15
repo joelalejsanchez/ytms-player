@@ -132,6 +132,10 @@ export const tauriApi = {
     return safeInvoke<PlaylistWithTracks>("get_playlist_details", { playlistId });
   },
 
+  getPlaylistTrackMap(): Promise<Record<number, number[]>> {
+    return safeInvoke<Record<number, number[]>>("get_playlist_track_map");
+  },
+
   addTrackToPlaylist(playlistId: number, trackId: number): Promise<void> {
     return safeInvoke<void>("add_track_to_playlist", { playlistId, trackId });
   },

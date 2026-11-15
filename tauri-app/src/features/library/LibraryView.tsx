@@ -27,11 +27,13 @@ export const LibraryView = React.memo(() => {
 
   const tracks = useLibraryStore((s) => s.tracks);
   const playlists = useLibraryStore((s) => s.playlists);
+  const playlistTrackMap = useLibraryStore((s) => s.playlistTrackMap);
   const isLoading = useLibraryStore((s) => s.isLoading);
   const syncStatusByTrack = useLibraryStore((s) => s.syncStatusByTrack);
   const toggleLike = useLibraryStore((s) => s.toggleLike);
   const deleteTrack = useLibraryStore((s) => s.deleteTrack);
   const addTrackToPlaylist = useLibraryStore((s) => s.addTrackToPlaylist);
+  const removeTrackFromPlaylist = useLibraryStore((s) => s.removeTrackFromPlaylist);
   const verifyIntegrity = useLibraryStore((s) => s.verifyIntegrity);
   const syncLikes = useLibraryStore((s) => s.syncLikes);
 
@@ -135,11 +137,15 @@ export const LibraryView = React.memo(() => {
     }
   }, [syncLikes]);
 
-  const handleAddToPlaylist = useCallback(
-    (playlistId: number, trackId: number) => {
-      void addTrackToPlaylist(playlistId, trackId);
+  const handleTogglePlaylist = useCallback(
+    async (playlistId: number, trackId: number, willAdd: boolean) => {
+      if (willAdd) {
+        await addTrackToPlaylist(playlistId, trackId);
+      } else {
+        await removeTrackFromPlaylist(playlistId, trackId);
+      }
     },
-    [addTrackToPlaylist],
+    [addTrackToPlaylist, removeTrackFromPlaylist],
   );
 
   const handlePlayAll = useCallback(() => {
@@ -314,6 +320,7 @@ export const LibraryView = React.memo(() => {
                     height: `${virtualRow.size}px`,
                     transform: `translateY(${virtualRow.start}px)`,
                     paddingBottom: "8px",
+                    zIndex: filteredTracks.length - virtualRow.index,
                   }}
                 >
                   <TrackRow
@@ -321,13 +328,14 @@ export const LibraryView = React.memo(() => {
                     isCurrent={currentTrackId === track.youtube_id}
                     isPlaying={isPlaying}
                     playlists={playlists}
+                    assignedPlaylistIds={playlistTrackMap[track.id] || []}
                     syncStatus={syncStatusByTrack[track.youtube_id]}
                     isDeleting={deletingId === track.youtube_id}
                     onPlay={handlePlay}
                     onEnqueue={handleEnqueue}
                     onToggleLike={handleToggleLike}
                     onDelete={handleDelete}
-                    onAddToPlaylist={handleAddToPlaylist}
+                    onTogglePlaylist={handleTogglePlaylist}
                   />
                 </div>
               );

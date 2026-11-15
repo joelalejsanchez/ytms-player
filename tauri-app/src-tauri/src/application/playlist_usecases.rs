@@ -65,3 +65,10 @@ pub fn sync_playlist_tracks(
 ) -> DomainResult<usize> {
     playlist_repo.sync_playlist_tracks(playlist_id, current_youtube_ids, unlink_removed)
 }
+
+/// Obtiene un mapa de track_id -> [playlist_id, ...] para todas las asociaciones de playlists.
+pub fn get_playlist_track_map(
+    playlist_repo: &dyn PlaylistRepository,
+) -> DomainResult<std::collections::HashMap<i64, Vec<i64>>> {
+    playlist_repo.get_playlist_track_map()
+}

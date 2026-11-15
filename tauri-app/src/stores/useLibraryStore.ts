@@ -29,6 +29,7 @@ export interface LibraryStoreState {
   orphanFiles: OrphanTrackFile[];
   downloadHistory: DownloadHistoryEntry[];
   playlists: Playlist[];
+  playlistTrackMap: Record<number, number[]>;
   activePlaylist: PlaylistWithTracks | null;
   lastIntegrityReport: IntegrityReport | null;
   health: HealthStatusDto | null;
@@ -53,6 +54,7 @@ export interface LibraryStoreState {
   toggleLike: (youtubeId: string, liked: boolean | null) => Promise<void>;
   deleteTrack: (youtubeId: string, deleteFiles: boolean) => Promise<void>;
   refreshPlaylists: () => Promise<void>;
+  refreshPlaylistTrackMap: () => Promise<void>;
   selectPlaylist: (playlistId: number | null) => Promise<void>;
   createPlaylist: (title: string, youtubePlaylistId?: string) => Promise<Playlist>;
   addTrackToPlaylist: (playlistId: number, trackId: number) => Promise<void>;
@@ -84,6 +86,7 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
   orphanFiles: [],
   downloadHistory: [],
   playlists: [],
+  playlistTrackMap: {},
   activePlaylist: null,
   lastIntegrityReport: null,
   health: null,
@@ -96,10 +99,11 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const ws = await tauriApi.selectWorkspace(path);
-      const [tracks, missingTracks, playlists, appSettings] = await Promise.all([
+      const [tracks, missingTracks, playlists, playlistTrackMap, appSettings] = await Promise.all([
         tauriApi.getTracks(),
         tauriApi.getMissingTracks(),
         tauriApi.getPlaylists(),
+        tauriApi.getPlaylistTrackMap().catch(() => ({})),
         tauriApi.getAppSettings(),
       ]);
       set({
@@ -108,6 +112,7 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
         tracks,
         missingTracks,
         playlists,
+        playlistTrackMap: playlistTrackMap || {},
         activePlaylist: null,
         isLoading: false,
       });
@@ -149,10 +154,11 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
         tauriApi.getAppSettings(),
       ]);
       if (ws) {
-        const [tracks, missingTracks, playlists] = await Promise.all([
+        const [tracks, missingTracks, playlists, playlistTrackMap] = await Promise.all([
           tauriApi.getTracks(),
           tauriApi.getMissingTracks(),
           tauriApi.getPlaylists(),
+          tauriApi.getPlaylistTrackMap().catch(() => ({})),
         ]);
         set({
           workspace: ws,
@@ -160,6 +166,7 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
           tracks,
           missingTracks,
           playlists,
+          playlistTrackMap: playlistTrackMap || {},
           isLoading: false,
         });
       } else {
@@ -336,10 +343,22 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
 
   refreshPlaylists: async () => {
     try {
-      const playlists = await tauriApi.getPlaylists();
-      set({ playlists });
+      const [playlists, map] = await Promise.all([
+        tauriApi.getPlaylists(),
+        tauriApi.getPlaylistTrackMap().catch(() => ({})),
+      ]);
+      set({ playlists, playlistTrackMap: map || {} });
     } catch (err) {
       set({ error: extractErrorMessage(err, "No se pudieron cargar las playlists") });
+    }
+  },
+
+  refreshPlaylistTrackMap: async () => {
+    try {
+      const map = await tauriApi.getPlaylistTrackMap();
+      set({ playlistTrackMap: map || {} });
+    } catch {
+      // Ignorar
     }
   },
 
@@ -363,6 +382,16 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
   },
 
   addTrackToPlaylist: async (playlistId, trackId) => {
+    set((state) => {
+      const current = state.playlistTrackMap[trackId] || [];
+      if (current.includes(playlistId)) return state;
+      return {
+        playlistTrackMap: {
+          ...state.playlistTrackMap,
+          [trackId]: [...current, playlistId],
+        },
+      };
+    });
     await tauriApi.addTrackToPlaylist(playlistId, trackId);
     await get().refreshPlaylists();
     if (get().activePlaylist?.playlist.id === playlistId) {
@@ -371,6 +400,15 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
   },
 
   removeTrackFromPlaylist: async (playlistId, trackId) => {
+    set((state) => {
+      const current = state.playlistTrackMap[trackId] || [];
+      return {
+        playlistTrackMap: {
+          ...state.playlistTrackMap,
+          [trackId]: current.filter((id) => id !== playlistId),
+        },
+      };
+    });
     await tauriApi.removeTrackFromPlaylist(playlistId, trackId);
     await get().refreshPlaylists();
     if (get().activePlaylist?.playlist.id === playlistId) {

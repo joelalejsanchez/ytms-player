@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
@@ -847,5 +848,32 @@ impl PlaylistRepository for SqliteWorkspaceStore {
             .map_err(|e| DomainError::PersistenceError(format!("Commit failed: {e}")))?;
 
         Ok(linked_count)
+    }
+
+    fn get_playlist_track_map(&self) -> DomainResult<HashMap<i64, Vec<i64>>> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| DomainError::PersistenceError(format!("Mutex poisoned: {e}")))?;
+
+        let mut stmt = conn
+            .prepare("SELECT track_id, playlist_id FROM playlist_tracks")
+            .map_err(|e| DomainError::PersistenceError(format!("Prepare map failed: {e}")))?;
+
+        let rows = stmt
+            .query_map([], |row| {
+                let track_id: i64 = row.get(0)?;
+                let playlist_id: i64 = row.get(1)?;
+                Ok((track_id, playlist_id))
+            })
+            .map_err(|e| DomainError::PersistenceError(format!("Query map failed: {e}")))?;
+
+        let mut map: HashMap<i64, Vec<i64>> = HashMap::new();
+        for item in rows {
+            let (track_id, playlist_id) = item.map_err(|e| DomainError::PersistenceError(format!("Row parse error: {e}")))?;
+            map.entry(track_id).or_default().push(playlist_id);
+        }
+
+        Ok(map)
     }
 }

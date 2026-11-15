@@ -11,8 +11,9 @@ import {
 } from "lucide-react";
 import React from "react";
 import { ActionMenu } from "@/components/ui/ActionMenu";
+import { PlaylistBookmarkMenu } from "@/components/ui/PlaylistBookmarkMenu";
 import { Badge, Button } from "@/components/ui/Primitives";
-import { formatBytes, formatDuration, toAssetUrl } from "@/lib/utils";
+import { formatDuration, toAssetUrl } from "@/lib/utils";
 import type { TrackSyncInfo } from "@/stores/useLibraryStore";
 import type { Playlist, Track } from "@/types/models";
 
@@ -21,13 +22,15 @@ export interface TrackRowProps {
   isCurrent: boolean;
   isPlaying: boolean;
   playlists: Playlist[];
+  assignedPlaylistIds?: number[];
   syncStatus?: TrackSyncInfo;
   isDeleting?: boolean;
   onPlay: (track: Track) => void;
   onEnqueue: (track: Track) => void;
   onToggleLike: (youtubeId: string, nextLiked: boolean | null) => void;
   onDelete: (youtubeId: string) => void;
-  onAddToPlaylist: (playlistId: number, trackId: number) => void;
+  onTogglePlaylist: (playlistId: number, trackId: number, willAdd: boolean) => void | Promise<void>;
+  onAddToPlaylist?: (playlistId: number, trackId: number) => void;
 }
 
 /**
@@ -40,13 +43,14 @@ export const TrackRow = React.memo(
     isCurrent,
     isPlaying,
     playlists,
+    assignedPlaylistIds = [],
     syncStatus,
     isDeleting = false,
     onPlay,
     onEnqueue,
     onToggleLike,
     onDelete,
-    onAddToPlaylist,
+    onTogglePlaylist,
   }: TrackRowProps) => {
     const thumbUrl = toAssetUrl(track.thumbnail_path);
     const isSyncingLike = syncStatus?.status === "loading";
@@ -55,7 +59,7 @@ export const TrackRow = React.memo(
 
     return (
       <div
-        className={`group flex h-[60px] max-h-[60px] box-border select-none items-center justify-between gap-4 rounded-xl border px-4 py-2 transition-colors ${
+        className={`group flex h-[60px] max-h-[60px] box-border select-none items-center justify-between gap-4 rounded-xl border px-4 py-2 transition-colors hover:z-30 focus-within:z-40 ${
           track.is_missing
             ? "border-amber-500/50 bg-amber-500/10"
             : isCurrent
@@ -121,14 +125,8 @@ export const TrackRow = React.memo(
           </div>
         </div>
 
-        {/* Metadatos técnicos + Indicador de sincronización con YouTube */}
+        {/* Duración + Indicador de sincronización con YouTube */}
         <div className="hidden items-center gap-4 text-xs text-muted-foreground md:flex">
-          <Badge tone="default" className="uppercase">
-            {track.file_extension}
-          </Badge>
-          <span className="w-16 text-right tabular-nums">
-            {formatBytes(track.file_size)}
-          </span>
           <span className="w-12 text-right tabular-nums">
             {formatDuration(track.duration)}
           </span>
@@ -193,31 +191,13 @@ export const TrackRow = React.memo(
             <ListPlus className="h-4 w-4" />
           </Button>
 
-          {playlists.length > 0 && (
-            <div className="relative">
-              <select
-                aria-label="Añadir a playlist"
-                defaultValue=""
-                onChange={(e) => {
-                  const pid = Number(e.target.value);
-                  if (pid > 0) {
-                    onAddToPlaylist(pid, track.id);
-                    e.target.value = "";
-                  }
-                }}
-                className="h-8 cursor-pointer rounded-md border border-border bg-card px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="" disabled>
-                  + Playlist
-                </option>
-                {playlists.map((pl) => (
-                  <option key={pl.id} value={pl.id}>
-                    {pl.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          {/* Selector de Playlists desplegable estilo marcador */}
+          <PlaylistBookmarkMenu
+            trackId={track.id}
+            playlists={playlists}
+            assignedPlaylistIds={assignedPlaylistIds}
+            onTogglePlaylist={onTogglePlaylist}
+          />
 
           <ActionMenu
             isLoading={isDeleting}

@@ -355,7 +355,6 @@ export const PlaylistsView = React.memo(() => {
                         </div>
 
                       <div className="flex items-center gap-2">
-                        <Badge tone="default">{track.file_extension}</Badge>
                         <ActionMenu
                           isLoading={removingTrackId === track.id}
                           title="Opciones de la pista"

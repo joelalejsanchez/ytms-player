@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use crate::domain::entities::{
@@ -60,6 +61,7 @@ pub trait PlaylistRepository: Send + Sync {
         current_youtube_ids: &[String],
         unlink_removed: bool,
     ) -> DomainResult<usize>;
+    fn get_playlist_track_map(&self) -> DomainResult<HashMap<i64, Vec<i64>>>;
 }
 
 /// Puerto para la administración física del directorio Workspace y archivo `.ytms-player-workspace` (SDD Sección 3).
