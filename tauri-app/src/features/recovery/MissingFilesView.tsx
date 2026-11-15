@@ -153,14 +153,10 @@ export const MissingFilesView = React.memo(() => {
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-foreground">
-            Panel de Recuperación de Archivos Extraviados
+            Recuperación de Archivos
           </h2>
           <p className="text-xs text-muted-foreground">
-            Reconciliación automática entre registros de SQLite y archivos físicos en{" "}
-            <code className="font-mono text-foreground">
-              /tracks/&lt;youtube_id&gt;.&lt;ext&gt;
-            </code>{" "}
-            (SDD 3.5)
+            Comprueba y restaura canciones faltantes o agrega archivos de música a tu biblioteca
           </p>
         </div>
 
@@ -175,26 +171,26 @@ export const MissingFilesView = React.memo(() => {
           ) : (
             <RefreshCw className="h-4 w-4" />
           )}
-          {isScanning ? "Escaneando..." : "Escanear Integridad Ahora"}
+          {isScanning ? "Comprobando..." : "Comprobar archivos"}
         </Button>
       </header>
 
       {lastReport && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-border bg-card p-3.5">
-            <p className="text-xs text-muted-foreground">Registros Verificados</p>
+            <p className="text-xs text-muted-foreground">Canciones revisadas</p>
             <p className="mt-1 text-xl font-bold text-foreground">
               {lastReport.checked_count}
             </p>
           </div>
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5">
-            <p className="text-xs text-amber-600 dark:text-amber-400">Nuevos Extraviados Detectados</p>
+            <p className="text-xs text-amber-600 dark:text-amber-400">Archivos no encontrados</p>
             <p className="mt-1 text-xl font-bold text-amber-600 dark:text-amber-400">
               {lastReport.newly_missing_ids.length}
             </p>
           </div>
           <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5">
-            <p className="text-xs text-emerald-600 dark:text-emerald-400">Archivos Restaurados</p>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400">Archivos restaurados</p>
             <p className="mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-400">
               {lastReport.restored_ids.length}
             </p>
@@ -207,11 +203,10 @@ export const MissingFilesView = React.memo(() => {
           <div className="flex h-60 flex-col items-center justify-center text-center">
             <CheckCircle2 className="mb-2 h-10 w-10 text-emerald-500" />
             <p className="text-sm font-semibold text-foreground">
-              Integridad verificada: 0 archivos extraviados
+              Todas tus canciones están disponibles
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Todos los registros en SQLite cuentan con su archivo físico
-              correspondiente en <code className="text-foreground">/tracks</code>.
+              No hay archivos faltantes en tu biblioteca.
             </p>
           </div>
         ) : (
@@ -236,11 +231,10 @@ export const MissingFilesView = React.memo(() => {
                       <span className="truncate text-sm font-semibold text-foreground">
                         {track.title}
                       </span>
-                      <Badge tone="warning">is_missing = 1</Badge>
+                      <Badge tone="warning">No disponible</Badge>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Artista: {track.artist} · Ruta esperada:{" "}
-                      <code className="font-mono text-amber-600 dark:text-amber-400">{track.audio_path}</code>
+                      Artista: {track.artist} · El archivo no se encuentra en el equipo
                     </p>
                   </div>
                 </div>
@@ -257,7 +251,7 @@ export const MissingFilesView = React.memo(() => {
                     ) : (
                       <DownloadCloud className="h-4 w-4" />
                     )}
-                    {isRecoveringThis ? "Recuperando..." : "Re-descargar / Restaurar"}
+                    {isRecoveringThis ? "Descargando..." : "Volver a descargar"}
                   </Button>
 
                   <ActionMenu
@@ -265,15 +259,15 @@ export const MissingFilesView = React.memo(() => {
                     title="Opciones de archivo extraviado"
                     items={[
                       {
-                        label: "Eliminar registro de la base de datos",
+                        label: "Eliminar de la biblioteca",
                         icon: <Trash2 className="h-3.5 w-3.5" />,
                         variant: "danger",
                         onClick: () => {
                           setConfirmModal({
                             isOpen: true,
-                            title: "¿Estás seguro de eliminar este registro?",
-                            description: `Se eliminará el registro de "${track.title}" de la base de datos local. Esto no afectará archivos físicos.`,
-                            confirmLabel: "Sí, eliminar registro",
+                            title: "¿Eliminar de la biblioteca?",
+                            description: `Se quitará "${track.title}" de tu biblioteca.`,
+                            confirmLabel: "Sí, eliminar",
                             tone: "danger",
                             onConfirm: async () => {
                               await handleDeleteTrack(track.youtube_id);
@@ -291,13 +285,13 @@ export const MissingFilesView = React.memo(() => {
         )}
       </div>
 
-      {/* Sección de Archivos Huérfanos en /tracks (archivos físicos que no están en SQLite) */}
+      {/* Sección de Archivos no agregados */}
       <div className="space-y-3 rounded-xl border border-border bg-card p-5">
         <div className="flex items-center justify-between border-b border-border pb-3">
           <div className="flex items-center gap-2">
             <FileAudio className="h-4 w-4 text-primary" />
             <h3 className="text-sm font-semibold text-foreground">
-              Archivos Huérfanos en /tracks ({orphanFiles.length})
+              Archivos no agregados ({orphanFiles.length})
             </h3>
           </div>
           <div className="flex items-center gap-3">
@@ -314,27 +308,24 @@ export const MissingFilesView = React.memo(() => {
                   <PlusCircle className="h-3.5 w-3.5" />
                 )}
                 {isAdoptingAll
-                  ? "Adoptando todos..."
-                  : `Adoptar todos (${orphanFiles.length})`}
+                  ? "Agregando todas..."
+                  : `Agregar todas (${orphanFiles.length})`}
               </Button>
             )}
             <Badge tone={orphanFiles.length > 0 ? "warning" : "success"}>
-              {orphanFiles.length > 0 ? "Requiere acción" : "Limpio"}
+              {orphanFiles.length > 0 ? "Pendientes" : "Al día"}
             </Badge>
           </div>
         </div>
 
         {orphanFiles.length === 0 ? (
           <p className="py-2 text-xs text-muted-foreground">
-            No hay archivos huérfanos. Todos los archivos de audio en el disco están
-            registrados en la biblioteca.
+            No hay archivos sueltos. Todo el audio encontrado en tu carpeta está agregado a tu biblioteca.
           </p>
         ) : (
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">
-              Se encontraron archivos en tu carpeta física que no figuran en tu
-              biblioteca (por ejemplo descargas previas de Mixes). Puedes adoptarlos
-              directamente o borrarlos para liberar espacio:
+              Se encontraron canciones en tu carpeta que aún no figuran en tu biblioteca. Puedes agregarlas o eliminarlas del equipo para ahorrar espacio:
             </p>
             {orphanFiles.map((file) => {
               const thumbSrc =
@@ -359,12 +350,8 @@ export const MissingFilesView = React.memo(() => {
                         <span className="truncate font-semibold text-foreground">
                           {file.file_name}
                         </span>
-                        <Badge tone="default">.{file.file_extension}</Badge>
                         <span className="text-muted-foreground">{formatBytes(file.file_size)}</span>
                       </div>
-                      <span className="font-mono text-[11px] text-muted-foreground">
-                        {file.youtube_id}
-                      </span>
                     </div>
                   </div>
 
@@ -387,23 +374,23 @@ export const MissingFilesView = React.memo(() => {
                       <PlusCircle className="h-3.5 w-3.5" />
                     )}
                     {adoptingId === file.youtube_id
-                      ? "Integrando..."
-                      : "Adoptar en Biblioteca"}
+                      ? "Agregando..."
+                      : "Agregar a biblioteca"}
                   </Button>
                   <ActionMenu
                     isLoading={deletingOrphanId === file.youtube_id}
-                    title="Opciones de archivo huérfano"
+                    title="Opciones de archivo"
                     items={[
                       {
-                        label: "Borrar permanentemente de disco",
+                        label: "Eliminar del equipo",
                         icon: <Trash2 className="h-3.5 w-3.5" />,
                         variant: "danger",
                         onClick: () => {
                           setConfirmModal({
                             isOpen: true,
-                            title: "¿Estás seguro de borrar este archivo?",
-                            description: `El archivo "${file.file_name}" (${formatBytes(file.file_size)}) será eliminado permanentemente del disco. Esta acción no se puede deshacer.`,
-                            confirmLabel: "Sí, borrar de disco",
+                            title: "¿Eliminar archivo del equipo?",
+                            description: `El archivo "${file.file_name}" (${formatBytes(file.file_size)}) se eliminará permanentemente de tu equipo.`,
+                            confirmLabel: "Eliminar archivo",
                             tone: "danger",
                             onConfirm: async () => {
                               await handleDeleteOrphan(file.youtube_id, file.file_extension);

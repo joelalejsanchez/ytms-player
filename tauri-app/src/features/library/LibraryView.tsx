@@ -247,13 +247,13 @@ export const LibraryView = React.memo(() => {
           triggerClassName="h-9 w-9 rounded-lg border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground shadow-xs shrink-0 flex items-center justify-center"
           items={[
             {
-              label: "Actualizar Metadatos",
+              label: "Actualizar información",
               icon: <Sparkles className="h-4 w-4 text-amber-500" />,
               onClick: () => setIsMetadataModalOpen(true),
               disabled: tracks.length === 0 || isLoading || isVerifying || isSyncingLikes,
             },
             {
-              label: isVerifying ? "Verificando..." : "Verificar Integridad",
+              label: isVerifying ? "Comprobando..." : "Comprobar archivos",
               icon: isVerifying ? (
                 <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
               ) : (
@@ -263,7 +263,7 @@ export const LibraryView = React.memo(() => {
               disabled: isLoading || isVerifying || isSyncingLikes,
             },
             {
-              label: isSyncingLikes ? "Sincronizando..." : "Sincronizar Likes",
+              label: isSyncingLikes ? "Sincronizando..." : "Sincronizar Me gusta",
               icon: isSyncingLikes ? (
                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
               ) : (

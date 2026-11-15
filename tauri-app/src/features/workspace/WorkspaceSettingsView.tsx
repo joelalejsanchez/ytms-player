@@ -151,19 +151,19 @@ const THEME_MODES: ThemeModeOption[] = [
   {
     id: "light",
     label: "Modo Claro",
-    description: "Luminosidad alta con fondo claro Platinum",
+    description: "Fondo claro con alto contraste",
     icon: Sun,
   },
   {
     id: "dark",
     label: "Modo Oscuro",
-    description: "Luminosidad baja con fondo profundo Onyx",
+    description: "Fondo oscuro para descansar la vista",
     icon: Moon,
   },
   {
     id: "system",
     label: "Modo Sistema",
-    description: "Sincronizar automáticamente con la preferencia del sistema operativo",
+    description: "Se adapta automáticamente al tema de tu equipo",
     icon: Monitor,
   },
 ];
@@ -370,9 +370,9 @@ export const WorkspaceSettingsView = React.memo(() => {
     try {
       await tauriApi.logoutOAuth();
       await checkOAuthStatus();
-      setStatusMessage("Has cerrado la sesión de Google OAuth. Tu token local ha sido eliminado.");
+      setStatusMessage("Has cerrado sesión en Google correctamente.");
     } catch (err) {
-      setGeneralError(err instanceof Error ? err.message : "Error al cerrar sesión OAuth");
+      setGeneralError(err instanceof Error ? err.message : "Error al cerrar sesión");
     } finally {
       setIsLoggingOutOAuth(false);
     }
@@ -406,9 +406,7 @@ export const WorkspaceSettingsView = React.memo(() => {
       const updated = await importCookiesFile(cookiesInput.trim());
       setCookiesInput(updated.cookies_file_path ?? cookiesInput.trim());
       setIsEditingCookies(false);
-      setStatusMessage(
-        `Archivo cookies.txt actualizado en caliente (${updated.cookies_file_path ?? "config/cookies.txt"}).`,
-      );
+      setStatusMessage("Archivo de cookies actualizado correctamente.");
     } catch (err) {
       setGeneralError(
         err instanceof Error ? err.message : "Error al importar el archivo cookies.txt",
@@ -456,7 +454,7 @@ export const WorkspaceSettingsView = React.memo(() => {
                 Personalización
               </h3>
               <p className="text-xs text-muted-foreground">
-                Configuración del tema visual y esquema de luminosidad de la aplicación
+                Elige los colores y el estilo visual de la aplicación
               </p>
             </div>
           </div>
@@ -470,7 +468,7 @@ export const WorkspaceSettingsView = React.memo(() => {
               Paleta de Colores
             </h4>
             <p className="text-[11px] text-muted-foreground">
-              Selecciona la familia cromática aplicada a los controles, acentos y bordes
+              Color principal para botones, bordes y controles
             </p>
           </div>
 
@@ -529,10 +527,10 @@ export const WorkspaceSettingsView = React.memo(() => {
         <div className="space-y-3 pt-3 border-t border-border/60">
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Modo de Luminosidad
+              Apariencia
             </h4>
             <p className="text-[11px] text-muted-foreground">
-              Elige la apariencia base para contrastes claros u oscuros
+              Selecciona el modo claro, oscuro o automático según el sistema
             </p>
           </div>
 
@@ -596,29 +594,28 @@ export const WorkspaceSettingsView = React.memo(() => {
                 Cuenta de YouTube
               </h3>
               <p className="text-xs text-muted-foreground">
-                Autenticación OAuth 2.0 y cookies para sincronización de me gusta y acceso a contenido
+                Conecta tu cuenta para sincronizar canciones favoritas y acceder a contenido con restricción
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {oauthStatus?.mock_mode && (
-              <Badge tone="warning">Modo Simulado</Badge>
+              <Badge tone="warning">Modo Prueba</Badge>
             )}
             <Badge tone={oauthStatus?.authenticated ? "success" : "default"}>
-              {oauthStatus?.authenticated ? "Conectado con Google" : "Sin autorizar"}
+              {oauthStatus?.authenticated ? "Conectado" : "No conectado"}
             </Badge>
           </div>
         </div>
 
-        {/* OAuth 2.0 */}
+        {/* OAuth / Google Account */}
         <div className="space-y-3">
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Autenticación OAuth 2.0
+              Sincronización con YouTube
             </h4>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Permite registrar tus Me gusta y sincronizar canciones favoritas directamente con tu
-              cuenta de YouTube.
+              Sincroniza tus canciones con Me gusta directamente con tu cuenta de YouTube.
             </p>
           </div>
 
@@ -637,8 +634,8 @@ export const WorkspaceSettingsView = React.memo(() => {
               {isConnectingOAuth
                 ? "Conectando..."
                 : oauthStatus?.authenticated
-                  ? "Reconectar cuenta de Google"
-                  : "Conectar con Google (OAuth 2.0)"}
+                  ? "Reconectar cuenta"
+                  : "Conectar con Google"}
             </Button>
 
             {oauthStatus?.authenticated && (
@@ -652,7 +649,7 @@ export const WorkspaceSettingsView = React.memo(() => {
                 {isLoggingOutOAuth ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : null}
-                {isLoggingOutOAuth ? "Cerrando..." : "Cerrar Sesión OAuth"}
+                {isLoggingOutOAuth ? "Cerrando..." : "Cerrar sesión"}
               </Button>
             )}
 
@@ -663,24 +660,24 @@ export const WorkspaceSettingsView = React.memo(() => {
               onClick={() => void handleCheckOAuth()}
             >
               <RefreshCw className={cn("h-4 w-4", isCheckingOAuth && "animate-spin")} />
-              {isCheckingOAuth ? "Verificando..." : "Verificar Estado"}
+              {isCheckingOAuth ? "Comprobando..." : "Comprobar estado"}
             </Button>
           </div>
         </div>
 
-        {/* Cookies.txt */}
+        {/* Cookies */}
         <div className="space-y-3 pt-3 border-t border-border/60">
           <div className="flex items-center justify-between">
             <div>
               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Archivo Cookies.txt
+                Archivo de cookies
               </h4>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Copia segura del archivo a la ruta de Docker para descargar videos restringidos o con edad
+                Permite descargar canciones con restricción de edad o contenido exclusivo de tu cuenta
               </p>
             </div>
             <Badge tone={appSettings?.cookies_file_path ? "success" : "default"}>
-              {appSettings?.cookies_file_path ? "Configurado (:ro)" : "Opcional"}
+              {appSettings?.cookies_file_path ? "Configurado" : "Opcional"}
             </Badge>
           </div>
 
@@ -690,8 +687,8 @@ export const WorkspaceSettingsView = React.memo(() => {
               onChange={(e) => setCookiesInput(e.target.value)}
               readOnly={!isEditingCookies}
               disabled={!isEditingCookies}
-              placeholder="Ruta del archivo cookies.txt exportado del navegador..."
-              aria-label="Ruta origen de cookies.txt"
+              placeholder="Ruta de tu archivo de cookies..."
+              aria-label="Ruta de archivo cookies"
               className={cn(
                 "flex-1 w-full font-mono text-xs",
                 !isEditingCookies && "bg-muted/40 cursor-not-allowed opacity-80 text-foreground",
@@ -714,7 +711,7 @@ export const WorkspaceSettingsView = React.memo(() => {
                   type="button"
                   variant="secondary"
                   onClick={() => void handleBrowseCookies()}
-                  title="Examinar archivo cookies.txt"
+                  title="Examinar archivo de cookies"
                 >
                   <FolderOpen className="h-4 w-4" />
                   <span>Buscar</span>
@@ -731,7 +728,7 @@ export const WorkspaceSettingsView = React.memo(() => {
                   ) : (
                     <Cookie className="h-4 w-4" />
                   )}
-                  <span>{isImportingCookies ? "Actualizando..." : "Actualizar Cookies"}</span>
+                  <span>{isImportingCookies ? "Guardando..." : "Guardar cookies"}</span>
                 </Button>
 
                 <Button
@@ -763,7 +760,7 @@ export const WorkspaceSettingsView = React.memo(() => {
                 Workspaces
               </h3>
               <p className="text-xs text-muted-foreground">
-                Directorios de almacenamiento con base de datos SQLite y archivos de audio
+                Carpetas donde se guardan tus canciones descargadas y listas de reproducción
               </p>
             </div>
           </div>
@@ -781,7 +778,7 @@ export const WorkspaceSettingsView = React.memo(() => {
             ) : (
               <FolderPlus className="h-4 w-4" />
             )}
-            <span>Agregar Workspace</span>
+            <span>Agregar carpeta</span>
           </Button>
         </div>
 
@@ -790,10 +787,10 @@ export const WorkspaceSettingsView = React.memo(() => {
           {!appSettings || appSettings.recent_workspaces.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
               <p className="font-medium text-foreground">
-                Aún no tienes ningún Workspace registrado.
+                Aún no tienes ninguna carpeta agregada.
               </p>
               <p className="mt-1">
-                Pulsa en <strong>"Agregar Workspace"</strong> para seleccionar una carpeta y comenzar.
+                Pulsa en <strong>"Agregar carpeta"</strong> para seleccionar dónde guardar tu música.
               </p>
             </div>
           ) : (
@@ -835,9 +832,9 @@ export const WorkspaceSettingsView = React.memo(() => {
                         <span className="font-semibold text-sm text-foreground truncate">
                           {folderName}
                         </span>
-                        {isCurrent && <Badge tone="info">Activo</Badge>}
+                        {isCurrent && <Badge tone="info">En uso</Badge>}
                         {!saved.is_available && (
-                          <Badge tone="warning">No encontrado en disco</Badge>
+                          <Badge tone="warning">Carpeta no encontrada</Badge>
                         )}
                         {switchingWorkspace === saved.path && (
                           <span className="flex items-center gap-1 text-[11px] text-primary">
@@ -858,10 +855,10 @@ export const WorkspaceSettingsView = React.memo(() => {
                   >
                     <ActionMenu
                       isLoading={removingWorkspace === saved.path}
-                      title="Opciones de workspace"
+                      title="Opciones de carpeta"
                       items={[
                         {
-                          label: "Olvidar de la lista",
+                          label: "Quitar de la lista",
                           icon: <Trash2 className="h-3.5 w-3.5" />,
                           variant: "danger",
                           onClick: async () => {
@@ -884,7 +881,7 @@ export const WorkspaceSettingsView = React.memo(() => {
       </div>
 
       {/* ============================================================== */}
-      {/* 4. SECCIÓN: MICROSERVICIO                                      */}
+      {/* 4. SECCIÓN: SERVICIO DE DESCARGAS                              */}
       {/* ============================================================== */}
       <div className="space-y-5 rounded-xl border border-border bg-card p-5">
         <div className="flex items-center justify-between border-b border-border pb-3">
@@ -892,10 +889,10 @@ export const WorkspaceSettingsView = React.memo(() => {
             <Server className="h-5 w-5 text-primary" />
             <div>
               <h3 className="text-base font-semibold text-foreground">
-                Microservicio Go
+                Servicio de Descargas
               </h3>
               <p className="text-xs text-muted-foreground">
-                Endpoint de comunicación HTTP y estado de los motores yt-dlp y FFmpeg
+                Estado del servidor interno encargado de procesar y descargar audio
               </p>
             </div>
           </div>
@@ -905,17 +902,17 @@ export const WorkspaceSettingsView = React.memo(() => {
             size="sm"
             disabled={isCheckingHealth}
             onClick={() => void handleCheckHealth()}
-            title="Refrescar estado de salud"
+            title="Comprobar estado del servicio"
           >
             <RefreshCw className={cn("h-4 w-4", isCheckingHealth && "animate-spin text-primary")} />
-            <span>Refrescar</span>
+            <span>Comprobar</span>
           </Button>
         </div>
 
         {/* Subsección A: Input de ruta con bloqueo y botón editar */}
         <div className="space-y-2">
           <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Dirección del Microservicio (URL)
+            Dirección del servicio (URL)
           </label>
           <div className="flex items-center gap-2 w-full">
             <Input
@@ -924,7 +921,7 @@ export const WorkspaceSettingsView = React.memo(() => {
               readOnly={!isEditingUrl}
               disabled={!isEditingUrl}
               placeholder="http://127.0.0.1:8080"
-              aria-label="URL del Microservicio Go"
+              aria-label="URL del servicio de descargas"
               className={cn(
                 "flex-1 w-full font-mono text-xs",
                 !isEditingUrl && "bg-muted/40 cursor-not-allowed opacity-80 text-foreground",
@@ -937,7 +934,7 @@ export const WorkspaceSettingsView = React.memo(() => {
                 variant="secondary"
                 size="icon"
                 onClick={() => setIsEditingUrl(true)}
-                title="Editar URL del microservicio"
+                title="Editar dirección del servicio"
               >
                 <Edit2 className="h-4 w-4" />
               </Button>
@@ -978,10 +975,10 @@ export const WorkspaceSettingsView = React.memo(() => {
         <div className="space-y-3 pt-3 border-t border-border/60">
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Indicadores de Estado
+              Estado de las herramientas
             </h4>
             <p className="text-[11px] text-muted-foreground">
-              Disponibilidad en tiempo real de los servicios locales y herramientas CLI
+              Disponibilidad del motor de descargas y procesamiento de audio
             </p>
           </div>
 
@@ -994,19 +991,19 @@ export const WorkspaceSettingsView = React.memo(() => {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-1">
                   <span className="font-semibold text-xs text-foreground truncate">
-                    {health?.service || "Backend Go"}
+                    Servidor local
                   </span>
                   <Badge tone={isHealthy ? "success" : "danger"}>
-                    {isHealthy ? "Online" : "Offline"}
+                    {isHealthy ? "En línea" : "Desconectado"}
                   </Badge>
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                  {isHealthy ? `Versión ${health?.version || "1.0.0"}` : "Sin conexión con Docker"}
+                  {isHealthy ? "Listo para descargar" : "Sin conexión con el servidor"}
                 </p>
               </div>
             </div>
 
-            {/* Card 2: yt-dlp */}
+            {/* Card 2: Motor de descarga */}
             <div className="flex items-center gap-3.5 rounded-xl border border-border bg-card/60 p-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
                 <Download className="h-5 w-5" />
@@ -1014,21 +1011,21 @@ export const WorkspaceSettingsView = React.memo(() => {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-1">
                   <span className="font-semibold text-xs text-foreground truncate">
-                    yt-dlp
+                    Motor de descarga
                   </span>
                   <Badge tone={isYtDlpReady ? "success" : "danger"}>
-                    {isYtDlpReady ? "Disponible" : "No detectado"}
+                    {isYtDlpReady ? "Listo" : "No disponible"}
                   </Badge>
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
                   {isYtDlpReady
-                    ? health?.dependencies?.["yt-dlp"] || "Listo para descargas"
-                    : "Requiere instalación"}
+                    ? "Listo para descargar canciones"
+                    : "Herramienta no encontrada"}
                 </p>
               </div>
             </div>
 
-            {/* Card 3: FFmpeg */}
+            {/* Card 3: Procesador de audio */}
             <div className="flex items-center gap-3.5 rounded-xl border border-border bg-card/60 p-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-500">
                 <Music className="h-5 w-5" />
@@ -1036,16 +1033,16 @@ export const WorkspaceSettingsView = React.memo(() => {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-1">
                   <span className="font-semibold text-xs text-foreground truncate">
-                    FFmpeg
+                    Procesador de audio
                   </span>
                   <Badge tone={isFfmpegReady ? "success" : "danger"}>
-                    {isFfmpegReady ? "Disponible" : "No detectado"}
+                    {isFfmpegReady ? "Listo" : "No disponible"}
                   </Badge>
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
                   {isFfmpegReady
-                    ? health?.dependencies?.["ffmpeg"] || "Transcodificación activa"
-                    : "No detectado en contenedor"}
+                    ? "Listo para convertir formatos"
+                    : "Herramienta no encontrada"}
                 </p>
               </div>
             </div>
@@ -1056,7 +1053,7 @@ export const WorkspaceSettingsView = React.memo(() => {
       {/* Modal de error al agregar workspace */}
       <ConfirmationModal
         isOpen={workspaceErrorModal.isOpen}
-        title="Error al Inicializar Workspace"
+        title="No se pudo agregar la carpeta"
         description={workspaceErrorModal.message}
         confirmLabel="Entendido"
         cancelLabel="Cerrar"

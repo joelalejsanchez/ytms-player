@@ -356,12 +356,12 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                       {pendingCount > 0 ? (
                         <span> · <strong className="text-amber-500">{pendingCount}</strong> pendientes de descarga</span>
                       ) : selectedCount > 0 ? (
-                        <span> · <strong className="text-emerald-500">Todas disponibles en local</strong></span>
+                        <span> · <strong className="text-emerald-500">Todas descargadas</strong></span>
                       ) : null}
                     </p>
                   </div>
                   <Badge tone={previewData.content_type === "mix" ? "warning" : "info"}>
-                    {previewData.content_type === "mix" ? "Mix Autogenerado" : "Playlist"}
+                    {previewData.content_type === "mix" ? "Mix" : "Playlist"}
                   </Badge>
                 </div>
 
@@ -592,12 +592,11 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                         onChange={(e) => setUnlinkRemoved(e.target.checked)}
                       />
                       <span className="font-medium">
-                        Sincronizar y desvincular canciones eliminadas de YouTube
+                        Desvincular canciones que ya no estén en YouTube
                       </span>
                     </label>
                     <p className="mt-1 pl-6 text-[11px] text-muted-foreground">
-                      Si una canción de tu playlist local ya no existe en la lista de YouTube, se
-                      removerá de la lista (el archivo físico permanece seguro en tu biblioteca).
+                      Si una canción ya no existe en la lista de YouTube, se quitará de la playlist pero continuará guardada en tu biblioteca.
                     </p>
                   </div>
                 )}

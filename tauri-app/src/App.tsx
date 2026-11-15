@@ -59,8 +59,7 @@ export const App: React.FC = () => {
           {!workspace && activeTab !== "workspace" && (
             <div className="mb-4 flex items-center justify-between rounded-xl border border-amber-800/60 bg-amber-950/30 px-4 py-3 text-xs text-amber-200">
               <span>
-                No has seleccionado un directorio Workspace activo. Configura uno para
-                almacenar tus pistas y base de datos SQLite.
+                No has seleccionado una carpeta activa. Configura una para guardar tus canciones y listas de reproducción.
               </span>
               <Button
                 variant="secondary"
@@ -68,7 +67,7 @@ export const App: React.FC = () => {
                 onClick={() => setActiveTab("workspace")}
               >
                 <FolderCog className="h-4 w-4" />
-                Configurar Workspace
+                Configurar carpeta
               </Button>
             </div>
           )}

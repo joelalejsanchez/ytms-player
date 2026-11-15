@@ -91,7 +91,7 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
 
     await refreshTracks();
     setIsProcessing(false);
-    setSuccessMsg(`Se actualizaron con éxito los metadatos de ${success} canción(es) desde YouTube.`);
+    setSuccessMsg(`Se actualizó la información de ${success} canción(es) correctamente.`);
     setSelectedIds(new Set());
   };
 
@@ -105,10 +105,10 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
             <Sparkles className="h-5 w-5 text-amber-500" />
             <div>
               <h3 className="text-base font-semibold text-foreground">
-                Actualizar Metadatos desde YouTube
+                Actualizar información de canciones
               </h3>
               <p className="text-xs text-muted-foreground">
-                Vuelve a consultar los títulos y artistas oficiales de las canciones ya guardadas
+                Vuelve a consultar los títulos y artistas oficiales desde YouTube
               </p>
             </div>
           </div>
@@ -127,9 +127,7 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
           {/* Mensajes informativos */}
           <div className="rounded-xl border border-border bg-muted/40 p-3.5 text-foreground">
             <p>
-              Esta herramienta consulta la API de YouTube usando el{" "}
-              <code className="text-primary font-mono">youtube_id</code> de cada canción
-              para renombrarla con su título, artista y duración oficiales actuales en tu biblioteca.
+              Consulta YouTube para actualizar los nombres, artistas y duración de las canciones seleccionadas en tu biblioteca.
             </p>
           </div>
 
