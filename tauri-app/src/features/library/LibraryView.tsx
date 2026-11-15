@@ -222,8 +222,8 @@ export const LibraryView = React.memo(() => {
   return (
     <section className="flex h-full flex-col gap-3">
       {/* 1. Contenedor transparente superior: Búsqueda + Filtro de Playlist + Menú dropdown de 3 puntos */}
-      <div className="flex items-center gap-2 w-full relative z-20">
-        <div className="relative flex-1">
+      <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] items-center gap-2.5 w-full relative z-20">
+        <div className="relative w-full min-w-0">
           <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             value={searchQuery}
@@ -238,8 +238,8 @@ export const LibraryView = React.memo(() => {
           onChange={setSelectedPlaylistId}
           options={playlistOptions}
           ariaLabel="Filtrar por playlist"
-          className="w-48 sm:w-56 shrink-0"
-          triggerClassName="h-9 text-xs bg-card"
+          className="w-full min-w-0"
+          triggerClassName="w-full h-9 text-xs bg-card"
         />
 
         <ActionMenu

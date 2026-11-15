@@ -1,6 +1,5 @@
 import {
   AlertCircle,
-  CheckCircle2,
   FolderPlus,
   Heart,
   Link,
@@ -57,6 +56,29 @@ export const TrackRow = React.memo(
     const isSyncingLike = syncStatus?.status === "loading";
     const isSyncError = syncStatus?.status === "error";
     const isSynced = track.synced || syncStatus?.status === "synced";
+
+    // Unificación de estado de Like y Sincronización en el botón de corazón
+    const likeButtonTitle = isSyncingLike
+      ? "Sincronizando con YouTube..."
+      : isSyncError
+        ? `Error al sincronizar con YouTube: ${syncStatus?.error ?? "Fallo desconocido"}`
+        : track.liked
+          ? isSynced
+            ? "Me gusta (Sincronizado con YouTube)"
+            : "Me gusta (Solo local / No sincronizado)"
+          : isSynced
+            ? "Sin Me gusta (Sincronizado con YouTube)"
+            : "Sin Me gusta (Solo local)";
+
+    const heartIconClass = isSyncError
+      ? "text-destructive"
+      : track.liked
+        ? isSynced
+          ? "fill-rose-500 text-rose-500" // Rojo si está con like y sincronizado
+          : "fill-amber-500 text-amber-500" // Naranja/Ámbar si está con like pero desincronizado
+        : isSynced
+          ? "text-emerald-500 hover:text-rose-500 hover:fill-rose-500/20" // Borde verde para estado sincronizado ante like nulo
+          : "text-muted-foreground/60 hover:text-rose-500 hover:fill-rose-500/20"; // Borde gris atenuado ante like nulo no sincronizado
 
     return (
       <div
@@ -117,34 +139,11 @@ export const TrackRow = React.memo(
           </div>
         </div>
 
-        {/* Duración + Indicador de sincronización con YouTube */}
-        <div className="hidden items-center gap-4 text-xs text-muted-foreground md:flex">
+        {/* Duración */}
+        <div className="hidden items-center text-xs text-muted-foreground md:flex">
           <span className="w-12 text-right tabular-nums">
             {formatDuration(track.duration)}
           </span>
-
-          {/* Indicador de sincronización (Carga: amarillo / Sincronizado: verde / Error: rojo / Solo local: gris) */}
-          <div className="flex items-center justify-center w-5">
-            {isSyncingLike ? (
-              <span title="Sincronizando like con tu cuenta de YouTube...">
-                <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
-              </span>
-            ) : isSyncError ? (
-              <span
-                title={`Error al sincronizar con YouTube: ${syncStatus?.error ?? "Fallo desconocido"}`}
-              >
-                <AlertCircle className="h-4 w-4 text-destructive" />
-              </span>
-            ) : isSynced ? (
-              <span title="Sincronizado con tu cuenta de YouTube (Algoritmo actualizado)">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-              </span>
-            ) : (
-              <span title="Solo local (no sincronizado con YouTube)">
-                <CheckCircle2 className="h-4 w-4 text-muted-foreground/40" />
-              </span>
-            )}
-          </div>
         </div>
 
         {/* Acciones */}
@@ -154,22 +153,17 @@ export const TrackRow = React.memo(
             size="icon"
             disabled={isSyncingLike}
             onClick={() => onToggleLike(track.youtube_id, !track.liked)}
-            title={
-              isSyncingLike
-                ? "Sincronizando con YouTube..."
-                : track.liked
-                  ? "Quitar Me gusta"
-                  : "Marcar Me gusta"
-            }
+            title={likeButtonTitle}
+            className={`transition-colors ${
+              !track.liked && isSynced
+                ? "hover:bg-emerald-500/10"
+                : ""
+            }`}
           >
             {isSyncingLike ? (
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
             ) : (
-              <Heart
-                className={`h-4 w-4 ${
-                  track.liked ? "fill-rose-500 text-rose-500" : "text-muted-foreground"
-                }`}
-              />
+              <Heart className={`h-4 w-4 transition-colors ${heartIconClass}`} />
             )}
           </Button>
 
