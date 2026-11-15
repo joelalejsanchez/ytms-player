@@ -9,19 +9,26 @@ import {
   Loader2,
   Music2,
   RotateCcw,
+  Settings,
   Trash2,
-  Wifi,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { ActionMenu } from "@/components/ui/ActionMenu";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
+import { CustomSelect, type SelectOption } from "@/components/ui/CustomSelect";
 import { Badge, Button, Input, ProgressBar } from "@/components/ui/Primitives";
 import { toAssetUrl } from "@/lib/utils";
 import { downloadFormSchema } from "@/schemas/validation";
 import { useDownloadStore } from "@/stores/useDownloadStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import type { AudioFormat, DownloadProgressEvent } from "@/types/models";
-import { ActionMenu } from "@/components/ui/ActionMenu";
-import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { PlaylistImportModal } from "./PlaylistImportModal";
+
+const AUDIO_FORMAT_OPTIONS: SelectOption<AudioFormat>[] = [
+  { value: "mp3", label: "MP3 (ID3v2 + Carátula)" },
+  { value: "m4a", label: "M4A (AAC + Átomos iTunes)" },
+  { value: "opus", label: "OPUS (Vorbis Comments)" },
+];
 
 function parseIsoDate(raw: string): Date {
   if (!raw) return new Date();
@@ -115,7 +122,6 @@ export const DownloadsView = React.memo(() => {
   const [isClearingHistory, setIsClearingHistory] = useState(false);
   const [collapsedPlaylists, setCollapsedPlaylists] = useState<Record<string, boolean>>({});
 
-  const connectionState = useDownloadStore((s) => s.connectionState);
   const tasks = useDownloadStore((s) => s.tasks);
   const isSubmitting = useDownloadStore((s) => s.isSubmitting);
   const lastError = useDownloadStore((s) => s.lastError);
@@ -390,24 +396,6 @@ export const DownloadsView = React.memo(() => {
 
   return (
     <section className="flex h-full flex-col gap-5">
-      <header className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-foreground">
-            Gestor de Descargas & Stream SSE
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Descargas activas en tiempo real e historial histórico unificado por día
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Badge tone={connectionState === "connected" ? "success" : "warning"}>
-            <Wifi className="h-3.5 w-3.5" />
-            SSE: {connectionState}
-          </Badge>
-        </div>
-      </header>
-
       {/* Formulario de descarga validado con Zod */}
       <form
         onSubmit={(e) => void handleSubmit(e)}
@@ -423,35 +411,23 @@ export const DownloadsView = React.memo(() => {
             />
           </div>
 
-          <select
-            aria-label="Formato de audio"
+          <CustomSelect
             value={audioFormat}
-            onChange={(e) => handleFormatChange(e.target.value as AudioFormat)}
-            className="h-9 rounded-lg border border-input bg-card px-3 text-sm text-foreground focus:ring-1 focus:ring-ring"
-          >
-            <option value="mp3">MP3 (ID3v2 + Carátula)</option>
-            <option value="m4a">M4A (AAC + Átomos iTunes)</option>
-            <option value="opus">OPUS (Vorbis Comments)</option>
-          </select>
-
-          {shouldOpenPlaylistModal && (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setIsPlaylistModalOpen(true)}
-            >
-              <ListMusic className="h-4 w-4 text-primary" />
-              Previsualizar e Importar
-            </Button>
-          )}
+            onChange={(val) => handleFormatChange(val as AudioFormat)}
+            options={AUDIO_FORMAT_OPTIONS}
+            ariaLabel="Formato de audio"
+            triggerClassName="h-9 px-3 text-sm min-w-[220px]"
+          />
 
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
+            ) : shouldOpenPlaylistModal ? (
+              <ListMusic className="h-4 w-4" />
             ) : (
               <Download className="h-4 w-4" />
             )}
-            Descargar
+            {shouldOpenPlaylistModal ? "Importar Playlist" : "Descargar"}
           </Button>
         </div>
 
@@ -799,24 +775,27 @@ export const DownloadsView = React.memo(() => {
                 <History className="h-3.5 w-3.5 text-muted-foreground" />
                 Historial de Descargas ({downloadHistory.length})
               </h3>
-              {downloadHistory.length > 0 && (
-                <ActionMenu
-                  title="Opciones del historial"
-                  items={[
-                    {
-                      label: "Limpiar historial de descargas",
-                      icon: <Trash2 className="h-3.5 w-3.5" />,
-                      variant: "danger",
-                      onClick: () => setIsClearHistoryModalOpen(true),
-                    },
-                  ]}
-                />
+              {hasActiveDownloads && (
+                <span className="text-[11px] text-muted-foreground">
+                  Las descargas finalizadas se integran automáticamente aquí
+                </span>
               )}
             </div>
-            {hasActiveDownloads && (
-              <span className="text-[11px] text-muted-foreground">
-                Las descargas finalizadas se integran automáticamente aquí
-              </span>
+
+            {downloadHistory.length > 0 && (
+              <ActionMenu
+                title="Opciones del historial"
+                triggerIcon={<Settings className="h-4 w-4" />}
+                triggerClassName="h-7 w-7 rounded-lg border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground shadow-xs flex items-center justify-center ml-auto"
+                items={[
+                  {
+                    label: "Limpiar historial de descargas",
+                    icon: <Trash2 className="h-3.5 w-3.5" />,
+                    variant: "danger",
+                    onClick: () => setIsClearHistoryModalOpen(true),
+                  },
+                ]}
+              />
             )}
           </div>
 

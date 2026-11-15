@@ -135,15 +135,6 @@ export const PlaylistsView = React.memo(() => {
 
   return (
     <section className="flex h-full flex-col gap-5">
-      <header>
-        <h2 className="text-xl font-bold text-foreground">Gestión de Playlists</h2>
-        <p className="text-xs text-muted-foreground">
-          Relación muchos a muchos (
-          <code className="text-foreground">playlist_tracks</code>) con integridad
-          referencial <code className="text-foreground">ON DELETE CASCADE</code>
-        </p>
-      </header>
-
       {/* Formulario de nueva playlist */}
       <form
         onSubmit={(e) => void handleCreate(e)}
