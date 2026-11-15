@@ -2,24 +2,31 @@ import {
   AlertTriangle,
   CheckCircle2,
   DownloadCloud,
+  FileAudio,
+  PlusCircle,
   RefreshCw,
   Trash2,
 } from "lucide-react";
 import React, { useCallback, useState } from "react";
 import { Badge, Button } from "@/components/ui/Primitives";
+import { formatBytes } from "@/lib/utils";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 
 /**
- * Panel dedicado de recuperación de archivos extraviados (`is_missing = 1`, SDD 3.5).
+ * Panel dedicado de recuperación de archivos extraviados (`is_missing = 1`, SDD 3.5)
+ * y detección de archivos huérfanos en `/tracks`.
  */
 export const MissingFilesView = React.memo(() => {
   const [recoveringId, setRecoveringId] = useState<string | null>(null);
 
   const missingTracks = useLibraryStore((s) => s.missingTracks);
+  const orphanFiles = useLibraryStore((s) => s.orphanFiles);
   const lastReport = useLibraryStore((s) => s.lastIntegrityReport);
   const isLoading = useLibraryStore((s) => s.isLoading);
   const verifyIntegrity = useLibraryStore((s) => s.verifyIntegrity);
   const recoverTrack = useLibraryStore((s) => s.recoverTrack);
+  const adoptOrphanFile = useLibraryStore((s) => s.adoptOrphanFile);
+  const deleteOrphanFile = useLibraryStore((s) => s.deleteOrphanFile);
   const deleteTrack = useLibraryStore((s) => s.deleteTrack);
 
   const handleRecover = useCallback(
@@ -141,6 +148,76 @@ export const MissingFilesView = React.memo(() => {
               </div>
             );
           })
+        )}
+      </div>
+
+      {/* Sección de Archivos Huérfanos en /tracks (archivos físicos que no están en SQLite) */}
+      <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="flex items-center gap-2">
+            <FileAudio className="h-4 w-4 text-sky-400" />
+            <h3 className="text-sm font-semibold text-white">
+              Archivos Huérfanos en /tracks ({orphanFiles.length})
+            </h3>
+          </div>
+          <Badge tone={orphanFiles.length > 0 ? "warning" : "success"}>
+            {orphanFiles.length > 0 ? "Requiere acción" : "Limpio"}
+          </Badge>
+        </div>
+
+        {orphanFiles.length === 0 ? (
+          <p className="py-2 text-xs text-slate-500">
+            No hay archivos huérfanos. Todos los archivos de audio en el disco están
+            registrados en la biblioteca.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs text-slate-400">
+              Se encontraron archivos en tu carpeta física que no figuran en tu
+              biblioteca (por ejemplo descargas previas de Mixes). Puedes adoptarlos
+              directamente o borrarlos para liberar espacio:
+            </p>
+            {orphanFiles.map((file) => (
+              <div
+                key={file.full_path}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950/70 p-3 text-xs"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-slate-200">{file.file_name}</span>
+                    <Badge tone="default">.{file.file_extension}</Badge>
+                    <span className="text-slate-500">{formatBytes(file.file_size)}</span>
+                  </div>
+                  <span className="font-mono text-[11px] text-slate-500">{file.youtube_id}</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    disabled={isLoading}
+                    onClick={() =>
+                      void adoptOrphanFile(file.youtube_id, file.file_extension)
+                    }
+                  >
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    Adoptar en Biblioteca
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    disabled={isLoading}
+                    onClick={() =>
+                      void deleteOrphanFile(file.youtube_id, file.file_extension)
+                    }
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Borrar de Disco
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </section>

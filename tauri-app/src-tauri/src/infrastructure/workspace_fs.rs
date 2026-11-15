@@ -125,4 +125,62 @@ impl WorkspaceManagerPort for LocalWorkspaceManager {
         }
         Ok(())
     }
+
+    fn scan_orphan_track_files(
+        &self,
+        root_path: &Path,
+        known_youtube_ids: &[String],
+    ) -> DomainResult<Vec<crate::domain::entities::OrphanTrackFile>> {
+        let tracks_dir = root_path.join("tracks");
+        if !tracks_dir.is_dir() {
+            return Ok(Vec::new());
+        }
+
+        let id_set: std::collections::HashSet<&str> =
+            known_youtube_ids.iter().map(|s| s.as_str()).collect();
+        let mut orphans = Vec::new();
+
+        if let Ok(entries) = fs::read_dir(tracks_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if !path.is_file() {
+                    continue;
+                }
+                let file_name = path
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or_default()
+                    .to_string();
+
+                let ext = path
+                    .extension()
+                    .and_then(|e| e.to_str())
+                    .unwrap_or_default()
+                    .to_lowercase();
+
+                if ext != "mp3" && ext != "m4a" && ext != "opus" {
+                    continue;
+                }
+
+                let stem = path
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or_default()
+                    .to_string();
+
+                if !id_set.contains(stem.as_str()) {
+                    let size = entry.metadata().map(|m| m.len() as i64).unwrap_or(0);
+                    orphans.push(crate::domain::entities::OrphanTrackFile {
+                        file_name,
+                        youtube_id: stem,
+                        file_extension: ext,
+                        file_size: size,
+                        full_path: path.to_string_lossy().to_string(),
+                    });
+                }
+            }
+        }
+
+        Ok(orphans)
+    }
 }

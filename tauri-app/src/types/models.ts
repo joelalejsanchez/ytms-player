@@ -73,6 +73,15 @@ export interface AppSettings {
   recent_workspaces: SavedWorkspaceEntry[];
   microservice_url: string;
   cookies_file_path: string | null;
+  preferred_audio_format?: string | null;
+}
+
+export interface OrphanTrackFile {
+  file_name: string;
+  youtube_id: string;
+  file_extension: string;
+  file_size: number;
+  full_path: string;
 }
 
 export interface IntegrityReport {
@@ -80,6 +89,19 @@ export interface IntegrityReport {
   newly_missing_ids: string[];
   restored_ids: string[];
   missing_tracks: Track[];
+  orphan_files?: OrphanTrackFile[];
+}
+
+export interface DownloadHistoryEntry {
+  id: number;
+  task_id: string;
+  url: string;
+  youtube_id: string;
+  title: string;
+  status: string;
+  audio_format: string;
+  error_message?: string | null;
+  created_at: string;
 }
 
 export interface DownloadCommandInput {

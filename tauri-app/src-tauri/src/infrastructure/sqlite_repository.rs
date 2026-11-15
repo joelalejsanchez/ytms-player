@@ -47,6 +47,20 @@ CREATE TABLE IF NOT EXISTS playlist_tracks (
 
 CREATE INDEX IF NOT EXISTS idx_tracks_youtube_id ON tracks(youtube_id);
 CREATE INDEX IF NOT EXISTS idx_tracks_is_missing ON tracks(is_missing);
+
+CREATE TABLE IF NOT EXISTS download_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id TEXT NOT NULL,
+    url TEXT NOT NULL,
+    youtube_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    status TEXT NOT NULL,
+    audio_format TEXT NOT NULL,
+    error_message TEXT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_download_history_created_at ON download_history(created_at);
 ";
 
 /// Repositorio SQLite independiente por Workspace con `PRAGMA foreign_keys = ON` y transacciones ACID (SDD Sección 4).
@@ -405,6 +419,78 @@ impl TrackRepository for SqliteWorkspaceStore {
 
         tx.commit()
             .map_err(|e| DomainError::PersistenceError(format!("Commit failed: {e}")))
+    }
+
+    fn record_download_history(
+        &self,
+        task_id: &str,
+        url: &str,
+        youtube_id: &str,
+        title: &str,
+        status: &str,
+        format: &str,
+        error: Option<&str>,
+    ) -> DomainResult<()> {
+        let mut conn = self
+            .conn
+            .lock()
+            .map_err(|e| DomainError::PersistenceError(format!("Mutex poisoned: {e}")))?;
+
+        let tx = conn
+            .transaction()
+            .map_err(|e| DomainError::PersistenceError(format!("Transaction error: {e}")))?;
+
+        tx.execute(
+            r"
+            INSERT INTO download_history (task_id, url, youtube_id, title, status, audio_format, error_message)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+            ",
+            params![task_id, url, youtube_id, title, status, format, error],
+        )
+        .map_err(|e| DomainError::PersistenceError(format!("Insert download history failed: {e}")))?;
+
+        tx.commit()
+            .map_err(|e| DomainError::PersistenceError(format!("Commit failed: {e}")))
+    }
+
+    fn get_download_history(&self, limit: usize) -> DomainResult<Vec<crate::domain::entities::DownloadHistoryEntry>> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| DomainError::PersistenceError(format!("Mutex poisoned: {e}")))?;
+
+        let mut stmt = conn
+            .prepare(
+                r"
+                SELECT id, task_id, url, youtube_id, title, status, audio_format, error_message, created_at
+                FROM download_history
+                ORDER BY id DESC
+                LIMIT ?1
+                ",
+            )
+            .map_err(|e| DomainError::PersistenceError(format!("Prepare history failed: {e}")))?;
+
+        let rows = stmt
+            .query_map(params![limit as i64], |row| {
+                Ok(crate::domain::entities::DownloadHistoryEntry {
+                    id: row.get(0)?,
+                    task_id: row.get(1)?,
+                    url: row.get(2)?,
+                    youtube_id: row.get(3)?,
+                    title: row.get(4)?,
+                    status: row.get(5)?,
+                    audio_format: row.get(6)?,
+                    error_message: row.get(7)?,
+                    created_at: row.get(8)?,
+                })
+            })
+            .map_err(|e| DomainError::PersistenceError(format!("Query history failed: {e}")))?;
+
+        let mut history = Vec::new();
+        for r in rows {
+            history.push(r.map_err(|e| DomainError::PersistenceError(e.to_string()))?);
+        }
+        Ok(history)
     }
 }
 

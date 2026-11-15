@@ -6,11 +6,12 @@ pub mod infrastructure;
 pub mod interfaces;
 
 use interfaces::commands::{
-    add_track_to_playlist, check_microservice_health, confirm_sse_download, create_playlist,
-    delete_playlist, delete_track, get_app_settings, get_missing_tracks, get_oauth_status,
-    get_playlist_details, get_playlists, get_tracks, get_workspace_info, import_cookies_file,
-    open_oauth_login, read_audio_data_url, recover_track, register_track, remove_saved_workspace,
-    remove_track_from_playlist, select_workspace, set_microservice_url, start_download, sync_likes,
+    add_track_to_playlist, adopt_orphan_file, check_microservice_health, confirm_sse_download,
+    create_playlist, delete_orphan_file, delete_playlist, delete_track, get_app_settings,
+    get_download_history, get_missing_tracks, get_oauth_status, get_playlist_details, get_playlists,
+    get_tracks, get_workspace_info, import_cookies_file, open_oauth_login, read_audio_data_url,
+    recover_track, register_track, remove_saved_workspace, remove_track_from_playlist,
+    select_workspace, set_microservice_url, set_preferred_audio_format, start_download, sync_likes,
     toggle_track_like, verify_integrity,
 };
 use interfaces::state::AppState;
@@ -53,6 +54,10 @@ fn main() {
             get_oauth_status,
             open_oauth_login,
             read_audio_data_url,
+            get_download_history,
+            set_preferred_audio_format,
+            adopt_orphan_file,
+            delete_orphan_file,
         ])
         .run(tauri::generate_context!())
         .expect("Error while running ytms-player Tauri application");

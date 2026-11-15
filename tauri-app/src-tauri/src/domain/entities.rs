@@ -82,6 +82,17 @@ pub struct AppSettings {
     pub recent_workspaces: Vec<SavedWorkspaceEntry>,
     pub microservice_url: String,
     pub cookies_file_path: Option<String>,
+    pub preferred_audio_format: Option<String>,
+}
+
+/// Información de un archivo huérfano detectado en `/tracks` que no figura en SQLite.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OrphanTrackFile {
+    pub file_name: String,
+    pub youtube_id: String,
+    pub file_extension: String,
+    pub file_size: i64,
+    pub full_path: String,
 }
 
 /// Reporte de verificación de integridad entre SQLite y el sistema de archivos físico (SDD 3.5).
@@ -91,6 +102,21 @@ pub struct IntegrityReport {
     pub newly_missing_ids: Vec<String>,
     pub restored_ids: Vec<String>,
     pub missing_tracks: Vec<Track>,
+    pub orphan_files: Vec<OrphanTrackFile>,
+}
+
+/// Entrada en el historial de descargas del Workspace.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DownloadHistoryEntry {
+    pub id: i64,
+    pub task_id: String,
+    pub url: String,
+    pub youtube_id: String,
+    pub title: String,
+    pub status: String,
+    pub audio_format: String,
+    pub error_message: Option<String>,
+    pub created_at: String,
 }
 
 /// Petición de descarga enviada desde el frontend hacia Tauri y delegada al microservicio Go (SDD 6.1).

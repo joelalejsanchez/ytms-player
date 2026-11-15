@@ -245,6 +245,17 @@ impl AppSettingsStore {
         Ok(settings)
     }
 
+    pub fn update_preferred_format(
+        &self,
+        format: &str,
+        default_microservice_url: &str,
+    ) -> DomainResult<AppSettings> {
+        let mut settings = self.load(default_microservice_url);
+        settings.preferred_audio_format = Some(format.trim().to_lowercase());
+        self.save(&settings)?;
+        Ok(settings)
+    }
+
     fn default_settings(&self, default_microservice_url: &str) -> AppSettings {
         AppSettings {
             config_file_path: self.settings_path.to_string_lossy().to_string(),
@@ -252,6 +263,7 @@ impl AppSettingsStore {
             recent_workspaces: Vec::new(),
             microservice_url: default_microservice_url.to_string(),
             cookies_file_path: None,
+            preferred_audio_format: Some("mp3".to_string()),
         }
     }
 }

@@ -1,5 +1,5 @@
-import { Download, Loader2, Trash2, Wifi } from "lucide-react";
-import React, { useCallback, useMemo, useState } from "react";
+import { AlertCircle, Download, History, List, Loader2, Music2, Trash2, Wifi } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge, Button, Input, ProgressBar } from "@/components/ui/Primitives";
 import { downloadFormSchema } from "@/schemas/validation";
 import { useDownloadStore } from "@/stores/useDownloadStore";
@@ -7,11 +7,20 @@ import { useLibraryStore } from "@/stores/useLibraryStore";
 import type { AudioFormat } from "@/types/models";
 
 export const DownloadsView = React.memo(() => {
+  const appSettings = useLibraryStore((s) => s.appSettings);
+  const setPreferredFormat = useLibraryStore((s) => s.setPreferredFormat);
+  const downloadHistory = useLibraryStore((s) => s.downloadHistory);
+  const refreshDownloadHistory = useLibraryStore((s) => s.refreshDownloadHistory);
+
+  const initialFormat = (appSettings?.preferred_audio_format as AudioFormat) || "mp3";
+
   const [url, setUrl] = useState("");
-  const [audioFormat, setAudioFormat] = useState<AudioFormat>("mp3");
+  const [audioFormat, setAudioFormat] = useState<AudioFormat>(initialFormat);
   const [forceOverwrite, setForceOverwrite] = useState(false);
   const [asyncMode, setAsyncMode] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [mixOption, setMixOption] = useState<"track" | "mix">("track");
 
   const connectionState = useDownloadStore((s) => s.connectionState);
   const tasks = useDownloadStore((s) => s.tasks);
@@ -24,6 +33,27 @@ export const DownloadsView = React.memo(() => {
   const refreshTracks = useLibraryStore((s) => s.refreshTracks);
   const refreshPlaylists = useLibraryStore((s) => s.refreshPlaylists);
 
+  // Sincronizar formato con preferencia persistente
+  useEffect(() => {
+    if (appSettings?.preferred_audio_format) {
+      setAudioFormat(appSettings.preferred_audio_format as AudioFormat);
+    }
+    void refreshDownloadHistory();
+  }, [appSettings?.preferred_audio_format, refreshDownloadHistory]);
+
+  const handleFormatChange = useCallback(
+    (newFormat: AudioFormat) => {
+      setAudioFormat(newFormat);
+      void setPreferredFormat(newFormat);
+    },
+    [setPreferredFormat],
+  );
+
+  // Detección automática de Mix / Radio de YouTube (list=RD...)
+  const isMixUrl = useMemo(() => {
+    return url.includes("list=RD") || url.includes("list=UL");
+  }, [url]);
+
   const taskEntries = useMemo(() => Object.entries(tasks).reverse(), [tasks]);
 
   const handleSubmit = useCallback(
@@ -31,8 +61,22 @@ export const DownloadsView = React.memo(() => {
       e.preventDefault();
       setValidationError(null);
 
+      // Si es un mix y el usuario eligió solo la canción, limpiar el parámetro list
+      let finalUrl = url.trim();
+      if (isMixUrl && mixOption === "track") {
+        try {
+          const parsedUrl = new URL(finalUrl);
+          const videoId = parsedUrl.searchParams.get("v");
+          if (videoId) {
+            finalUrl = `https://www.youtube.com/watch?v=${videoId}`;
+          }
+        } catch {
+          // Ignorar si no es URL estándar
+        }
+      }
+
       const parsed = downloadFormSchema.safeParse({
-        url,
+        url: finalUrl,
         audioFormat,
         forceOverwrite,
         asyncMode,
@@ -53,19 +97,26 @@ export const DownloadsView = React.memo(() => {
           async_mode: parsed.data.asyncMode,
         });
         setUrl("");
-        await Promise.all([refreshTracks(), refreshPlaylists()]);
+        await Promise.all([
+          refreshTracks(),
+          refreshPlaylists(),
+          refreshDownloadHistory(),
+        ]);
       } catch {
         // El error ya queda registrado en useDownloadStore
       }
     },
     [
       url,
+      isMixUrl,
+      mixOption,
       audioFormat,
       forceOverwrite,
       asyncMode,
       startDownloadTask,
       refreshTracks,
       refreshPlaylists,
+      refreshDownloadHistory,
     ],
   );
 
@@ -83,6 +134,14 @@ export const DownloadsView = React.memo(() => {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant={showHistory ? "primary" : "secondary"}
+            size="sm"
+            onClick={() => setShowHistory((prev) => !prev)}
+          >
+            <History className="h-3.5 w-3.5" />
+            Historial ({downloadHistory.length})
+          </Button>
           <Badge tone={connectionState === "connected" ? "success" : "warning"}>
             <Wifi className="h-3.5 w-3.5" />
             SSE: {connectionState}
@@ -113,7 +172,7 @@ export const DownloadsView = React.memo(() => {
           <select
             aria-label="Formato de audio"
             value={audioFormat}
-            onChange={(e) => setAudioFormat(e.target.value as AudioFormat)}
+            onChange={(e) => handleFormatChange(e.target.value as AudioFormat)}
             className="h-9 rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100"
           >
             <option value="mp3">MP3 (ID3v2 + Carátula)</option>
@@ -130,6 +189,107 @@ export const DownloadsView = React.memo(() => {
             Descargar
           </Button>
         </div>
+
+        {/* Alerta y Selector inteligente si se pega un Mix de YouTube (list=RD...) */}
+        {isMixUrl && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-amber-400" />
+              <span>Detectamos un Mix autogenerado de YouTube en la URL. ¿Qué deseas descargar?</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setMixOption("track")}
+                className={`rounded px-2.5 py-1 text-xs font-semibold ${
+                  mixOption === "track"
+                    ? "bg-amber-500 text-slate-950"
+                    : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                }`}
+              >
+                <Music2 className="mr-1 inline h-3 w-3" />
+                Solo esta canción (Recomendado)
+              </button>
+              <button
+                type="button"
+                onClick={() => setMixOption("mix")}
+                className={`rounded px-2.5 py-1 text-xs font-semibold ${
+                  mixOption === "mix"
+                    ? "bg-amber-500 text-slate-950"
+                    : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                }`}
+              >
+                <List className="mr-1 inline h-3 w-3" />
+                Mix completo
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Panel colapsable de Historial de descargas */}
+        {showHistory && (
+          <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-900/95 p-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                Historial de descargas recientes ({downloadHistory.length})
+              </h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowHistory(false)}>
+                Cerrar
+              </Button>
+            </div>
+            {downloadHistory.length === 0 ? (
+              <p className="py-4 text-center text-xs text-slate-500">
+                Aún no hay descargas registradas en este Workspace.
+              </p>
+            ) : (
+              <div className="max-h-60 space-y-1.5 overflow-y-auto">
+                {downloadHistory.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-950/70 px-3 py-2 text-xs"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate font-semibold text-slate-100">
+                          {item.title}
+                        </span>
+                        <Badge
+                          tone={
+                            item.status === "completed"
+                              ? "success"
+                              : item.status === "failed"
+                                ? "danger"
+                                : "info"
+                          }
+                        >
+                          {item.status}
+                        </Badge>
+                        <span className="text-[10px] text-slate-400">
+                          .{item.audio_format}
+                        </span>
+                      </div>
+                      <span className="font-mono text-[11px] text-slate-500">
+                        {item.youtube_id} · {item.created_at}
+                      </span>
+                    </div>
+                    {item.status === "failed" && item.url && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          setUrl(item.url);
+                          setShowHistory(false);
+                        }}
+                      >
+                        Reintentar
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-6 text-xs text-slate-300">
           <label className="flex cursor-pointer items-center gap-2">

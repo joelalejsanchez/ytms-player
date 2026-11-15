@@ -5,6 +5,7 @@ import {
   Play,
   Repeat,
   Repeat1,
+  Shuffle,
   SkipBack,
   SkipForward,
   Trash2,
@@ -34,6 +35,7 @@ export const PersistentPlayer = React.memo(() => {
   const seekTarget = usePlayerStore((s) => s.seekTarget);
   const queue = usePlayerStore((s) => s.queue);
   const repeatMode = usePlayerStore((s) => s.repeatMode);
+  const isShuffle = usePlayerStore((s) => s.isShuffle);
 
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
   const setPlaying = usePlayerStore((s) => s.setPlaying);
@@ -49,6 +51,7 @@ export const PersistentPlayer = React.memo(() => {
   const removeFromQueue = usePlayerStore((s) => s.removeFromQueue);
   const clearQueue = usePlayerStore((s) => s.clearQueue);
   const cycleRepeatMode = usePlayerStore((s) => s.cycleRepeatMode);
+  const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
 
   // Sincronizar fuente de audio cuando cambia el track activo
   useEffect(() => {
@@ -299,6 +302,16 @@ export const PersistentPlayer = React.memo(() => {
               ) : (
                 <Repeat className="h-4 w-4" />
               )}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleShuffle}
+              title={`Aleatorio: ${isShuffle ? "Activado" : "Desactivado"}`}
+              className={isShuffle ? "text-red-400" : "text-slate-400"}
+            >
+              <Shuffle className="h-4 w-4" />
             </Button>
           </div>
 

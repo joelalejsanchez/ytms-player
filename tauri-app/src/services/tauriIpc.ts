@@ -4,6 +4,7 @@ import { isTauriEnvironment } from "@/lib/utils";
 import type {
   AppSettings,
   DownloadCommandInput,
+  DownloadHistoryEntry,
   HealthStatusDto,
   IntegrityReport,
   LikeSyncResponseDto,
@@ -163,5 +164,31 @@ export const tauriApi = {
 
   readAudioDataUrl(filePath: string): Promise<string> {
     return safeInvoke<string>("read_audio_data_url", { filePath });
+  },
+
+  getDownloadHistory(limit?: number): Promise<DownloadHistoryEntry[]> {
+    return safeInvoke<DownloadHistoryEntry[]>("get_download_history", { limit });
+  },
+
+  setPreferredAudioFormat(format: string): Promise<AppSettings> {
+    return safeInvoke<AppSettings>("set_preferred_audio_format", { format });
+  },
+
+  adoptOrphanFile(
+    youtubeId: string,
+    fileExtension: string,
+    title?: string,
+    artist?: string,
+  ): Promise<Track> {
+    return safeInvoke<Track>("adopt_orphan_file", {
+      youtubeId,
+      fileExtension,
+      title: title || null,
+      artist: artist || null,
+    });
+  },
+
+  deleteOrphanFile(youtubeId: string, fileExtension: string): Promise<void> {
+    return safeInvoke<void>("delete_orphan_file", { youtubeId, fileExtension });
   },
 };

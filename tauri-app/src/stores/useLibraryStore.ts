@@ -2,10 +2,12 @@ import { create } from "zustand";
 import { tauriApi } from "@/services/tauriIpc";
 import type {
   AppSettings,
+  DownloadHistoryEntry,
   HealthStatusDto,
   IntegrityReport,
   LikeSyncResponseDto,
   OAuthStatusDto,
+  OrphanTrackFile,
   Playlist,
   PlaylistWithTracks,
   Track,
@@ -17,6 +19,8 @@ export interface LibraryStoreState {
   appSettings: AppSettings | null;
   tracks: Track[];
   missingTracks: Track[];
+  orphanFiles: OrphanTrackFile[];
+  downloadHistory: DownloadHistoryEntry[];
   playlists: Playlist[];
   activePlaylist: PlaylistWithTracks | null;
   lastIntegrityReport: IntegrityReport | null;
@@ -28,11 +32,15 @@ export interface LibraryStoreState {
   selectWorkspace: (path: string) => Promise<WorkspaceInfo>;
   removeSavedWorkspace: (path: string) => Promise<void>;
   importCookiesFile: (sourcePath: string) => Promise<AppSettings>;
+  setPreferredFormat: (format: string) => Promise<void>;
   loadInitialState: () => Promise<void>;
   refreshTracks: () => Promise<void>;
   refreshMissingTracks: () => Promise<void>;
+  refreshDownloadHistory: () => Promise<void>;
   verifyIntegrity: () => Promise<IntegrityReport>;
   recoverTrack: (youtubeId: string) => Promise<Track>;
+  adoptOrphanFile: (youtubeId: string, fileExtension: string, title?: string) => Promise<void>;
+  deleteOrphanFile: (youtubeId: string, fileExtension: string) => Promise<void>;
   toggleLike: (youtubeId: string, liked: boolean | null) => Promise<void>;
   deleteTrack: (youtubeId: string, deleteFiles: boolean) => Promise<void>;
   refreshPlaylists: () => Promise<void>;
@@ -64,6 +72,8 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
   appSettings: null,
   tracks: [],
   missingTracks: [],
+  orphanFiles: [],
+  downloadHistory: [],
   playlists: [],
   activePlaylist: null,
   lastIntegrityReport: null,
@@ -174,6 +184,24 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
     }
   },
 
+  setPreferredFormat: async (format: string) => {
+    try {
+      const appSettings = await tauriApi.setPreferredAudioFormat(format);
+      set({ appSettings });
+    } catch {
+      // Ignorar
+    }
+  },
+
+  refreshDownloadHistory: async () => {
+    try {
+      const history = await tauriApi.getDownloadHistory(50);
+      set({ downloadHistory: history });
+    } catch {
+      // Ignorar si el workspace no está inicializado
+    }
+  },
+
   verifyIntegrity: async () => {
     set({ isLoading: true, error: null });
     try {
@@ -185,6 +213,7 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       set({
         lastIntegrityReport: report,
         missingTracks: report.missing_tracks,
+        orphanFiles: report.orphan_files ?? [],
         tracks,
         workspace: ws,
         isLoading: false,
@@ -192,6 +221,33 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       return report;
     } catch (err) {
       const message = extractErrorMessage(err, "Error al verificar la integridad");
+      set({ isLoading: false, error: message });
+      throw err;
+    }
+  },
+
+  adoptOrphanFile: async (youtubeId, fileExtension, title) => {
+    set({ isLoading: true, error: null });
+    try {
+      await tauriApi.adoptOrphanFile(youtubeId, fileExtension, title);
+      await get().verifyIntegrity();
+      await get().refreshTracks();
+      set({ isLoading: false });
+    } catch (err) {
+      const message = extractErrorMessage(err, "No se pudo adoptar el archivo huérfano");
+      set({ isLoading: false, error: message });
+      throw err;
+    }
+  },
+
+  deleteOrphanFile: async (youtubeId, fileExtension) => {
+    set({ isLoading: true, error: null });
+    try {
+      await tauriApi.deleteOrphanFile(youtubeId, fileExtension);
+      await get().verifyIntegrity();
+      set({ isLoading: false });
+    } catch (err) {
+      const message = extractErrorMessage(err, "No se pudo eliminar el archivo huérfano");
       set({ isLoading: false, error: message });
       throw err;
     }

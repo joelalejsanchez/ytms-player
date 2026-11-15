@@ -61,11 +61,14 @@ pub fn verify_workspace_integrity(
     }
 
     let missing_tracks = track_repo.get_missing_tracks()?;
+    let known_ids: Vec<String> = tracks.iter().map(|t| t.youtube_id.clone()).collect();
+    let orphan_files = workspace_manager.scan_orphan_track_files(workspace_path, &known_ids)?;
 
     Ok(IntegrityReport {
         checked_count: tracks.len(),
         newly_missing_ids,
         restored_ids,
         missing_tracks,
+        orphan_files,
     })
 }

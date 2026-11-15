@@ -1,9 +1,9 @@
 use std::path::{Path, PathBuf};
 
 use crate::domain::entities::{
-    HealthStatusDto, LikeSyncItemDto, LikeSyncResponseDto, MicroserviceDownloadRequest,
-    MicroserviceDownloadResponse, NewTrack, OAuthStatusDto, Playlist, PlaylistWithTracks, Track,
-    WorkspaceInfo,
+    DownloadHistoryEntry, HealthStatusDto, LikeSyncItemDto, LikeSyncResponseDto,
+    MicroserviceDownloadRequest, MicroserviceDownloadResponse, NewTrack, OAuthStatusDto,
+    OrphanTrackFile, Playlist, PlaylistWithTracks, Track, WorkspaceInfo,
 };
 use crate::domain::errors::DomainResult;
 
@@ -28,6 +28,17 @@ pub trait TrackRepository: Send + Sync {
     ) -> DomainResult<Track>;
     fn apply_synced_likes(&self, items: &[LikeSyncItemDto]) -> DomainResult<usize>;
     fn delete_track(&self, youtube_id: &str) -> DomainResult<()>;
+    fn record_download_history(
+        &self,
+        task_id: &str,
+        url: &str,
+        youtube_id: &str,
+        title: &str,
+        status: &str,
+        format: &str,
+        error: Option<&str>,
+    ) -> DomainResult<()>;
+    fn get_download_history(&self, limit: usize) -> DomainResult<Vec<DownloadHistoryEntry>>;
 }
 
 /// Puerto de persistencia para las tablas `playlists` y `playlist_tracks` en SQLite (SDD 4.2, 4.3 y 5.1).
@@ -60,6 +71,11 @@ pub trait WorkspaceManagerPort: Send + Sync {
         youtube_id: &str,
         extension: &str,
     ) -> DomainResult<()>;
+    fn scan_orphan_track_files(
+        &self,
+        root_path: &Path,
+        known_youtube_ids: &[String],
+    ) -> DomainResult<Vec<OrphanTrackFile>>;
 }
 
 /// Puerto de comunicación HTTP con el microservicio Go (SDD Sección 6).

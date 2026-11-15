@@ -14,6 +14,7 @@ export interface PlayerState {
   queue: Track[];
   currentIndex: number;
   repeatMode: RepeatMode;
+  isShuffle: boolean;
 
   playTrack: (track: Track, newQueue?: Track[]) => void;
   togglePlayPause: () => void;
@@ -30,6 +31,7 @@ export interface PlayerState {
   removeFromQueue: (youtubeId: string) => void;
   clearQueue: () => void;
   cycleRepeatMode: () => void;
+  toggleShuffle: () => void;
 }
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
@@ -43,6 +45,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   queue: [],
   currentIndex: -1,
   repeatMode: "off",
+  isShuffle: false,
 
   playTrack: (track, newQueue) => {
     if (track.is_missing) {
@@ -208,5 +211,26 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const modes: RepeatMode[] = ["off", "all", "one"];
     const next = modes[(modes.indexOf(get().repeatMode) + 1) % modes.length];
     set({ repeatMode: next });
+  },
+
+  toggleShuffle: () => {
+    const { isShuffle, queue, currentTrack } = get();
+    const nextShuffle = !isShuffle;
+    if (nextShuffle && queue.length > 1) {
+      const rest = queue.filter((t) => t.youtube_id !== currentTrack?.youtube_id);
+      // Algoritmo Fisher-Yates
+      for (let i = rest.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [rest[i], rest[j]] = [rest[j], rest[i]];
+      }
+      const shuffledQueue = currentTrack ? [currentTrack, ...rest] : rest;
+      set({
+        isShuffle: true,
+        queue: shuffledQueue,
+        currentIndex: currentTrack ? 0 : -1,
+      });
+    } else {
+      set({ isShuffle: nextShuffle });
+    }
   },
 }));

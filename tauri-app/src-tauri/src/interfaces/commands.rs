@@ -7,9 +7,9 @@ use crate::application::{
     download_sync_usecases, playlist_usecases, track_usecases, workspace_usecases,
 };
 use crate::domain::entities::{
-    AppSettings, DownloadCommandInput, HealthStatusDto, IntegrityReport, LikeSyncResponseDto,
-    MicroserviceDownloadItem, MicroserviceDownloadResponse, NewTrack, OAuthStatusDto, Playlist,
-    PlaylistWithTracks, Track, WorkspaceInfo,
+    AppSettings, DownloadCommandInput, DownloadHistoryEntry, HealthStatusDto, IntegrityReport,
+    LikeSyncResponseDto, MicroserviceDownloadItem, MicroserviceDownloadResponse, NewTrack,
+    OAuthStatusDto, Playlist, PlaylistWithTracks, Track, WorkspaceInfo,
 };
 use crate::domain::errors::{DomainError, DomainResult};
 use crate::domain::ports::{MicroserviceClientPort, TrackRepository, WorkspaceManagerPort};
@@ -397,6 +397,94 @@ pub fn import_cookies_file(
     state
         .settings_store
         .import_cookies_file(&PathBuf::from(source_path.trim()), &current_url)
+}
+
+/// Obtiene el historial reciente de descargas registradas en el Workspace.
+#[tauri::command]
+pub fn get_download_history(
+    limit: Option<usize>,
+    state: State<'_, AppState>,
+) -> DomainResult<Vec<DownloadHistoryEntry>> {
+    let ctx = state.active_workspace()?;
+    ctx.store.get_download_history(limit.unwrap_or(50))
+}
+
+/// Guarda la preferencia de formato de audio predeterminado en `settings.json`.
+#[tauri::command]
+pub fn set_preferred_audio_format(
+    format: String,
+    state: State<'_, AppState>,
+) -> DomainResult<AppSettings> {
+    let current_url = state
+        .microservice_client()
+        .map_or_else(|_| "http://127.0.0.1:8080".to_string(), |c| c.base_url().to_string());
+    state.settings_store.update_preferred_format(&format, &current_url)
+}
+
+/// Adopta en la biblioteca SQLite un archivo de audio huérfano que ya existe físicamente en `/tracks`.
+#[tauri::command]
+pub fn adopt_orphan_file(
+    youtube_id: String,
+    file_extension: String,
+    title: Option<String>,
+    artist: Option<String>,
+    state: State<'_, AppState>,
+) -> DomainResult<Track> {
+    let ctx = state.active_workspace()?;
+    let (exists, size, _) = state.workspace_manager.track_file_status(
+        &ctx.root_path,
+        &youtube_id,
+        &file_extension,
+    );
+
+    if !exists {
+        return Err(DomainError::ValidationError(format!(
+            "Orphan file {youtube_id}.{file_extension} not found on disk"
+        )));
+    }
+
+    let default_title = title
+        .filter(|t| !t.trim().is_empty())
+        .unwrap_or_else(|| youtube_id.clone());
+    let default_artist = artist
+        .filter(|a| !a.trim().is_empty())
+        .unwrap_or_else(|| "Local Audio".to_string());
+
+    let new_track = NewTrack {
+        youtube_id: youtube_id.clone(),
+        title: default_title,
+        artist: default_artist,
+        duration: 0,
+        published_at: None,
+        file_extension,
+        thumbnail_path: state.workspace_manager.resolve_thumbnail_path(&ctx.root_path, &youtube_id),
+        synced: false,
+        liked: None,
+        is_missing: false,
+        file_size: size,
+    };
+
+    track_usecases::register_or_update_track(
+        &ctx.root_path,
+        new_track,
+        &state.workspace_manager,
+        ctx.store.as_ref(),
+    )
+}
+
+/// Elimina un archivo físico huérfano de `/tracks`.
+#[tauri::command]
+pub fn delete_orphan_file(
+    youtube_id: String,
+    file_extension: String,
+    state: State<'_, AppState>,
+) -> DomainResult<()> {
+    let ctx = state.active_workspace()?;
+    state.workspace_manager.delete_physical_files(
+        &ctx.root_path,
+        &youtube_id,
+        &file_extension,
+    )
 }
 
 /// Consulta el estado de conexión OAuth 2.0 en `GET /api/oauth/status`.

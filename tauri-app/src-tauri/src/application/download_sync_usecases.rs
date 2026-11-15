@@ -34,7 +34,7 @@ pub fn execute_download_and_persist(
 
     let req = MicroserviceDownloadRequest {
         url: input.url.trim().to_string(),
-        audio_format: format,
+        audio_format: format.clone(),
         workspace_path: ws_info.root_path,
         tracks_dir: ws_info.tracks_dir,
         thumbnails_dir: ws_info.thumbnails_dir,
@@ -52,6 +52,27 @@ pub fn execute_download_and_persist(
             track_repo,
             playlist_repo,
         )?;
+        for item in &response.items {
+            let _ = track_repo.record_download_history(
+                &response.task_id,
+                &input.url,
+                &item.youtube_id,
+                &item.metadata.title,
+                &item.status,
+                &item.file_extension,
+                item.error.as_deref(),
+            );
+        }
+    } else {
+        let _ = track_repo.record_download_history(
+            &response.task_id,
+            &input.url,
+            &response.youtube_id,
+            &response.youtube_id,
+            &response.status,
+            &format,
+            response.message.as_deref(),
+        );
     }
 
     Ok(response)
@@ -87,6 +108,16 @@ pub fn persist_single_downloaded_item(
 
     let saved_track =
         register_or_update_track(workspace_path, new_track, workspace_manager, track_repo)?;
+
+    let _ = track_repo.record_download_history(
+        "sse-task",
+        "",
+        &item.youtube_id,
+        &item.metadata.title,
+        &item.status,
+        &item.file_extension,
+        item.error.as_deref(),
+    );
 
     if let Some(yt_playlist_id) = &item.metadata.playlist_id {
         if !yt_playlist_id.trim().is_empty() {
