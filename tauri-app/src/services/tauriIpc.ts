@@ -207,6 +207,10 @@ export const tauriApi = {
     return safeInvoke<DownloadHistoryEntry[]>("get_download_history", { limit });
   },
 
+  clearDownloadHistory(): Promise<void> {
+    return safeInvoke<void>("clear_download_history");
+  },
+
   setPreferredAudioFormat(format: string): Promise<AppSettings> {
     return safeInvoke<AppSettings>("set_preferred_audio_format", { format });
   },

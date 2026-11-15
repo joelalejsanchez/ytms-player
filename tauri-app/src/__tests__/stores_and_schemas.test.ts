@@ -118,6 +118,38 @@ describe("usePlayerStore", () => {
     usePlayerStore.getState().cycleRepeatMode();
     expect(usePlayerStore.getState().repeatMode).toBe("all");
   });
+
+  it("blocks seekTo while track is loading and unlocks when loaded", () => {
+    usePlayerStore.getState().playTrack(sampleTrack);
+    expect(usePlayerStore.getState().isLoadingTrack).toBe(true);
+
+    // Intentar buscar mientras carga debe ser ignorado
+    usePlayerStore.getState().seekTo(80);
+    expect(usePlayerStore.getState().seekTarget).toBeNull();
+    expect(usePlayerStore.getState().currentTime).toBe(0);
+
+    // Al finalizar carga se desbloquea
+    usePlayerStore.getState().setIsLoadingTrack(false);
+    usePlayerStore.getState().seekTo(80);
+    expect(usePlayerStore.getState().seekTarget).toBe(80);
+    expect(usePlayerStore.getState().currentTime).toBe(80);
+  });
+
+  it("preserves shuffle mode when playing a new playlist queue", () => {
+    const track2: Track = { ...sampleTrack, id: 3, youtube_id: "track_2" };
+    const track3: Track = { ...sampleTrack, id: 4, youtube_id: "track_3" };
+    const track4: Track = { ...sampleTrack, id: 5, youtube_id: "track_4" };
+
+    usePlayerStore.setState({ isShuffle: true });
+    usePlayerStore.getState().playTrack(track2, [sampleTrack, track2, track3, track4]);
+
+    const state = usePlayerStore.getState();
+    expect(state.currentTrack?.youtube_id).toBe("track_2");
+    expect(state.currentIndex).toBe(0);
+    expect(state.queue[0].youtube_id).toBe("track_2");
+    expect(state.queue.length).toBe(4);
+    expect(state.isShuffle).toBe(true);
+  });
 });
 
 describe("useDownloadStore & Utility Helpers", () => {

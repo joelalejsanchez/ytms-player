@@ -37,9 +37,11 @@ export const PersistentPlayer = React.memo(() => {
   const queue = usePlayerStore((s) => s.queue);
   const repeatMode = usePlayerStore((s) => s.repeatMode);
   const isShuffle = usePlayerStore((s) => s.isShuffle);
+  const isLoadingTrack = usePlayerStore((s) => s.isLoadingTrack);
 
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
   const setPlaying = usePlayerStore((s) => s.setPlaying);
+  const setIsLoadingTrack = usePlayerStore((s) => s.setIsLoadingTrack);
   const seekTo = usePlayerStore((s) => s.seekTo);
   const clearSeekTarget = usePlayerStore((s) => s.clearSeekTarget);
   const setCurrentTime = usePlayerStore((s) => s.setCurrentTime);
@@ -133,11 +135,13 @@ export const PersistentPlayer = React.memo(() => {
       audio.removeAttribute("src");
       currentTrackIdRef.current = null;
       isChangingTrackRef.current = false;
+      setIsLoadingTrack(false);
       return;
     }
 
     currentTrackIdRef.current = currentTrack.youtube_id;
     isChangingTrackRef.current = true;
+    setIsLoadingTrack(true);
 
     const loadAndPlayTrack = async () => {
       try {
@@ -181,6 +185,7 @@ export const PersistentPlayer = React.memo(() => {
         if (!isCancelled && currentTrackIdRef.current === currentTrack.youtube_id) {
           console.error("Error al iniciar reproducción:", err);
           setPlaying(false);
+          setIsLoadingTrack(false);
         }
       } finally {
         if (!isCancelled) {
@@ -202,6 +207,7 @@ export const PersistentPlayer = React.memo(() => {
     getTargetVolume,
     preloadNextTrack,
     setPlaying,
+    setIsLoadingTrack,
   ]);
 
   // Sincronizar manual play / pause con respuesta inmediata sin interferir con el cambio de pista
@@ -249,15 +255,15 @@ export const PersistentPlayer = React.memo(() => {
     }
   }, [volume, isMuted]);
 
-  // Sincronizar operaciones de Seek manuales
+  // Sincronizar operaciones de Seek manuales (bloqueadas durante carga)
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || seekTarget === null) {
+    if (!audio || seekTarget === null || isLoadingTrack) {
       return;
     }
     audio.currentTime = seekTarget;
     clearSeekTarget();
-  }, [seekTarget, clearSeekTarget]);
+  }, [seekTarget, isLoadingTrack, clearSeekTarget]);
 
   const handleTimeUpdate = useCallback(() => {
     if (audioRef.current) {
@@ -269,7 +275,16 @@ export const PersistentPlayer = React.memo(() => {
     if (audioRef.current && Number.isFinite(audioRef.current.duration)) {
       setDuration(audioRef.current.duration);
     }
-  }, [setDuration]);
+    setIsLoadingTrack(false);
+  }, [setDuration, setIsLoadingTrack]);
+
+  const handleCanPlay = useCallback(() => {
+    setIsLoadingTrack(false);
+  }, [setIsLoadingTrack]);
+
+  const handleAudioError = useCallback(() => {
+    setIsLoadingTrack(false);
+  }, [setIsLoadingTrack]);
 
   const handleEnded = useCallback(() => {
     const repeat = usePlayerStore.getState().repeatMode;
@@ -285,9 +300,10 @@ export const PersistentPlayer = React.memo(() => {
 
   const handleSeekInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (isLoadingTrack || !currentTrack) return;
       seekTo(Number(e.target.value));
     },
-    [seekTo],
+    [isLoadingTrack, currentTrack, seekTo],
   );
 
   const handleVolumeInput = useCallback(
@@ -310,6 +326,8 @@ export const PersistentPlayer = React.memo(() => {
         ref={audioRef}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
+        onCanPlay={handleCanPlay}
+        onError={handleAudioError}
         onEnded={handleEnded}
         preload="auto"
       />
@@ -461,20 +479,33 @@ export const PersistentPlayer = React.memo(() => {
               {formatDuration(currentTime)}
             </span>
 
-            {/* Barra de progreso de pista con relleno exacto e indicador responsivo al cursor */}
-            <div className="group relative flex h-4 flex-1 cursor-pointer select-none items-center">
+            {/* Barra de progreso de pista con bloqueo durante carga de track, relleno exacto e indicador dinámico */}
+            <div
+              className={`group relative flex h-4 flex-1 select-none items-center ${
+                !currentTrack || isLoadingTrack
+                  ? "cursor-not-allowed opacity-50 pointer-events-none"
+                  : "cursor-pointer"
+              }`}
+              title={isLoadingTrack ? "Cargando pista..." : undefined}
+            >
               {/* Fondo de la barra */}
               <div className="relative h-1 w-full overflow-hidden rounded-full bg-slate-800 transition-all duration-150 group-hover:h-1.5">
                 {/* Relleno hasta el punto actual */}
                 <div
-                  className="h-full bg-red-500 transition-none"
+                  className={`h-full transition-none ${
+                    isLoadingTrack ? "bg-slate-600 animate-pulse" : "bg-red-500"
+                  }`}
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
 
-              {/* Indicador / Thumb pequeño que crece cuando el ratón se acerca */}
+              {/* Indicador / Thumb pequeño que crece cuando el ratón se acerca (bloqueado durante carga) */}
               <div
-                className="pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full bg-white shadow-md transition-all duration-150 group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-red-500"
+                className={`pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full shadow-md transition-all duration-150 ${
+                  isLoadingTrack
+                    ? "bg-slate-500 opacity-40"
+                    : "bg-white group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-red-500"
+                }`}
                 style={{ left: `${progressPercent}%` }}
               />
 
@@ -486,9 +517,10 @@ export const PersistentPlayer = React.memo(() => {
                 step={0.5}
                 value={currentTime}
                 onChange={handleSeekInput}
-                disabled={!currentTrack}
+                disabled={!currentTrack || isLoadingTrack}
                 aria-label="Progreso de la canción"
-                className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+                aria-disabled={!currentTrack || isLoadingTrack}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed disabled:pointer-events-none"
               />
             </div>
 

@@ -505,6 +505,18 @@ impl TrackRepository for SqliteWorkspaceStore {
         }
         Ok(history)
     }
+
+    fn clear_download_history(&self) -> DomainResult<()> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| DomainError::PersistenceError(format!("Mutex poisoned: {e}")))?;
+
+        conn.execute("DELETE FROM download_history", [])
+            .map_err(|e| DomainError::PersistenceError(format!("Clear download history failed: {e}")))?;
+
+        Ok(())
+    }
 }
 
 impl PlaylistRepository for SqliteWorkspaceStore {

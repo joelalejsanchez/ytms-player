@@ -19,6 +19,7 @@ import { downloadFormSchema } from "@/schemas/validation";
 import { useDownloadStore } from "@/stores/useDownloadStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import type { AudioFormat, DownloadProgressEvent } from "@/types/models";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { PlaylistImportModal } from "./PlaylistImportModal";
 
 function parseIsoDate(raw: string): Date {
@@ -96,6 +97,7 @@ export const DownloadsView = React.memo(() => {
   const downloadHistory = useLibraryStore((s) => s.downloadHistory);
   const tracks = useLibraryStore((s) => s.tracks);
   const refreshDownloadHistory = useLibraryStore((s) => s.refreshDownloadHistory);
+  const clearDownloadHistory = useLibraryStore((s) => s.clearDownloadHistory);
   const refreshTracks = useLibraryStore((s) => s.refreshTracks);
   const refreshPlaylists = useLibraryStore((s) => s.refreshPlaylists);
 
@@ -108,6 +110,8 @@ export const DownloadsView = React.memo(() => {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [mixOption, setMixOption] = useState<"track" | "mix">("track");
   const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
+  const [isClearHistoryModalOpen, setIsClearHistoryModalOpen] = useState(false);
+  const [isClearingHistory, setIsClearingHistory] = useState(false);
   const [collapsedPlaylists, setCollapsedPlaylists] = useState<Record<string, boolean>>({});
 
   const connectionState = useDownloadStore((s) => s.connectionState);
@@ -370,6 +374,18 @@ export const DownloadsView = React.memo(() => {
       refreshDownloadHistory,
     ],
   );
+
+  const handleConfirmClearHistory = useCallback(async () => {
+    setIsClearingHistory(true);
+    try {
+      await clearDownloadHistory();
+      setIsClearHistoryModalOpen(false);
+    } catch (err) {
+      console.error("Error al limpiar historial de descargas:", err);
+    } finally {
+      setIsClearingHistory(false);
+    }
+  }, [clearDownloadHistory]);
 
   return (
     <section className="flex h-full flex-col gap-5">
@@ -751,10 +767,24 @@ export const DownloadsView = React.memo(() => {
         {/* SECCIÓN 2: Historial completo unificado separado por día (Estilo WhatsApp) */}
         <div className="space-y-4">
           <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-            <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-300">
-              <History className="h-3.5 w-3.5 text-slate-400" />
-              Historial de Descargas ({downloadHistory.length})
-            </h3>
+            <div className="flex items-center gap-3">
+              <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-300">
+                <History className="h-3.5 w-3.5 text-slate-400" />
+                Historial de Descargas ({downloadHistory.length})
+              </h3>
+              {downloadHistory.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsClearHistoryModalOpen(true)}
+                  className="h-6 gap-1.5 px-2 text-[11px] text-slate-400 hover:bg-rose-500/10 hover:text-rose-400"
+                  title="Limpiar todo el historial de descargas"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  Limpiar historial
+                </Button>
+              )}
+            </div>
             {hasActiveDownloads && (
               <span className="text-[11px] text-slate-400">
                 Las descargas finalizadas se integran automáticamente aquí
@@ -875,6 +905,18 @@ export const DownloadsView = React.memo(() => {
             refreshDownloadHistory(),
           ]);
         }}
+      />
+
+      <ConfirmationModal
+        isOpen={isClearHistoryModalOpen}
+        title="Limpiar Historial de Descargas"
+        description="¿Estás seguro de que deseas eliminar todo el historial de descargas? Los archivos de audio ya descargados se conservarán intactos en tu biblioteca."
+        confirmLabel="Limpiar historial"
+        cancelLabel="Cancelar"
+        tone="danger"
+        isLoading={isClearingHistory}
+        onConfirm={handleConfirmClearHistory}
+        onCancel={() => setIsClearHistoryModalOpen(false)}
       />
     </section>
   );

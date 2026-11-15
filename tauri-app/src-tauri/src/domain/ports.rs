@@ -39,6 +39,7 @@ pub trait TrackRepository: Send + Sync {
         error: Option<&str>,
     ) -> DomainResult<()>;
     fn get_download_history(&self, limit: usize) -> DomainResult<Vec<DownloadHistoryEntry>>;
+    fn clear_download_history(&self) -> DomainResult<()>;
 }
 
 /// Puerto de persistencia para las tablas `playlists` y `playlist_tracks` en SQLite (SDD 4.2, 4.3 y 5.1).

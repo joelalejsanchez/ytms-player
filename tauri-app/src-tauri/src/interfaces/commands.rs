@@ -489,6 +489,13 @@ pub fn get_download_history(
     ctx.store.get_download_history(limit.unwrap_or(50))
 }
 
+/// Elimina todo el historial de descargas registrado en SQLite del Workspace activo.
+#[tauri::command]
+pub fn clear_download_history(state: State<'_, AppState>) -> DomainResult<()> {
+    let ctx = state.active_workspace()?;
+    ctx.store.clear_download_history()
+}
+
 /// Guarda la preferencia de formato de audio predeterminado en `settings.json`.
 #[tauri::command]
 pub fn set_preferred_audio_format(

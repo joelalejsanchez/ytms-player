@@ -6,6 +6,7 @@ export type RepeatMode = "off" | "all" | "one";
 export interface PlayerState {
   currentTrack: Track | null;
   isPlaying: boolean;
+  isLoadingTrack: boolean;
   volume: number;
   isMuted: boolean;
   duration: number;
@@ -19,6 +20,7 @@ export interface PlayerState {
   playTrack: (track: Track, newQueue?: Track[]) => void;
   togglePlayPause: () => void;
   setPlaying: (playing: boolean) => void;
+  setIsLoadingTrack: (loading: boolean) => void;
   seekTo: (seconds: number) => void;
   clearSeekTarget: () => void;
   setCurrentTime: (seconds: number) => void;
@@ -66,11 +68,24 @@ function savePersistedPreferences(data: Partial<PersistedPlayerPreferences>) {
   }
 }
 
+function shuffleTracksWithFirst(tracks: Track[], firstTrack?: Track | null): Track[] {
+  const rest = firstTrack
+    ? tracks.filter((t) => t.youtube_id !== firstTrack.youtube_id)
+    : [...tracks];
+  // Algoritmo Fisher-Yates
+  for (let i = rest.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [rest[i], rest[j]] = [rest[j], rest[i]];
+  }
+  return firstTrack ? [firstTrack, ...rest] : rest;
+}
+
 const savedPrefs = loadPersistedPreferences();
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
   currentTrack: savedPrefs.currentTrack ?? null,
   isPlaying: false,
+  isLoadingTrack: false,
   volume: typeof savedPrefs.volume === "number" ? savedPrefs.volume : 0.85,
   isMuted: Boolean(savedPrefs.isMuted),
   duration: savedPrefs.currentTrack?.duration || 0,
@@ -85,19 +100,31 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     if (track.is_missing) {
       return;
     }
+    const hasNewQueue = newQueue !== undefined;
     const playableQueue = (newQueue ?? get().queue).filter((item) => !item.is_missing);
-    const existingIndex = playableQueue.findIndex(
-      (item) => item.youtube_id === track.youtube_id,
-    );
 
-    const updatedQueue = existingIndex >= 0 ? playableQueue : [...playableQueue, track];
-    const nextIndex = existingIndex >= 0 ? existingIndex : updatedQueue.length - 1;
+    let updatedQueue: Track[];
+    let nextIndex: number;
+
+    // Si el modo aleatorio está activo y se cargó una nueva lista (o la cola estaba vacía),
+    // colocar la canción seleccionada al inicio y barajar el resto con Fisher-Yates
+    if (get().isShuffle && (hasNewQueue || get().queue.length === 0)) {
+      updatedQueue = shuffleTracksWithFirst(playableQueue, track);
+      nextIndex = 0;
+    } else {
+      const existingIndex = playableQueue.findIndex(
+        (item) => item.youtube_id === track.youtube_id,
+      );
+      updatedQueue = existingIndex >= 0 ? playableQueue : [...playableQueue, track];
+      nextIndex = existingIndex >= 0 ? existingIndex : updatedQueue.length - 1;
+    }
 
     savePersistedPreferences({ currentTrack: track, currentTime: 0 });
 
     set({
       currentTrack: track,
       isPlaying: true,
+      isLoadingTrack: true,
       currentTime: 0,
       duration: track.duration || 0,
       queue: updatedQueue,
@@ -115,7 +142,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   setPlaying: (playing) => set({ isPlaying: playing }),
 
+  setIsLoadingTrack: (loading) => set({ isLoadingTrack: loading }),
+
   seekTo: (seconds) => {
+    if (get().isLoadingTrack) {
+      return;
+    }
     const clamped = Math.max(0, Math.min(seconds, get().duration || seconds));
     savePersistedPreferences({ currentTime: clamped });
     set({ currentTime: clamped, seekTarget: clamped });
@@ -141,14 +173,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     }),
 
   playNext: () => {
-    const { queue, currentIndex, repeatMode, currentTrack } = get();
+    const { queue, currentIndex, repeatMode, currentTrack, isShuffle } = get();
     if (queue.length === 0) {
-      set({ isPlaying: false });
+      set({ isPlaying: false, isLoadingTrack: false });
       return;
     }
 
     if (repeatMode === "one" && currentTrack) {
-      set({ currentTime: 0, seekTarget: 0, isPlaying: true });
+      set({ currentTime: 0, seekTarget: 0, isPlaying: true, isLoadingTrack: true });
       return;
     }
 
@@ -161,11 +193,26 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         currentTime: 0,
         duration: nextTrack.duration || 0,
         isPlaying: true,
+        isLoadingTrack: true,
       });
       return;
     }
 
     if (repeatMode === "all") {
+      if (isShuffle && queue.length > 1) {
+        const reshuffled = shuffleTracksWithFirst(queue);
+        const firstTrack = reshuffled[0];
+        set({
+          currentTrack: firstTrack,
+          queue: reshuffled,
+          currentIndex: 0,
+          currentTime: 0,
+          duration: firstTrack.duration || 0,
+          isPlaying: true,
+          isLoadingTrack: true,
+        });
+        return;
+      }
       const firstTrack = queue[0];
       set({
         currentTrack: firstTrack,
@@ -173,11 +220,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         currentTime: 0,
         duration: firstTrack.duration || 0,
         isPlaying: true,
+        isLoadingTrack: true,
       });
       return;
     }
 
-    set({ isPlaying: false, currentTime: 0 });
+    set({ isPlaying: false, currentTime: 0, isLoadingTrack: false });
   },
 
   playPrevious: () => {
@@ -200,6 +248,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         currentTime: 0,
         duration: prevTrack.duration || 0,
         isPlaying: true,
+        isLoadingTrack: true,
       });
     }
   },
@@ -262,13 +311,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const nextShuffle = !isShuffle;
     savePersistedPreferences({ isShuffle: nextShuffle });
     if (nextShuffle && queue.length > 1) {
-      const rest = queue.filter((t) => t.youtube_id !== currentTrack?.youtube_id);
-      // Algoritmo Fisher-Yates
-      for (let i = rest.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [rest[i], rest[j]] = [rest[j], rest[i]];
-      }
-      const shuffledQueue = currentTrack ? [currentTrack, ...rest] : rest;
+      const shuffledQueue = shuffleTracksWithFirst(queue, currentTrack);
       set({
         isShuffle: true,
         queue: shuffledQueue,

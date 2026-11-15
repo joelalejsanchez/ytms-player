@@ -6,7 +6,7 @@ pub mod infrastructure;
 pub mod interfaces;
 
 use interfaces::commands::{
-    add_track_to_playlist, adopt_orphan_file, check_microservice_health, confirm_sse_download,
+    add_track_to_playlist, adopt_orphan_file, check_microservice_health, clear_download_history, confirm_sse_download,
     create_playlist, delete_orphan_file, delete_playlist, delete_track, get_app_settings,
     get_download_history, get_missing_tracks, get_oauth_status, get_playlist_details, get_playlists,
     get_tracks, get_workspace_info, import_cookies_file, logout_oauth, open_oauth_login,
@@ -56,6 +56,7 @@ fn main() {
             open_oauth_login,
             read_audio_data_url,
             get_download_history,
+            clear_download_history,
             set_preferred_audio_format,
             adopt_orphan_file,
             delete_orphan_file,

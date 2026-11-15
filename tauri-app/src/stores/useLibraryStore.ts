@@ -45,6 +45,7 @@ export interface LibraryStoreState {
   refreshTracks: () => Promise<void>;
   refreshMissingTracks: () => Promise<void>;
   refreshDownloadHistory: () => Promise<void>;
+  clearDownloadHistory: () => Promise<void>;
   verifyIntegrity: () => Promise<IntegrityReport>;
   recoverTrack: (youtubeId: string) => Promise<Track>;
   adoptOrphanFile: (youtubeId: string, fileExtension: string, title?: string) => Promise<void>;
@@ -208,6 +209,16 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       set({ downloadHistory: history });
     } catch {
       // Ignorar si el workspace no está inicializado
+    }
+  },
+
+  clearDownloadHistory: async () => {
+    try {
+      await tauriApi.clearDownloadHistory();
+      set({ downloadHistory: [] });
+    } catch (err) {
+      console.error("Error al limpiar historial de descargas:", err);
+      throw err;
     }
   },
 
