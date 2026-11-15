@@ -9,6 +9,7 @@ import {
 } from "@/schemas/validation";
 import { buildTaskKey, useDownloadStore } from "@/stores/useDownloadStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
+import { useThemeStore } from "@/stores/useThemeStore";
 import type { Track } from "@/types/models";
 
 const sampleTrack: Track = {
@@ -238,5 +239,41 @@ describe("useDownloadStore & Utility Helpers", () => {
     expect(defaultSelected.has("long_mix")).toBe(false);
     expect(defaultSelected.has("edge_case")).toBe(false);
     expect(defaultSelected.size).toBe(2);
+  });
+});
+
+describe("useThemeStore", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    document.documentElement.className = "";
+  });
+
+  it("initializes with default light mode and blue color family", () => {
+    useThemeStore.getState().initTheme();
+    const state = useThemeStore.getState();
+    expect(state.mode).toBe("light");
+    expect(state.colorFamily).toBe("blue");
+    expect(document.documentElement.classList.contains("light")).toBe(true);
+    expect(document.documentElement.classList.contains("blue")).toBe(true);
+  });
+
+  it("switches theme mode and color family dynamically injecting classes on root", () => {
+    const store = useThemeStore.getState();
+
+    store.setMode("dark");
+    expect(useThemeStore.getState().mode).toBe("dark");
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    expect(document.documentElement.classList.contains("light")).toBe(false);
+
+    store.setColorFamily("teal");
+    expect(useThemeStore.getState().colorFamily).toBe("teal");
+    expect(document.documentElement.classList.contains("teal")).toBe(true);
+    expect(document.documentElement.classList.contains("blue")).toBe(false);
+
+    store.toggleMode();
+    expect(useThemeStore.getState().mode).toBe("light");
+    expect(document.documentElement.classList.contains("light")).toBe(true);
+    expect(document.documentElement.classList.contains("dark")).toBe(false);
+    expect(document.documentElement.classList.contains("teal")).toBe(true);
   });
 });

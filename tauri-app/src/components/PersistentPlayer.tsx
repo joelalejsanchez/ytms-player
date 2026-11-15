@@ -440,7 +440,7 @@ export const PersistentPlayer = React.memo(() => {
               size="icon"
               onClick={cycleRepeatMode}
               title={`Modo repetición: ${repeatMode}`}
-              className={repeatMode !== "off" ? "text-red-400" : ""}
+              className={repeatMode !== "off" ? "text-primary" : ""}
             >
               {repeatMode === "one" ? (
                 <Repeat1 className="h-4 w-4" />
@@ -484,7 +484,7 @@ export const PersistentPlayer = React.memo(() => {
               size="icon"
               onClick={toggleShuffle}
               title={`Aleatorio: ${isShuffle ? "Activado" : "Desactivado"}`}
-              className={isShuffle ? "text-red-400" : "text-slate-400"}
+              className={isShuffle ? "text-primary" : "text-slate-400"}
             >
               <Shuffle className="h-4 w-4" />
             </Button>
@@ -509,7 +509,7 @@ export const PersistentPlayer = React.memo(() => {
                 {/* Relleno hasta el punto actual */}
                 <div
                   className={`h-full transition-none ${
-                    isLoadingTrack ? "bg-slate-600 animate-pulse" : "bg-red-500"
+                    isLoadingTrack ? "bg-slate-600 animate-pulse" : "bg-primary"
                   }`}
                   style={{ width: `${progressPercent}%` }}
                 />
@@ -520,7 +520,7 @@ export const PersistentPlayer = React.memo(() => {
                 className={`pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full shadow-md transition-all duration-150 ${
                   isLoadingTrack
                     ? "bg-slate-500 opacity-40"
-                    : "bg-white group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-red-500"
+                    : "bg-white group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-primary"
                 }`}
                 style={{ left: `${progressPercent}%` }}
               />
@@ -565,14 +565,14 @@ export const PersistentPlayer = React.memo(() => {
             <div className="relative h-1 w-full overflow-hidden rounded-full bg-slate-800 transition-all duration-150 group-hover:h-1.5">
               {/* Relleno hasta el valor de volumen */}
               <div
-                className="h-full bg-red-500 transition-none"
+                className="h-full bg-primary transition-none"
                 style={{ width: `${volumePercent}%` }}
               />
             </div>
 
             {/* Indicador / Thumb pequeño que crece al acercar el ratón */}
             <div
-              className="pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full bg-white shadow-md transition-all duration-150 group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-red-500"
+              className="pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full bg-white shadow-md transition-all duration-150 group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-primary"
               style={{ left: `${volumePercent}%` }}
             />
 

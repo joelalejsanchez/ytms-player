@@ -34,7 +34,7 @@ export const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex h-screen w-screen flex-col bg-slate-950 text-slate-100">
+    <div className="flex h-screen w-screen flex-col bg-background text-foreground transition-colors duration-200">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar activeTab={activeTab} onSelectTab={handleSelectTab} />
 

@@ -10,7 +10,7 @@ export const Button = React.memo(
   React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, variant = "primary", size = "md", ...props }, ref) => {
       const variants: Record<NonNullable<ButtonProps["variant"]>, string> = {
-        primary: "bg-red-600 text-white hover:bg-red-500 active:bg-red-700 shadow-sm",
+        primary: "bg-primary text-primary-foreground hover:opacity-90 active:opacity-100 shadow-sm",
         secondary:
           "bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-700",
         ghost: "bg-transparent text-slate-300 hover:bg-slate-800/70 hover:text-white",
@@ -31,7 +31,7 @@ export const Button = React.memo(
         <button
           ref={ref}
           className={cn(
-            "inline-flex items-center justify-center gap-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:pointer-events-none disabled:opacity-50",
+            "inline-flex items-center justify-center gap-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
             variants[variant],
             sizes[size],
             className,
@@ -51,7 +51,7 @@ export const Input = React.memo(
     <input
       ref={ref}
       className={cn(
-        "flex h-9 w-full rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-1.5 text-sm text-slate-100 placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-9 w-full rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-1.5 text-sm text-slate-100 placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       {...props}

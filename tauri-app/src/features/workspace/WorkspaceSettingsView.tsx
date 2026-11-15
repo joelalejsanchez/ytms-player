@@ -7,17 +7,22 @@ import {
   History,
   KeyRound,
   Loader2,
+  Moon,
+  Palette,
   RefreshCw,
   Server,
+  Sun,
   Trash2,
 } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { Badge, Button, Input } from "@/components/ui/Primitives";
+import { cn } from "@/lib/utils";
 import { workspaceConfigSchema } from "@/schemas/validation";
 import { tauriApi } from "@/services/tauriIpc";
 import { useDownloadStore } from "@/stores/useDownloadStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
+import { useThemeStore } from "@/stores/useThemeStore";
 
 export const WorkspaceSettingsView = React.memo(() => {
   const workspace = useLibraryStore((s) => s.workspace);
@@ -33,6 +38,11 @@ export const WorkspaceSettingsView = React.memo(() => {
 
   const microserviceUrl = useDownloadStore((s) => s.microserviceUrl);
   const setMicroserviceUrl = useDownloadStore((s) => s.setMicroserviceUrl);
+
+  const mode = useThemeStore((s) => s.mode);
+  const colorFamily = useThemeStore((s) => s.colorFamily);
+  const setMode = useThemeStore((s) => s.setMode);
+  const setColorFamily = useThemeStore((s) => s.setColorFamily);
 
   const [pathInput, setPathInput] = useState(workspace?.root_path ?? "");
   const [urlInput, setUrlInput] = useState(microserviceUrl);
@@ -194,6 +204,124 @@ export const WorkspaceSettingsView = React.memo(() => {
           Ajustes del sistema, autenticación de YouTube OAuth, cookies y gestión de directorios de música.
         </p>
       </header>
+
+      {/* Selector de Tema y Apariencia (Modo Claro/Oscuro y Familias de Colores) */}
+      <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/75 p-5">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="flex items-center gap-2.5">
+            <Palette className="h-5 w-5 text-primary" />
+            <div>
+              <h3 className="text-sm font-semibold text-white">
+                Personalización de Tema y Colores
+              </h3>
+              <p className="text-xs text-slate-400">
+                Variables CSS en :root según convención Shadcn UI con inyección dinámica de clases.
+              </p>
+            </div>
+          </div>
+          <Badge tone="info">v1.1.0</Badge>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* Selector de Modo: Claro vs Oscuro */}
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+              Modo de Luminosidad
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setMode("light")}
+                className={cn(
+                  "flex items-center justify-center gap-2 rounded-lg border p-3 text-xs font-medium transition",
+                  mode === "light"
+                    ? "border-primary bg-primary/10 text-white ring-1 ring-primary shadow-sm"
+                    : "border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700 hover:text-white",
+                )}
+              >
+                <Sun className={cn("h-4 w-4", mode === "light" ? "text-amber-400" : "text-slate-400")} />
+                <span>Modo Claro (Por defecto)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMode("dark")}
+                className={cn(
+                  "flex items-center justify-center gap-2 rounded-lg border p-3 text-xs font-medium transition",
+                  mode === "dark"
+                    ? "border-primary bg-primary/10 text-white ring-1 ring-primary shadow-sm"
+                    : "border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700 hover:text-white",
+                )}
+              >
+                <Moon className={cn("h-4 w-4", mode === "dark" ? "text-sky-400" : "text-slate-400")} />
+                <span>Modo Oscuro</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Selector de Familia de Colores */}
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+              Familia de Colores (Paleta)
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {/* Opción 1: Blue / Lavender */}
+              <button
+                type="button"
+                onClick={() => setColorFamily("blue")}
+                className={cn(
+                  "flex flex-col gap-2 rounded-lg border p-3 text-left transition",
+                  colorFamily === "blue"
+                    ? "border-primary bg-primary/10 ring-1 ring-primary shadow-sm"
+                    : "border-slate-800 bg-slate-950/60 hover:border-slate-700",
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={cn("text-xs font-semibold", colorFamily === "blue" ? "text-white" : "text-slate-300")}>
+                    Blue & Lavender
+                  </span>
+                  {colorFamily === "blue" && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
+                </div>
+                {/* Muestra de colores */}
+                <div className="flex items-center gap-1.5">
+                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#4c4c9d" }} title="Ocean Twilight" />
+                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#48639c" }} title="Baltic Blue" />
+                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#976391" }} title="Vintage Lavender" />
+                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#eef0f2" }} title="Platinum" />
+                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#170312" }} title="Coffee Bean" />
+                </div>
+              </button>
+
+              {/* Opción 2: Teal / Spruce */}
+              <button
+                type="button"
+                onClick={() => setColorFamily("teal")}
+                className={cn(
+                  "flex flex-col gap-2 rounded-lg border p-3 text-left transition",
+                  colorFamily === "teal"
+                    ? "border-primary bg-primary/10 ring-1 ring-primary shadow-sm"
+                    : "border-slate-800 bg-slate-950/60 hover:border-slate-700",
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={cn("text-xs font-semibold", colorFamily === "teal" ? "text-white" : "text-slate-300")}>
+                    Teal & Spruce
+                  </span>
+                  {colorFamily === "teal" && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
+                </div>
+                {/* Muestra de colores */}
+                <div className="flex items-center gap-1.5">
+                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#0a8754" }} title="Sea Green" />
+                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#508ca4" }} title="Air Force Blue" />
+                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#004f2d" }} title="Dark Spruce" />
+                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#eef0f2" }} title="Platinum" />
+                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#170312" }} title="Coffee Bean" />
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <form
         onSubmit={(e) => void handleSaveConfig(e)}

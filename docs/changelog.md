@@ -6,6 +6,42 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.1.0] - 2026-11-15
+
+### Añadido
+
+#### Sistema Integral de Temas y Paletas de Colores (Shadcn UI Convention)
+- **Variables CSS en `:root` según especificación Shadcn**:
+  - Definición de roles semánticos `--background`, `--foreground`, `--card`, `--card-foreground`, `--popover`, `--popover-foreground`, `--primary`, `--primary-foreground`, `--secondary`, `--secondary-foreground`, `--muted`, `--muted-foreground`, `--accent`, `--accent-foreground`, `--destructive`, `--destructive-foreground`, `--border`, `--input` y `--ring`.
+- **Inyección dinámica de clases en raíz (`:root` / `document.documentElement`)**:
+  - Inyección de clases `.light` y `.dark` para conmutar instantáneamente entre modo claro y modo oscuro.
+  - Inyección de clases de familias de color (`.blue` y `.teal`) independientes del modo de luminosidad.
+  - Comportamiento predeterminado sin clase o con clase inicial en modo claro (`.light`) y familia Blue (`.blue`).
+- **Paletas de color incorporadas**:
+  - **Familia Blue / Lavender (`.blue`):**
+    - `--coffee-bean`: `#170312` (Fondo oscuro)
+    - `--platinum`: `#eef0f2` (Fondo claro)
+    - `--baltic-blue`: `#48639c` (Secundario)
+    - `--ocean-twilight`: `#4c4c9d` (Primario / Acento)
+    - `--vintage-lavender`: `#976391` (Terciario / Acentos sutiles)
+  - **Familia Teal / Spruce (`.teal`):**
+    - `--coffee-bean`: `#170312` (Fondo oscuro)
+    - `--platinum`: `#eef0f2` (Fondo claro)
+    - `--air-force-blue`: `#508ca4` (Secundario)
+    - `--sea-green`: `#0a8754` (Primario)
+    - `--dark-spruce`: `#004f2d` (Terciario / Acento)
+- **Selectores de Tema en la Interfaz de Usuario**:
+  - **Panel de Configuración General (`WorkspaceSettingsView.tsx`):**
+    - Tarjeta dedicada *"Personalización de Tema y Colores"* con botones de selección de Modo Claro/Oscuro y tarjetas de paleta con muestras de color visuales (*swatches* circulares).
+  - **Barra Lateral (`Sidebar.tsx`):**
+    - Barra inferior compacta de conmutación rápida con botones para alternar entre `Blue` y `Teal` y botón de alternancia rápida Claro/Oscuro con iconos `Sun`/`Moon`.
+- **Adaptabilidad global del reproductor y controles interactivos**:
+  - Barras de progreso, deslizador de volumen, botones de reproducción y navegación activa vinculados dinámicamente al color primario (`var(--primary)`) de la familia seleccionada.
+  - Barras de desplazamiento (*scrollbars*) y bordes armonizados con las variables del tema activo.
+  - Persistencia automática de las preferencias en `localStorage` (`ytms_theme_mode` y `ytms_theme_color`) gestionada a través del store Zustand `useThemeStore`.
+
+---
+
 ## [1.0.0] - 2026-11-15
 
 ### Añadido
