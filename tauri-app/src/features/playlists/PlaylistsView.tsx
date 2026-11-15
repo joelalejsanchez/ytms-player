@@ -1,8 +1,8 @@
-import { ListMusic, Loader2, Music, Play, Plus, Trash2 } from "lucide-react";
+import { Link, ListMusic, Loader2, Music, Play, Plus, Trash2 } from "lucide-react";
 import React, { useCallback, useState } from "react";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
-import { Badge, Button, Input } from "@/components/ui/Primitives";
+import { Button, Input } from "@/components/ui/Primitives";
 import { formatDuration, toAssetUrl } from "@/lib/utils";
 import { playlistFormSchema } from "@/schemas/validation";
 import { tauriApi } from "@/services/tauriIpc";
@@ -41,7 +41,6 @@ export const PlaylistsView = React.memo(() => {
   const deletePlaylist = useLibraryStore((s) => s.deletePlaylist);
 
   const currentTrack = usePlayerStore((s) => s.currentTrack);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
   const playTrack = usePlayerStore((s) => s.playTrack);
 
   const handleCreate = useCallback(
@@ -342,11 +341,6 @@ export const PlaylistsView = React.memo(() => {
                               >
                                 {track.title}
                               </p>
-                              {isCurrent && isPlaying && (
-                                <Badge tone="info" className="text-[10px]">
-                                  Reproduciendo
-                                </Badge>
-                              )}
                             </div>
                             <p className="truncate text-xs text-muted-foreground">
                               {track.artist} · {formatDuration(track.duration)}
@@ -359,6 +353,19 @@ export const PlaylistsView = React.memo(() => {
                           isLoading={removingTrackId === track.id}
                           title="Opciones de la pista"
                           items={[
+                            {
+                              label: "Copiar enlace",
+                              icon: <Link className="h-3.5 w-3.5" />,
+                              onClick: async () => {
+                                try {
+                                  await navigator.clipboard.writeText(
+                                    `https://www.youtube.com/watch?v=${track.youtube_id}`,
+                                  );
+                                } catch (err) {
+                                  console.error("No se pudo copiar el enlace al portapapeles:", err);
+                                }
+                              },
+                            },
                             {
                               label: "Quitar de la playlist",
                               icon: <Trash2 className="h-3.5 w-3.5" />,
