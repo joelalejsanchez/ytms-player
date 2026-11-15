@@ -16,7 +16,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { CustomSelect, type SelectOption } from "@/components/ui/CustomSelect";
-import { Badge, Button, Input, ProgressBar } from "@/components/ui/Primitives";
+import { Badge, Button, Checkbox, Input, ProgressBar } from "@/components/ui/Primitives";
 import { toAssetUrl } from "@/lib/utils";
 import { downloadFormSchema } from "@/schemas/validation";
 import { useDownloadStore } from "@/stores/useDownloadStore";
@@ -469,17 +469,12 @@ export const DownloadsView = React.memo(() => {
 
         <div className="flex flex-wrap items-center justify-between gap-4 text-xs text-muted-foreground">
           <label className="flex cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={forceOverwrite}
               onChange={(e) => setForceOverwrite(e.target.checked)}
-              className="rounded border-input bg-card text-primary focus:ring-ring"
             />
             <span>Forzar re-descarga si el archivo ya existe en el Workspace</span>
           </label>
-          <span className="text-[11px] text-muted-foreground">
-            Descarga asíncrona mediante streaming SSE y transcodificación FFmpeg activa
-          </span>
         </div>
 
         {(validationError || lastError) && (

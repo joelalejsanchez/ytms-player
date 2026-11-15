@@ -10,7 +10,8 @@ import {
   X,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Badge, Button, Input } from "@/components/ui/Primitives";
+import { CustomSelect } from "@/components/ui/CustomSelect";
+import { Badge, Button, Checkbox, Input, RadioButton } from "@/components/ui/Primitives";
 import { formatDuration } from "@/lib/utils";
 import { tauriApi } from "@/services/tauriIpc";
 import { useDownloadStore } from "@/stores/useDownloadStore";
@@ -362,14 +363,12 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                         }`}
                       >
                         <div className="flex min-w-0 items-center gap-2.5">
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={isSelected}
                             onChange={(e) => {
                               e.stopPropagation();
                               toggleTrack(item.youtube_id);
                             }}
-                            className="h-4 w-4 rounded border-border bg-card text-primary focus:ring-ring"
                           />
                           <span className="w-5 text-right font-mono text-[11px] text-muted-foreground">
                             {index + 1}.
@@ -412,13 +411,12 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                 <div className="space-y-2">
                   {/* Opción 1: Crear nueva playlist */}
                   <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-2.5 transition hover:bg-muted/50">
-                    <input
-                      type="radio"
+                    <RadioButton
                       name="destination"
                       value="new"
                       checked={destination === "new"}
                       onChange={() => setDestination("new")}
-                      className="mt-1 text-primary focus:ring-ring"
+                      containerClassName="mt-0.5"
                     />
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2">
@@ -440,13 +438,12 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
 
                   {/* Opción 2: Agregar a playlist existente */}
                   <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-2.5 transition hover:bg-muted/50">
-                    <input
-                      type="radio"
+                    <RadioButton
                       name="destination"
                       value="existing"
                       checked={destination === "existing"}
                       onChange={() => setDestination("existing")}
-                      className="mt-1 text-primary focus:ring-ring"
+                      containerClassName="mt-0.5"
                     />
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2">
@@ -462,17 +459,17 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                               No tienes playlists creadas todavía. Elige "Crear nueva playlist".
                             </p>
                           ) : (
-                            <select
-                              value={selectedPlaylistId ?? ""}
-                              onChange={(e) => setSelectedPlaylistId(Number(e.target.value))}
-                              className="h-8 w-full rounded-lg border border-input bg-card px-2.5 text-xs text-foreground focus:ring-1 focus:ring-ring focus:outline-none"
-                            >
-                              {playlists.map((pl) => (
-                                <option key={pl.id} value={pl.id}>
-                                  {pl.title} ({pl.track_count} canciones)
-                                </option>
-                              ))}
-                            </select>
+                            <CustomSelect
+                              value={selectedPlaylistId ? String(selectedPlaylistId) : ""}
+                              onChange={(val) => setSelectedPlaylistId(Number(val))}
+                              options={playlists.map((pl) => ({
+                                value: String(pl.id),
+                                label: `${pl.title} (${pl.track_count} canciones)`,
+                              }))}
+                              placeholder="Selecciona una playlist..."
+                              className="w-full"
+                              triggerClassName="h-8 w-full text-xs"
+                            />
                           )}
                         </div>
                       )}
@@ -481,13 +478,12 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
 
                   {/* Opción 3: Solo biblioteca */}
                   <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-2.5 transition hover:bg-muted/50">
-                    <input
-                      type="radio"
+                    <RadioButton
                       name="destination"
                       value="library_only"
                       checked={destination === "library_only"}
                       onChange={() => setDestination("library_only")}
-                      className="mt-1 text-primary focus:ring-ring"
+                      containerClassName="mt-0.5"
                     />
                     <div>
                       <div className="flex items-center gap-2">
@@ -508,11 +504,9 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                 {destination !== "library_only" && (
                   <div className="mt-3 rounded-lg border border-border bg-card/60 p-3">
                     <label className="flex cursor-pointer items-center gap-2.5 text-foreground">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={unlinkRemoved}
                         onChange={(e) => setUnlinkRemoved(e.target.checked)}
-                        className="rounded border-input bg-card text-primary focus:ring-ring"
                       />
                       <span className="font-medium">
                         Sincronizar y desvincular canciones eliminadas de YouTube

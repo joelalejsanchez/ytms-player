@@ -9,7 +9,7 @@ import {
   X,
 } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
-import { Button, Input } from "@/components/ui/Primitives";
+import { Button, Checkbox, Input } from "@/components/ui/Primitives";
 import { formatDuration } from "@/lib/utils";
 import { tauriApi } from "@/services/tauriIpc";
 import { useLibraryStore } from "@/stores/useLibraryStore";
@@ -190,12 +190,10 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
                     }`}
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={isSelected}
                         onChange={() => toggleSelectOne(track.youtube_id)}
                         disabled={isProcessing}
-                        className="rounded border-border bg-card text-primary focus:ring-ring"
                       />
                       <div className="min-w-0">
                         <p className="truncate font-medium text-foreground">{track.title}</p>

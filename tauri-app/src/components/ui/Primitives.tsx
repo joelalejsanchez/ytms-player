@@ -127,3 +127,6 @@ export const ProgressBar = React.memo(
   },
 );
 ProgressBar.displayName = "ProgressBar";
+
+export { Checkbox, type CheckboxProps } from "./Checkbox";
+export { RadioButton, type RadioButtonProps } from "./RadioButton";
