@@ -58,6 +58,7 @@ export const PersistentPlayer = React.memo(() => {
   const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
 
   const audioDataUrlCache = useRef<Map<string, string>>(new Map());
+  const activeBlobUrlRef = useRef<string | null>(null);
   const isChangingTrackRef = useRef(false);
   const currentTrackIdRef = useRef<string | null>(null);
   const prevIsPlayingRef = useRef(isPlaying);
@@ -184,7 +185,32 @@ export const PersistentPlayer = React.memo(() => {
           return;
         }
 
-        audio.src = src;
+        let playableSrc = src;
+        if (src.startsWith("data:")) {
+          try {
+            const parts = src.split(",");
+            if (parts.length >= 2) {
+              const mimeMatch = parts[0].match(/:(.*?);/);
+              const mime = mimeMatch ? mimeMatch[1] : "audio/mp4";
+              const bstr = atob(parts[1]);
+              let n = bstr.length;
+              const u8arr = new Uint8Array(n);
+              while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+              }
+              const blob = new Blob([u8arr], { type: mime });
+              if (activeBlobUrlRef.current && activeBlobUrlRef.current.startsWith("blob:")) {
+                URL.revokeObjectURL(activeBlobUrlRef.current);
+              }
+              playableSrc = URL.createObjectURL(blob);
+              activeBlobUrlRef.current = playableSrc;
+            }
+          } catch (blobErr) {
+            console.warn("Blob conversion error, using raw data url:", blobErr);
+          }
+        }
+
+        audio.src = playableSrc;
         audio.currentTime = 0;
 
         const tgtVol = getTargetVolume();
@@ -251,7 +277,8 @@ export const PersistentPlayer = React.memo(() => {
     if (isPlaying && audio.paused) {
       audio.volume = targetVol;
       audio.muted = isMutedRef.current;
-      audio.play().catch(() => {
+      audio.play().catch((playErr) => {
+        console.error("Manual audio.play() rejected:", playErr);
         setPlaying(false);
       });
     } else if (!isPlaying && !audio.paused) {
@@ -298,7 +325,13 @@ export const PersistentPlayer = React.memo(() => {
     setIsLoadingTrack(false);
   }, [setIsLoadingTrack]);
 
-  const handleAudioError = useCallback(() => {
+  const handleAudioError = useCallback((e: React.SyntheticEvent<HTMLAudioElement, Event>) => {
+    const audioEl = e.currentTarget;
+    console.error(
+      "Audio playback error event:",
+      audioEl.error?.code,
+      audioEl.error?.message,
+    );
     setIsLoadingTrack(false);
   }, [setIsLoadingTrack]);
 
