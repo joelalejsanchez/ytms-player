@@ -350,7 +350,7 @@ export const WorkspaceSettingsView = React.memo(() => {
     try {
       await openOAuthLogin();
       setStatusMessage(
-        "Se abrió la pantalla de consentimiento de Google en tu navegador. Autoriza el acceso y vuelve a ytms-player.",
+        "Se abrió la pantalla de consentimiento de Google en tu navegador. Autoriza el acceso y vuelve a YouTube Desktop Player.",
       );
     } catch (err) {
       setGeneralError(

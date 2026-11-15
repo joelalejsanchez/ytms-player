@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "ytms-player",
+        "title": "YouTube Desktop Player",
         "width": 1280,
         "height": 820,
         "minWidth": 960,

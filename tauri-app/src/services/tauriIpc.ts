@@ -39,7 +39,7 @@ export const tauriApi = {
     const selected = await open({
       directory: true,
       multiple: false,
-      title: "Seleccionar directorio raíz del Workspace ytms-player",
+      title: "Seleccionar carpeta para YouTube Desktop Player",
     });
     return typeof selected === "string" ? selected : null;
   },
@@ -51,7 +51,7 @@ export const tauriApi = {
     const selected = await open({
       directory: false,
       multiple: false,
-      title: "Seleccionar archivo cookies.txt (Netscape format)",
+      title: "Seleccionar archivo de cookies",
       filters: [{ name: "Cookies File", extensions: ["txt"] }],
     });
     return typeof selected === "string" ? selected : null;

@@ -8,7 +8,7 @@ import {
   Settings,
   Sun,
 } from "lucide-react";
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { CustomSelect, type SelectOption } from "@/components/ui/CustomSelect";
 import { Badge } from "@/components/ui/Primitives";
 import { cn } from "@/lib/utils";
@@ -128,6 +128,21 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
     [tasks],
   );
 
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("yt_sidebar_collapsed") === "true";
+    }
+    return false;
+  });
+
+  const toggleCollapsed = useCallback(() => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("yt_sidebar_collapsed", String(next));
+      return next;
+    });
+  }, []);
+
   const primaryNavItems: Array<{
     id: NavigationTab;
     label: string;
@@ -159,22 +174,40 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
   ];
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-card">
-      {/* Encabezado / Logo */}
-      <div className="flex items-center gap-3 border-b border-border px-5 py-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary bg-primary/15 text-primary shadow-xs">
+    <aside
+      className={cn(
+        "flex shrink-0 flex-col border-r border-border bg-card transition-all duration-200 select-none",
+        isCollapsed ? "w-16" : "w-64",
+      )}
+    >
+      {/* Encabezado / Logo con acción de colapso */}
+      <div
+        className={cn(
+          "flex items-center border-b border-border py-4 transition-all",
+          isCollapsed ? "justify-center px-2" : "gap-3 px-5",
+        )}
+      >
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          title={isCollapsed ? "Expandir barra lateral" : "Contraer barra lateral"}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary bg-primary/15 text-primary shadow-xs transition hover:bg-primary/25 cursor-pointer"
+        >
           <Radio className="h-5 w-5" />
-        </div>
-        <div>
-          <h1 className="text-base font-bold tracking-tight text-foreground">
-            ytms-player
-          </h1>
-          <p className="text-xs text-muted-foreground">YouTube Audio Desktop</p>
-        </div>
+        </button>
+
+        {!isCollapsed && (
+          <div className="min-w-0 overflow-hidden">
+            <h1 className="text-sm font-bold tracking-tight text-foreground truncate">
+              YouTube Desktop Player
+            </h1>
+            <p className="text-[11px] text-muted-foreground truncate">Audio Desktop</p>
+          </div>
+        )}
       </div>
 
       {/* Funcionalidad Principal: Biblioteca, Playlists, Descargas */}
-      <nav className="flex-1 space-y-1 p-3">
+      <nav className={cn("flex-1 space-y-1", isCollapsed ? "p-2" : "p-3")}>
         {primaryNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -183,19 +216,30 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
               key={item.id}
               type="button"
               onClick={() => onSelectTab(item.id)}
+              title={`${item.label}${item.badge !== undefined ? ` (${item.badge})` : ""}`}
               className={cn(
-                "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "relative flex items-center rounded-lg transition-colors",
+                isCollapsed
+                  ? "h-10 w-10 mx-auto justify-center p-0"
+                  : "w-full justify-between px-3 py-2.5 text-sm font-medium",
                 isActive
                   ? "bg-primary/15 text-primary ring-1 ring-primary"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
-              <span className="flex items-center gap-3">
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </span>
-              {item.badge !== undefined && (
-                <Badge tone={item.badgeTone}>{item.badge}</Badge>
+              <Icon className="h-4 w-4 shrink-0" />
+              {!isCollapsed && (
+                <>
+                  <span className="truncate">{item.label}</span>
+                  {item.badge !== undefined && (
+                    <Badge tone={item.badgeTone}>{item.badge}</Badge>
+                  )}
+                </>
+              )}
+              {isCollapsed && item.badge !== undefined && item.badge > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground shadow-xs">
+                  {item.badge > 99 ? "99+" : item.badge}
+                </span>
               )}
             </button>
           );
@@ -203,24 +247,26 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
       </nav>
 
       {/* Funcionalidad Secundaria (Totalmente Abajo): Tema, Recuperación, Configuración */}
-      <div className="mt-auto border-t border-border p-3 space-y-2">
+      <div className={cn("mt-auto border-t border-border space-y-2", isCollapsed ? "p-2" : "p-3")}>
         {/* Selector rápido de Tema y Modo */}
-        <div className="flex items-center gap-2">
-          <CustomSelect<ColorFamily>
-            value={colorFamily}
-            onChange={setColorFamily}
-            options={COLOR_OPTIONS}
-            direction="up"
-            className="flex-1 min-w-0"
-            triggerClassName="w-full h-8 text-xs bg-muted/40 hover:bg-muted/60"
-            ariaLabel="Seleccionar tema visual"
-          />
+        <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-2")}>
+          {!isCollapsed && (
+            <CustomSelect<ColorFamily>
+              value={colorFamily}
+              onChange={setColorFamily}
+              options={COLOR_OPTIONS}
+              direction="up"
+              className="flex-1 min-w-0"
+              triggerClassName="w-full h-8 text-xs bg-muted/40 hover:bg-muted/60"
+              ariaLabel="Seleccionar tema visual"
+            />
+          )}
 
           <button
             type="button"
             title={mode === "dark" ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro"}
             onClick={toggleMode}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-foreground transition hover:bg-muted"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-foreground transition hover:bg-muted cursor-pointer"
           >
             {mode === "dark" ? (
               <Sun className="h-4 w-4 text-foreground" />
@@ -235,34 +281,47 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
           <button
             type="button"
             onClick={() => onSelectTab("recovery")}
+            title={`Recuperación${missingCount > 0 ? ` (${missingCount})` : ""}`}
             className={cn(
-              "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              "relative flex items-center rounded-lg transition-colors",
+              isCollapsed
+                ? "h-10 w-10 mx-auto justify-center p-0"
+                : "w-full justify-between px-3 py-2 text-sm font-medium",
               activeTab === "recovery"
                 ? "bg-primary/15 text-primary ring-1 ring-primary"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
-            <span className="flex items-center gap-3">
-              <AlertTriangle className="h-4 w-4 text-foreground" />
-              Recuperación
-            </span>
-            {missingCount > 0 && <Badge tone="warning">{missingCount}</Badge>}
+            <AlertTriangle className="h-4 w-4 shrink-0 text-foreground" />
+            {!isCollapsed && (
+              <>
+                <span className="truncate">Recuperación</span>
+                {missingCount > 0 && <Badge tone="warning">{missingCount}</Badge>}
+              </>
+            )}
+            {isCollapsed && missingCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-white shadow-xs">
+                {missingCount}
+              </span>
+            )}
           </button>
 
           <button
             type="button"
             onClick={() => onSelectTab("workspace")}
+            title="Configuración"
             className={cn(
-              "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              "flex items-center rounded-lg transition-colors",
+              isCollapsed
+                ? "h-10 w-10 mx-auto justify-center p-0"
+                : "w-full justify-between px-3 py-2 text-sm font-medium",
               activeTab === "workspace"
                 ? "bg-primary/15 text-primary ring-1 ring-primary"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
-            <span className="flex items-center gap-3">
-              <Settings className="h-4 w-4" />
-              Configuración
-            </span>
+            <Settings className="h-4 w-4 shrink-0" />
+            {!isCollapsed && <span className="truncate">Configuración</span>}
           </button>
         </div>
       </div>
