@@ -135,7 +135,12 @@ export const WorkspaceSettingsView = React.memo(() => {
   const [urlError, setUrlError] = useState<string | null>(null);
 
   // Estados para Cookies y OAuth
-  const [cookiesInput, setCookiesInput] = useState("");
+  const [cookiesInput, setCookiesInput] = useState(
+    appSettings?.cookies_file_path ?? "",
+  );
+  const [isEditingCookies, setIsEditingCookies] = useState(
+    !appSettings?.cookies_file_path,
+  );
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [generalError, setGeneralError] = useState<string | null>(null);
 
@@ -164,6 +169,14 @@ export const WorkspaceSettingsView = React.memo(() => {
       setIsEditingUrl(false);
     }
   }, [microserviceUrl]);
+
+  // Sincronizar input de cookies si cambia en store
+  useEffect(() => {
+    if (appSettings?.cookies_file_path) {
+      setCookiesInput(appSettings.cookies_file_path);
+      setIsEditingCookies(false);
+    }
+  }, [appSettings?.cookies_file_path]);
 
   // Actualizar estado OAuth automáticamente al enfocar la app
   useEffect(() => {
@@ -331,7 +344,8 @@ export const WorkspaceSettingsView = React.memo(() => {
     setIsImportingCookies(true);
     try {
       const updated = await importCookiesFile(cookiesInput.trim());
-      setCookiesInput("");
+      setCookiesInput(updated.cookies_file_path ?? cookiesInput.trim());
+      setIsEditingCookies(false);
       setStatusMessage(
         `Archivo cookies.txt actualizado en caliente (${updated.cookies_file_path ?? "config/cookies.txt"}).`,
       );
@@ -400,7 +414,7 @@ export const WorkspaceSettingsView = React.memo(() => {
             </p>
           </div>
 
-          <div className="space-y-2 w-full max-w-xl">
+          <div className="space-y-2 w-full">
             {COLOR_PALETTES.map((palette) => {
               const isSelected = colorFamily === palette.id;
               return (
@@ -462,7 +476,7 @@ export const WorkspaceSettingsView = React.memo(() => {
             </p>
           </div>
 
-          <div className="space-y-2 w-full max-w-xl">
+          <div className="space-y-2 w-full">
             {THEME_MODES.map((item) => {
               const isSelected = mode === item.id;
               const Icon = item.icon;
@@ -551,7 +565,7 @@ export const WorkspaceSettingsView = React.memo(() => {
           <div className="flex flex-wrap items-center gap-2.5">
             <Button
               type="button"
-              variant="primary"
+              variant="outline"
               disabled={isConnectingOAuth || isLoggingOutOAuth}
               onClick={() => void handleConnectOAuth()}
             >
@@ -570,7 +584,8 @@ export const WorkspaceSettingsView = React.memo(() => {
             {oauthStatus?.authenticated && (
               <Button
                 type="button"
-                variant="danger"
+                variant="outline"
+                className="border-destructive/40 text-destructive hover:bg-destructive/10"
                 disabled={isLoggingOutOAuth || isConnectingOAuth}
                 onClick={() => void handleLogoutOAuth()}
               >
@@ -583,7 +598,7 @@ export const WorkspaceSettingsView = React.memo(() => {
 
             <Button
               type="button"
-              variant="secondary"
+              variant="outline"
               disabled={isCheckingOAuth}
               onClick={() => void handleCheckOAuth()}
             >
@@ -609,35 +624,69 @@ export const WorkspaceSettingsView = React.memo(() => {
             </Badge>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 max-w-2xl">
+          <div className="flex items-center gap-2 w-full">
             <Input
               value={cookiesInput}
               onChange={(e) => setCookiesInput(e.target.value)}
+              readOnly={!isEditingCookies}
+              disabled={!isEditingCookies}
               placeholder="Ruta del archivo cookies.txt exportado del navegador..."
               aria-label="Ruta origen de cookies.txt"
-              className="flex-1 min-w-[240px]"
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => void handleBrowseCookies()}
-            >
-              <FolderOpen className="h-4 w-4" />
-              Buscar .txt
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              disabled={isImportingCookies}
-              onClick={() => void handleImportCookies()}
-            >
-              {isImportingCookies ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Cookie className="h-4 w-4" />
+              className={cn(
+                "flex-1 w-full font-mono text-xs",
+                !isEditingCookies && "bg-muted/40 cursor-not-allowed opacity-80 text-foreground",
               )}
-              {isImportingCookies ? "Actualizando..." : "Actualizar Cookies"}
-            </Button>
+            />
+
+            {!isEditingCookies ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon"
+                onClick={() => setIsEditingCookies(true)}
+                title="Editar ruta de cookies"
+              >
+                <Edit2 className="h-4 w-4" />
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => void handleBrowseCookies()}
+                  title="Examinar archivo cookies.txt"
+                >
+                  <FolderOpen className="h-4 w-4" />
+                  <span>Buscar</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isImportingCookies}
+                  onClick={() => void handleImportCookies()}
+                >
+                  {isImportingCookies ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Cookie className="h-4 w-4" />
+                  )}
+                  <span>{isImportingCookies ? "Actualizando..." : "Actualizar Cookies"}</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setCookiesInput(appSettings?.cookies_file_path ?? "");
+                    setIsEditingCookies(false);
+                  }}
+                  disabled={isImportingCookies}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -808,7 +857,7 @@ export const WorkspaceSettingsView = React.memo(() => {
           <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Dirección del Microservicio (URL)
           </label>
-          <div className="flex flex-wrap items-center gap-2 max-w-xl">
+          <div className="flex items-center gap-2 w-full">
             <Input
               value={urlInput}
               onChange={(e) => setUrlInput(e.target.value)}
@@ -817,7 +866,7 @@ export const WorkspaceSettingsView = React.memo(() => {
               placeholder="http://127.0.0.1:8080"
               aria-label="URL del Microservicio Go"
               className={cn(
-                "flex-1 font-mono text-xs",
+                "flex-1 w-full font-mono text-xs",
                 !isEditingUrl && "bg-muted/40 cursor-not-allowed opacity-80 text-foreground",
               )}
             />
@@ -826,11 +875,11 @@ export const WorkspaceSettingsView = React.memo(() => {
               <Button
                 type="button"
                 variant="secondary"
+                size="icon"
                 onClick={() => setIsEditingUrl(true)}
                 title="Editar URL del microservicio"
               >
                 <Edit2 className="h-4 w-4" />
-                <span>Editar</span>
               </Button>
             ) : (
               <div className="flex items-center gap-2">
