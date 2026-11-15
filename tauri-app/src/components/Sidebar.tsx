@@ -4,18 +4,101 @@ import {
   Library,
   ListMusic,
   Moon,
-  Palette,
   Radio,
   Settings,
   Sun,
 } from "lucide-react";
 import React, { useMemo } from "react";
+import { CustomSelect, type SelectOption } from "@/components/ui/CustomSelect";
 import { Badge } from "@/components/ui/Primitives";
 import { cn } from "@/lib/utils";
 import { useDownloadStore } from "@/stores/useDownloadStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
-import { useThemeStore } from "@/stores/useThemeStore";
+import { type ColorFamily, useThemeStore } from "@/stores/useThemeStore";
 import type { NavigationTab } from "@/types/models";
+
+const COLOR_OPTIONS: SelectOption<ColorFamily>[] = [
+  {
+    value: "blue",
+    label: "Blue",
+    icon: (
+      <span
+        className="h-2.5 w-2.5 shrink-0 rounded-full border border-black/20"
+        style={{ backgroundColor: "#4c4c9d" }}
+      />
+    ),
+  },
+  {
+    value: "teal",
+    label: "Teal",
+    icon: (
+      <span
+        className="h-2.5 w-2.5 shrink-0 rounded-full border border-black/20"
+        style={{ backgroundColor: "#0a8754" }}
+      />
+    ),
+  },
+  {
+    value: "ember",
+    label: "Ember",
+    icon: (
+      <span
+        className="h-2.5 w-2.5 shrink-0 rounded-full border border-black/20"
+        style={{ backgroundColor: "#d00000" }}
+      />
+    ),
+  },
+  {
+    value: "midnight",
+    label: "Midnight",
+    icon: (
+      <span
+        className="h-2.5 w-2.5 shrink-0 rounded-full border border-black/20"
+        style={{ backgroundColor: "#010736" }}
+      />
+    ),
+  },
+  {
+    value: "denim",
+    label: "Denim",
+    icon: (
+      <span
+        className="h-2.5 w-2.5 shrink-0 rounded-full border border-black/20"
+        style={{ backgroundColor: "#253C6D" }}
+      />
+    ),
+  },
+  {
+    value: "pine",
+    label: "Pine",
+    icon: (
+      <span
+        className="h-2.5 w-2.5 shrink-0 rounded-full border border-black/20"
+        style={{ backgroundColor: "#123F36" }}
+      />
+    ),
+  },
+  {
+    value: "burgundy",
+    label: "Burgundy",
+    icon: (
+      <span
+        className="h-2.5 w-2.5 shrink-0 rounded-full border border-black/20"
+        style={{ backgroundColor: "#800020" }}
+      />
+    ),
+  },
+  {
+    value: "amber",
+    label: "Amber",
+    icon: (
+      <span
+        className="h-2.5 w-2.5 shrink-0 rounded-full border border-black/20"
+        style={{ backgroundColor: "#FFBF00" }}
+      />
+    ),
+  },
+];
 
 interface SidebarProps {
   activeTab: NavigationTab;
@@ -122,61 +205,27 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
       {/* Funcionalidad Secundaria (Totalmente Abajo): Tema, Recuperación, Configuración */}
       <div className="mt-auto border-t border-border p-3 space-y-2">
         {/* Selector rápido de Tema y Modo */}
-        <div className="flex items-center justify-between rounded-lg bg-muted/30 px-2.5 py-1.5 text-xs">
-          <div className="flex items-center gap-1.5">
-            <Palette className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-[11px] font-medium text-muted-foreground">Tema:</span>
-            <button
-              type="button"
-              title="Paleta Azul / Lavanda"
-              onClick={() => setColorFamily("blue")}
-              className={cn(
-                "h-5 rounded px-1.5 text-[10px] font-semibold transition border",
-                colorFamily === "blue"
-                  ? "bg-primary text-primary-foreground border-primary shadow-xs"
-                  : "bg-muted text-muted-foreground border-border hover:text-foreground",
-              )}
-            >
-              Blue
-            </button>
-            <button
-              type="button"
-              title="Paleta Verde / Spruce"
-              onClick={() => setColorFamily("teal")}
-              className={cn(
-                "h-5 rounded px-1.5 text-[10px] font-semibold transition border",
-                colorFamily === "teal"
-                  ? "bg-primary text-primary-foreground border-primary shadow-xs"
-                  : "bg-muted text-muted-foreground border-border hover:text-foreground",
-              )}
-            >
-              Teal
-            </button>
-            <button
-              type="button"
-              title="Paleta Ember / Fuego"
-              onClick={() => setColorFamily("ember")}
-              className={cn(
-                "h-5 rounded px-1.5 text-[10px] font-semibold transition border",
-                colorFamily === "ember"
-                  ? "bg-primary text-primary-foreground border-primary shadow-xs"
-                  : "bg-muted text-muted-foreground border-border hover:text-foreground",
-              )}
-            >
-              Ember
-            </button>
-          </div>
+        <div className="flex items-center gap-2">
+          <CustomSelect<ColorFamily>
+            value={colorFamily}
+            onChange={setColorFamily}
+            options={COLOR_OPTIONS}
+            direction="up"
+            className="flex-1 min-w-0"
+            triggerClassName="w-full h-8 text-xs bg-muted/40 hover:bg-muted/60"
+            ariaLabel="Seleccionar tema visual"
+          />
 
           <button
             type="button"
             title={mode === "dark" ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro"}
             onClick={toggleMode}
-            className="flex h-6 w-6 items-center justify-center rounded-md border border-border bg-card text-foreground transition hover:bg-muted"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-foreground transition hover:bg-muted"
           >
             {mode === "dark" ? (
-              <Sun className="h-3.5 w-3.5 text-amber-400" />
+              <Sun className="h-4 w-4 text-foreground" />
             ) : (
-              <Moon className="h-3.5 w-3.5 text-primary" />
+              <Moon className="h-4 w-4 text-primary" />
             )}
           </button>
         </div>
@@ -194,7 +243,7 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
             )}
           >
             <span className="flex items-center gap-3">
-              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <AlertTriangle className="h-4 w-4 text-foreground" />
               Recuperación
             </span>
             {missingCount > 0 && <Badge tone="warning">{missingCount}</Badge>}

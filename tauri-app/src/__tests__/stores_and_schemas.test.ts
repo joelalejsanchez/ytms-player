@@ -276,11 +276,21 @@ describe("useThemeStore", () => {
     expect(document.documentElement.classList.contains("teal")).toBe(false);
     expect(document.documentElement.classList.contains("blue")).toBe(false);
 
+    store.setColorFamily("midnight");
+    expect(useThemeStore.getState().colorFamily).toBe("midnight");
+    expect(document.documentElement.classList.contains("midnight")).toBe(true);
+    expect(document.documentElement.classList.contains("ember")).toBe(false);
+
+    store.setColorFamily("amber");
+    expect(useThemeStore.getState().colorFamily).toBe("amber");
+    expect(document.documentElement.classList.contains("amber")).toBe(true);
+    expect(document.documentElement.classList.contains("midnight")).toBe(false);
+
     store.toggleMode();
     expect(useThemeStore.getState().mode).toBe("light");
     expect(document.documentElement.classList.contains("light")).toBe(true);
     expect(document.documentElement.classList.contains("dark")).toBe(false);
-    expect(document.documentElement.classList.contains("ember")).toBe(true);
+    expect(document.documentElement.classList.contains("amber")).toBe(true);
 
     store.setMode("system");
     expect(useThemeStore.getState().mode).toBe("system");

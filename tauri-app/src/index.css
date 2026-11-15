@@ -96,7 +96,7 @@
   }
 
   :root.blue.dark,
-  :root.dark:not(.teal):not(.ember) {
+  :root.dark:not(.teal):not(.ember):not(.midnight):not(.denim):not(.pine):not(.burgundy):not(.amber) {
     --primary: #6868c2;
     --primary-foreground: #ffffff;
     --secondary: var(--baltic-blue);
@@ -158,6 +158,141 @@
     --accent: var(--amber-flame);
     --accent-foreground: var(--onyx);
     --ring: #e63946;
+  }
+
+  /* =========================================================================
+     FAMILIA 4: MIDNIGHT NAVY (:root.midnight) - Base: #010736
+     ========================================================================= */
+  :root.midnight {
+    --midnight-base: #010736;
+    --midnight-secondary: #1a2559;
+    --midnight-accent: #2c3a7d;
+
+    --primary: var(--midnight-base);
+    --primary-foreground: #ffffff;
+    --secondary: var(--midnight-secondary);
+    --secondary-foreground: #ffffff;
+    --accent: var(--midnight-accent);
+    --accent-foreground: #ffffff;
+    --ring: var(--midnight-base);
+  }
+
+  :root.midnight.dark {
+    --primary: #4d62b5;
+    --primary-foreground: #ffffff;
+    --secondary: #2c3a7d;
+    --secondary-foreground: #ffffff;
+    --accent: #1a2559;
+    --accent-foreground: #ffffff;
+    --ring: #4d62b5;
+  }
+
+  /* =========================================================================
+     FAMILIA 5: DENIM NAVY (:root.denim) - Base: #253C6D
+     ========================================================================= */
+  :root.denim {
+    --denim-base: #253C6D;
+    --denim-secondary: #3b5a96;
+    --denim-accent: #5274b5;
+
+    --primary: var(--denim-base);
+    --primary-foreground: #ffffff;
+    --secondary: var(--denim-secondary);
+    --secondary-foreground: #ffffff;
+    --accent: var(--denim-accent);
+    --accent-foreground: #ffffff;
+    --ring: var(--denim-base);
+  }
+
+  :root.denim.dark {
+    --primary: #5c82ca;
+    --primary-foreground: #ffffff;
+    --secondary: #3b5a96;
+    --secondary-foreground: #ffffff;
+    --accent: #253C6D;
+    --accent-foreground: #ffffff;
+    --ring: #5c82ca;
+  }
+
+  /* =========================================================================
+     FAMILIA 6: PINE GREEN (:root.pine) - Base: #123F36
+     ========================================================================= */
+  :root.pine {
+    --pine-base: #123F36;
+    --pine-secondary: #1c574b;
+    --pine-accent: #297566;
+
+    --primary: var(--pine-base);
+    --primary-foreground: #ffffff;
+    --secondary: var(--pine-secondary);
+    --secondary-foreground: #ffffff;
+    --accent: var(--pine-accent);
+    --accent-foreground: #ffffff;
+    --ring: var(--pine-base);
+  }
+
+  :root.pine.dark {
+    --primary: #38a390;
+    --primary-foreground: #ffffff;
+    --secondary: #226b5d;
+    --secondary-foreground: #ffffff;
+    --accent: #123F36;
+    --accent-foreground: #ffffff;
+    --ring: #38a390;
+  }
+
+  /* =========================================================================
+     FAMILIA 7: BURGUNDY (:root.burgundy) - Base: #800020
+     ========================================================================= */
+  :root.burgundy {
+    --burgundy-base: #800020;
+    --burgundy-secondary: #a31538;
+    --burgundy-accent: #c42951;
+
+    --primary: var(--burgundy-base);
+    --primary-foreground: #ffffff;
+    --secondary: var(--burgundy-secondary);
+    --secondary-foreground: #ffffff;
+    --accent: var(--burgundy-accent);
+    --accent-foreground: #ffffff;
+    --ring: var(--burgundy-base);
+  }
+
+  :root.burgundy.dark {
+    --primary: #dc3e66;
+    --primary-foreground: #ffffff;
+    --secondary: #a31538;
+    --secondary-foreground: #ffffff;
+    --accent: #800020;
+    --accent-foreground: #ffffff;
+    --ring: #dc3e66;
+  }
+
+  /* =========================================================================
+     FAMILIA 8: AMBER GOLD (:root.amber) - Base: #FFBF00
+     ========================================================================= */
+  :root.amber {
+    --amber-base: #b38600;
+    --amber-secondary: #d9a300;
+    --amber-accent: #FFBF00;
+
+    --primary: var(--amber-base);
+    --primary-foreground: #ffffff;
+    --secondary: var(--amber-secondary);
+    --secondary-foreground: #0A0A0C;
+    --accent: var(--amber-accent);
+    --accent-foreground: #0A0A0C;
+    --ring: var(--amber-base);
+  }
+
+  :root.amber.dark {
+    --primary: #FFBF00;
+    --primary-foreground: #0A0A0C;
+    --secondary: #e6ac00;
+    --secondary-foreground: #0A0A0C;
+    --accent: #ffd24d;
+    --accent-foreground: #0A0A0C;
+    --ring: #FFBF00;
   }
 
   * {

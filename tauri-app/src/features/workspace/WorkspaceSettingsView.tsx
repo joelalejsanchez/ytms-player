@@ -78,6 +78,66 @@ const COLOR_PALETTES: ColorPaletteOption[] = [
       { name: "Onyx", hex: "#0A0A0C" },
     ],
   },
+  {
+    id: "midnight",
+    name: "Midnight Navy (#010736)",
+    description: "Monocromático azul noche profundo de alta elegancia",
+    colors: [
+      { name: "Midnight", hex: "#010736" },
+      { name: "Deep Navy", hex: "#1a2559" },
+      { name: "Indigo", hex: "#2c3a7d" },
+      { name: "Soft Blue", hex: "#4d62b5" },
+      { name: "Onyx", hex: "#0A0A0C" },
+    ],
+  },
+  {
+    id: "denim",
+    name: "Denim Navy (#253C6D)",
+    description: "Monocromático azul denim clásico y equilibrado",
+    colors: [
+      { name: "Denim", hex: "#253C6D" },
+      { name: "Royal", hex: "#3b5a96" },
+      { name: "Steel", hex: "#5274b5" },
+      { name: "Sky Mist", hex: "#5c82ca" },
+      { name: "Onyx", hex: "#0A0A0C" },
+    ],
+  },
+  {
+    id: "pine",
+    name: "Pine Green (#123F36)",
+    description: "Monocromático verde pino bosque profundo y sereno",
+    colors: [
+      { name: "Pine", hex: "#123F36" },
+      { name: "Forest", hex: "#1c574b" },
+      { name: "Spruce", hex: "#297566" },
+      { name: "Mint Tint", hex: "#38a390" },
+      { name: "Onyx", hex: "#0A0A0C" },
+    ],
+  },
+  {
+    id: "burgundy",
+    name: "Burgundy Wine (#800020)",
+    description: "Monocromático burdeos vinotinto sobrio y refinado",
+    colors: [
+      { name: "Burgundy", hex: "#800020" },
+      { name: "Crimson", hex: "#a31538" },
+      { name: "Wine Rose", hex: "#c42951" },
+      { name: "Berry", hex: "#dc3e66" },
+      { name: "Onyx", hex: "#0A0A0C" },
+    ],
+  },
+  {
+    id: "amber",
+    name: "Amber Gold (#FFBF00)",
+    description: "Monocromático ámbar dorado enérgico y cálido",
+    colors: [
+      { name: "Amber", hex: "#FFBF00" },
+      { name: "Gold", hex: "#e6ac00" },
+      { name: "Deep Amber", hex: "#d9a300" },
+      { name: "Warm Ochre", hex: "#b38600" },
+      { name: "Onyx", hex: "#0A0A0C" },
+    ],
+  },
 ];
 
 interface ThemeModeOption {

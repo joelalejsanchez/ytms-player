@@ -18,6 +18,7 @@ export interface CustomSelectProps<T extends string = string> {
   menuClassName?: string;
   ariaLabel?: string;
   disabled?: boolean;
+  direction?: "up" | "down";
 }
 
 export const CustomSelect = <T extends string = string>({
@@ -30,6 +31,7 @@ export const CustomSelect = <T extends string = string>({
   menuClassName,
   ariaLabel,
   disabled = false,
+  direction = "down",
 }: CustomSelectProps<T>) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -121,7 +123,8 @@ export const CustomSelect = <T extends string = string>({
         <div
           role="listbox"
           className={cn(
-            "absolute right-0 top-full mt-1.5 z-[150] min-w-full w-max max-w-[260px] rounded-lg border border-border bg-popover text-popover-foreground p-1 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100",
+            "absolute right-0 z-[150] min-w-full w-max max-w-[260px] rounded-lg border border-border bg-popover text-popover-foreground p-1 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100",
+            direction === "up" ? "bottom-full mb-1.5" : "top-full mt-1.5",
             menuClassName,
           )}
         >
