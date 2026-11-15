@@ -87,7 +87,7 @@ export const CustomSelect = <T extends string = string>({
   return (
     <div
       ref={containerRef}
-      className={cn("relative inline-block text-left select-none", isOpen && "z-50", className)}
+      className={cn("relative inline-block text-left select-none", isOpen && "z-[100]", className)}
       onClick={(e) => e.stopPropagation()}
     >
       <button
@@ -121,7 +121,7 @@ export const CustomSelect = <T extends string = string>({
         <div
           role="listbox"
           className={cn(
-            "absolute right-0 top-full mt-1.5 z-[100] min-w-full w-max max-w-[260px] rounded-lg border border-border bg-popover text-popover-foreground p-1 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100",
+            "absolute right-0 top-full mt-1.5 z-[150] min-w-full w-max max-w-[260px] rounded-lg border border-border bg-popover text-popover-foreground p-1 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100",
             menuClassName,
           )}
         >

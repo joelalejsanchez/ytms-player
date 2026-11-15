@@ -179,7 +179,7 @@ export const LibraryView = React.memo(() => {
   return (
     <section className="flex h-full flex-col gap-3">
       {/* 1. Contenedor transparente superior: Búsqueda de ancho completo + Menú dropdown de 3 puntos */}
-      <div className="flex items-center gap-2 w-full">
+      <div className="flex items-center gap-2 w-full relative z-20">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -225,7 +225,7 @@ export const LibraryView = React.memo(() => {
       </div>
 
       {/* 2. Contenedor flex sin fondo: Reproducir todo a la izquierda + Filtros a la derecha */}
-      <div className="flex flex-wrap items-center justify-between gap-3 w-full">
+      <div className="flex flex-wrap items-center justify-between gap-3 w-full relative z-10">
         <Button
           variant="primary"
           size="sm"
@@ -267,7 +267,7 @@ export const LibraryView = React.memo(() => {
       {/* Contenedor virtualizado */}
       <div
         ref={parentRef}
-        className="flex-1 overflow-y-auto rounded-xl border border-border bg-card/40 p-3"
+        className="flex-1 overflow-y-auto rounded-xl border border-border bg-card/40 p-3 relative z-0"
       >
         {filteredTracks.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center text-center">

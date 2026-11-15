@@ -303,7 +303,7 @@ export const PlaylistsView = React.memo(() => {
                           track.is_missing
                             ? "border-amber-500/50 bg-amber-500/10"
                             : isCurrent
-                              ? "border-primary/50 bg-primary/10"
+                              ? "border-primary bg-card"
                               : "border-border bg-card hover:border-primary/30 hover:bg-muted/60"
                         }`}
                       >
