@@ -61,61 +61,73 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
       const nextTasks = { ...state.tasks };
       const canonicalKey = buildTaskKey(event.task_id, event.youtube_id);
 
-      // Buscar si ya existía una tarea para este youtube_id (ej. precargada con otro task_id como el ID de la playlist)
-      let existingKey: string | null = null;
+      // Buscar cualquier tarea previa para este youtube_id, priorizando la que contenga metadatos de playlist
+      let existingMetadata: DownloadProgressEvent["metadata"] = undefined;
+      let existingTask: DownloadProgressEvent | null = null;
+      const keysToDelete: string[] = [];
+
       for (const k of Object.keys(nextTasks)) {
         if (nextTasks[k]?.youtube_id === event.youtube_id) {
-          existingKey = k;
-          break;
+          if (nextTasks[k]?.metadata) {
+            existingMetadata = nextTasks[k]?.metadata;
+            existingTask = nextTasks[k];
+          } else if (!existingTask) {
+            existingTask = nextTasks[k];
+          }
+          if (k !== canonicalKey) {
+            keysToDelete.push(k);
+          }
         }
       }
 
-      const existingTask = existingKey ? nextTasks[existingKey] : null;
+      for (const k of keysToDelete) {
+        delete nextTasks[k];
+      }
 
       // Preservar y fusionar metadatos para nunca perder playlist_id, playlist_title, título ni artista
       let mergedMetadata: DownloadProgressEvent["metadata"] = undefined;
-      if (existingTask?.metadata || event.metadata) {
+      if (existingMetadata || event.metadata) {
         mergedMetadata = {
           youtube_id: event.youtube_id,
           title:
             event.metadata?.title ||
-            existingTask?.metadata?.title ||
+            existingMetadata?.title ||
             event.youtube_id,
           artist:
             event.metadata?.artist ||
-            existingTask?.metadata?.artist ||
+            existingMetadata?.artist ||
             "Unknown Artist",
           duration:
             event.metadata?.duration ??
-            existingTask?.metadata?.duration ??
+            existingMetadata?.duration ??
             0,
           published_at:
             event.metadata?.published_at ??
-            existingTask?.metadata?.published_at ??
+            existingMetadata?.published_at ??
             null,
           file_extension:
             event.metadata?.file_extension ||
-            existingTask?.metadata?.file_extension ||
+            existingMetadata?.file_extension ||
             "mp3",
           thumbnail_path:
             event.metadata?.thumbnail_path ||
-            existingTask?.metadata?.thumbnail_path ||
+            existingMetadata?.thumbnail_path ||
             "",
           audio_path:
             event.metadata?.audio_path ||
-            existingTask?.metadata?.audio_path ||
+            existingMetadata?.audio_path ||
             "",
           file_size:
             event.metadata?.file_size ??
-            existingTask?.metadata?.file_size ??
+            existingMetadata?.file_size ??
             0,
           playlist_id:
             event.metadata?.playlist_id ||
-            existingTask?.metadata?.playlist_id ||
+            existingMetadata?.playlist_id ||
             null,
           playlist_title:
             event.metadata?.playlist_title ||
-            existingTask?.metadata?.playlist_title ||
+            existingMetadata?.playlist_title ||
             null,
         };
       }
@@ -125,11 +137,6 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
         ...event,
         metadata: mergedMetadata,
       };
-
-      // Si la clave previa tenía otro task_id (ej. el ID de la playlist), eliminarla para evitar duplicación
-      if (existingKey && existingKey !== canonicalKey) {
-        delete nextTasks[existingKey];
-      }
 
       nextTasks[canonicalKey] = updatedEvent;
       return { tasks: nextTasks };
@@ -168,18 +175,41 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
         });
       } else {
         const key = buildTaskKey(response.task_id, response.youtube_id);
-        set((state) => ({
-          isSubmitting: false,
-          tasks: {
-            ...state.tasks,
-            [key]: {
-              task_id: response.task_id,
-              youtube_id: response.youtube_id,
-              status: response.status,
-              progress: response.status === "completed" ? 100 : 0,
-            },
-          },
-        }));
+        set((state) => {
+          const nextTasks = { ...state.tasks };
+          let existingMetadata: DownloadProgressEvent["metadata"] = undefined;
+          let existingProgress = 0;
+
+          for (const k of Object.keys(nextTasks)) {
+            if (nextTasks[k]?.youtube_id === response.youtube_id) {
+              if (nextTasks[k]?.metadata) {
+                existingMetadata = nextTasks[k]?.metadata;
+              }
+              if (
+                typeof nextTasks[k]?.progress === "number" &&
+                nextTasks[k]!.progress > existingProgress
+              ) {
+                existingProgress = nextTasks[k]!.progress;
+              }
+              if (k !== key) {
+                delete nextTasks[k];
+              }
+            }
+          }
+
+          nextTasks[key] = {
+            task_id: response.task_id,
+            youtube_id: response.youtube_id,
+            status: response.status,
+            progress: response.status === "completed" ? 100 : existingProgress,
+            metadata: existingMetadata,
+          };
+
+          return {
+            isSubmitting: false,
+            tasks: nextTasks,
+          };
+        });
       }
       return response;
     } catch (err) {
