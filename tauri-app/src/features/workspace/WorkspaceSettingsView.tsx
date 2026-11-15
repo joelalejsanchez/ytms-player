@@ -264,7 +264,7 @@ export const WorkspaceSettingsView = React.memo(() => {
             <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Familia de Colores (Paleta)
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               {/* Opción 1: Blue / Lavender */}
               <button
                 type="button"
@@ -314,6 +314,33 @@ export const WorkspaceSettingsView = React.memo(() => {
                   <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#0a8754" }} title="Sea Green" />
                   <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#508ca4" }} title="Air Force Blue" />
                   <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#004f2d" }} title="Dark Spruce" />
+                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#eef0f2" }} title="Platinum" />
+                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#170312" }} title="Coffee Bean" />
+                </div>
+              </button>
+
+              {/* Opción 3: Ember & Flame */}
+              <button
+                type="button"
+                onClick={() => setColorFamily("ember")}
+                className={cn(
+                  "flex flex-col gap-2 rounded-lg border p-3 text-left transition",
+                  colorFamily === "ember"
+                    ? "border-primary bg-primary/15 ring-1 ring-primary shadow-sm"
+                    : "border-border bg-card/60 hover:border-border/80",
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={cn("text-xs font-semibold", colorFamily === "ember" ? "text-primary" : "text-foreground")}>
+                    Ember & Flame
+                  </span>
+                  {colorFamily === "ember" && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
+                </div>
+                {/* Muestra de colores */}
+                <div className="flex items-center gap-1.5">
+                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#d00000" }} title="Brick Ember" />
+                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#ffba08" }} title="Amber Flame" />
+                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#3f88c5" }} title="Steel Blue" />
                   <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#eef0f2" }} title="Platinum" />
                   <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#170312" }} title="Coffee Bean" />
                 </div>

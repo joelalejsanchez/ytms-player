@@ -270,10 +270,16 @@ describe("useThemeStore", () => {
     expect(document.documentElement.classList.contains("teal")).toBe(true);
     expect(document.documentElement.classList.contains("blue")).toBe(false);
 
+    store.setColorFamily("ember");
+    expect(useThemeStore.getState().colorFamily).toBe("ember");
+    expect(document.documentElement.classList.contains("ember")).toBe(true);
+    expect(document.documentElement.classList.contains("teal")).toBe(false);
+    expect(document.documentElement.classList.contains("blue")).toBe(false);
+
     store.toggleMode();
     expect(useThemeStore.getState().mode).toBe("light");
     expect(document.documentElement.classList.contains("light")).toBe(true);
     expect(document.documentElement.classList.contains("dark")).toBe(false);
-    expect(document.documentElement.classList.contains("teal")).toBe(true);
+    expect(document.documentElement.classList.contains("ember")).toBe(true);
   });
 });

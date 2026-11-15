@@ -95,7 +95,7 @@
   }
 
   :root.blue.dark,
-  :root.dark:not(.teal) {
+  :root.dark:not(.teal):not(.ember) {
     --primary: #6868c2;
     --primary-foreground: #ffffff;
     --secondary: var(--baltic-blue);
@@ -130,6 +130,33 @@
     --accent: #0a8754;
     --accent-foreground: #ffffff;
     --ring: #10b981;
+  }
+
+  /* =========================================================================
+     FAMILIA 3: EMBER & FLAME (:root.ember)
+     ========================================================================= */
+  :root.ember {
+    --brick-ember: #d00000;
+    --amber-flame: #ffba08;
+    --steel-blue: #3f88c5;
+
+    --primary: var(--brick-ember);
+    --primary-foreground: #ffffff;
+    --secondary: var(--steel-blue);
+    --secondary-foreground: #ffffff;
+    --accent: var(--amber-flame);
+    --accent-foreground: #170312;
+    --ring: var(--brick-ember);
+  }
+
+  :root.ember.dark {
+    --primary: #e63946;
+    --primary-foreground: #ffffff;
+    --secondary: var(--steel-blue);
+    --secondary-foreground: #ffffff;
+    --accent: var(--amber-flame);
+    --accent-foreground: #170312;
+    --ring: #e63946;
   }
 
   * {

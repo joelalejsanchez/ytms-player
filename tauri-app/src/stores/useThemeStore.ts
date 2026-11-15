@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 export type ThemeMode = "light" | "dark";
-export type ColorFamily = "blue" | "teal";
+export type ColorFamily = "blue" | "teal" | "ember";
 
 export interface ThemeState {
   mode: ThemeMode;
@@ -24,8 +24,8 @@ export function applyTheme(mode: ThemeMode, colorFamily: ColorFamily) {
   root.classList.remove("light", "dark");
   root.classList.add(mode);
 
-  // Inyección de clase de familia de colores (.blue o .teal)
-  root.classList.remove("blue", "teal");
+  // Inyección de clase de familia de colores (.blue, .teal o .ember)
+  root.classList.remove("blue", "teal", "ember");
   root.classList.add(colorFamily);
 
   root.style.colorScheme = mode;
@@ -42,7 +42,8 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     const savedColor = (localStorage.getItem(STORAGE_KEY_COLOR) as ColorFamily) || "blue";
 
     const validMode: ThemeMode = savedMode === "dark" ? "dark" : "light";
-    const validColor: ColorFamily = savedColor === "teal" ? "teal" : "blue";
+    const validColor: ColorFamily =
+      savedColor === "teal" || savedColor === "ember" ? savedColor : "blue";
 
     set({ mode: validMode, colorFamily: validColor });
     applyTheme(validMode, validColor);

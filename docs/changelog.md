@@ -30,6 +30,17 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
     - `--air-force-blue`: `#508ca4` (Secundario)
     - `--sea-green`: `#0a8754` (Primario)
     - `--dark-spruce`: `#004f2d` (Terciario / Acento)
+  - **Familia Ember & Flame (`.ember`):**
+    - `--coffee-bean`: `#170312` (Fondo oscuro)
+    - `--platinum`: `#eef0f2` (Fondo claro)
+    - `--brick-ember`: `#d00000` (Primario / Acento cálido)
+    - `--amber-flame`: `#ffba08` (Terciario / Acento dorado)
+    - `--steel-blue`: `#3f88c5` (Secundario contrastante)
+- **Aislamiento y consistencia de colores de estado funcional**:
+  - **Azul (`sky-500`)**: reservado y garantizado para tareas y descargas en proceso (`downloading`, `queued`, barras de progreso activas).
+  - **Verde (`emerald-500`)**: reservado para descargas completadas con éxito, verificaciones de integridad limpias y servicios online.
+  - **Rojo (`red-600` / `destructive`)**: reservado para acciones destructivas (eliminación de listas, borrado de disco, confirmaciones de riesgo) y fallos críticos.
+  - **Ámbar (`amber-500`)**: reservado para advertencias de integridad, archivos huérfanos y fases de post-procesamiento/transcodificación FFmpeg.
 - **Selectores de Tema en la Interfaz de Usuario**:
   - **Panel de Configuración General (`WorkspaceSettingsView.tsx`):**
     - Tarjeta dedicada *"Personalización de Tema y Colores"* con botones de selección de Modo Claro/Oscuro y tarjetas de paleta con muestras de color visuales (*swatches* circulares).

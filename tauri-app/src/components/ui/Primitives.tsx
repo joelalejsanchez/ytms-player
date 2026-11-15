@@ -16,7 +16,7 @@ export const Button = React.memo(
           "bg-secondary text-secondary-foreground hover:opacity-90 border border-border shadow-xs",
         ghost: "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
         danger:
-          "bg-destructive/15 text-destructive border border-destructive/30 hover:bg-destructive/25",
+          "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm border border-red-700",
         outline:
           "bg-transparent border border-border text-foreground hover:bg-muted hover:text-foreground",
       };
@@ -62,19 +62,20 @@ export const Input = React.memo(
 Input.displayName = "Input";
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  tone?: "default" | "success" | "warning" | "danger" | "info";
+  tone?: "default" | "success" | "warning" | "danger" | "info" | "primary";
 }
 
 export const Badge = React.memo(
   ({ className, tone = "default", ...props }: BadgeProps) => {
     const tones: Record<NonNullable<BadgeProps["tone"]>, string> = {
       default: "bg-muted text-muted-foreground border-border",
+      info: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30",
       success:
         "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
       warning:
         "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
-      danger: "bg-destructive/15 text-destructive border-destructive/30",
-      info: "bg-primary/15 text-primary border-primary/30",
+      danger: "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30",
+      primary: "bg-primary/15 text-primary border-primary/30",
     };
 
     return (
@@ -94,19 +95,35 @@ Badge.displayName = "Badge";
 export interface ProgressBarProps {
   value: number;
   className?: string;
+  indicatorClassName?: string;
+  tone?: "primary" | "info" | "success" | "warning" | "danger";
 }
 
-export const ProgressBar = React.memo(({ value, className }: ProgressBarProps) => {
-  const clamped = Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
-  return (
-    <div
-      className={cn("h-2 w-full overflow-hidden rounded-full bg-muted", className)}
-    >
+export const ProgressBar = React.memo(
+  ({ value, className, indicatorClassName, tone = "primary" }: ProgressBarProps) => {
+    const clamped = Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
+    const toneClasses: Record<NonNullable<ProgressBarProps["tone"]>, string> = {
+      primary: "bg-primary",
+      info: "bg-sky-500",
+      success: "bg-emerald-500",
+      warning: "bg-amber-500",
+      danger: "bg-red-500",
+    };
+
+    return (
       <div
-        className="h-full bg-primary transition-all duration-200"
-        style={{ width: `${clamped}%` }}
-      />
-    </div>
-  );
-});
+        className={cn("h-2 w-full overflow-hidden rounded-full bg-muted", className)}
+      >
+        <div
+          className={cn(
+            "h-full transition-all duration-200",
+            toneClasses[tone],
+            indicatorClassName,
+          )}
+          style={{ width: `${clamped}%` }}
+        />
+      </div>
+    );
+  },
+);
 ProgressBar.displayName = "ProgressBar";

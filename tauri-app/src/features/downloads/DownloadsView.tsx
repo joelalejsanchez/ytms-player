@@ -673,7 +673,18 @@ export const DownloadsView = React.memo(() => {
                                   />
                                 </div>
                               </div>
-                              <ProgressBar value={task.progress} />
+                              <ProgressBar
+                                value={task.progress}
+                                tone={
+                                  task.status === "completed" || task.status === "skipped"
+                                    ? "success"
+                                    : task.status === "failed"
+                                      ? "danger"
+                                      : isProcessing
+                                        ? "warning"
+                                        : "info"
+                                }
+                              />
                               {task.error && (
                                 <p className="text-[11px] text-destructive">{task.error}</p>
                               )}
@@ -760,7 +771,18 @@ export const DownloadsView = React.memo(() => {
                       </div>
                     </div>
 
-                    <ProgressBar value={task.progress} />
+                    <ProgressBar
+                      value={task.progress}
+                      tone={
+                        task.status === "completed" || task.status === "skipped"
+                          ? "success"
+                          : task.status === "failed"
+                            ? "danger"
+                            : isProcessing
+                              ? "warning"
+                              : "info"
+                      }
+                    />
                     {task.error && <p className="text-xs text-destructive">{task.error}</p>}
                   </div>
                 </div>

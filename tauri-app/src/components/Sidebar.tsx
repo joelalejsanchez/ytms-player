@@ -178,6 +178,19 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
           >
             Teal
           </button>
+          <button
+            type="button"
+            title="Paleta Ember / Fuego"
+            onClick={() => setColorFamily("ember")}
+            className={cn(
+              "h-5 rounded px-1.5 text-[10px] font-semibold transition border",
+              colorFamily === "ember"
+                ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                : "bg-muted text-muted-foreground border-border hover:text-foreground",
+            )}
+          >
+            Ember
+          </button>
         </div>
 
         <button
