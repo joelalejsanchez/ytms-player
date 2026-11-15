@@ -69,7 +69,7 @@ pub fn execute_download_and_persist(
             );
         }
     } else {
-        if response.status != "skipped" {
+        if response.status != "skipped" && !response.youtube_id.trim().is_empty() {
             let _ = track_repo.record_download_history(
                 &response.task_id,
                 &input.url,

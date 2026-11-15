@@ -299,6 +299,11 @@ export const PersistentPlayer = React.memo(() => {
 
   const thumbnailSrc = toAssetUrl(currentTrack?.thumbnail_path);
 
+  const progressPercent =
+    duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0;
+  const volumeValue = isMuted ? 0 : volume;
+  const volumePercent = Math.min(100, Math.max(0, volumeValue * 100));
+
   return (
     <footer className="relative z-20 border-t border-slate-800 bg-slate-900/95 px-6 py-3 backdrop-blur">
       <audio
@@ -455,22 +460,44 @@ export const PersistentPlayer = React.memo(() => {
             <span className="w-10 text-right tabular-nums">
               {formatDuration(currentTime)}
             </span>
-            <input
-              type="range"
-              min={0}
-              max={duration > 0 ? duration : 100}
-              step={0.5}
-              value={currentTime}
-              onChange={handleSeekInput}
-              disabled={!currentTrack}
-              className="h-1.5 flex-1 cursor-pointer appearance-none rounded-lg bg-slate-800 accent-red-500"
-            />
+
+            {/* Barra de progreso de pista con relleno exacto e indicador responsivo al cursor */}
+            <div className="group relative flex h-4 flex-1 cursor-pointer select-none items-center">
+              {/* Fondo de la barra */}
+              <div className="relative h-1 w-full overflow-hidden rounded-full bg-slate-800 transition-all duration-150 group-hover:h-1.5">
+                {/* Relleno hasta el punto actual */}
+                <div
+                  className="h-full bg-red-500 transition-none"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+
+              {/* Indicador / Thumb pequeño que crece cuando el ratón se acerca */}
+              <div
+                className="pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full bg-white shadow-md transition-all duration-150 group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-red-500"
+                style={{ left: `${progressPercent}%` }}
+              />
+
+              {/* Input range transparente en primer plano para interacción nativa y fluida */}
+              <input
+                type="range"
+                min={0}
+                max={duration > 0 ? duration : 100}
+                step={0.5}
+                value={currentTime}
+                onChange={handleSeekInput}
+                disabled={!currentTrack}
+                aria-label="Progreso de la canción"
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+              />
+            </div>
+
             <span className="w-10 tabular-nums">{formatDuration(duration)}</span>
           </div>
         </div>
 
         {/* Volumen y Cola */}
-        <div className="flex min-w-[200px] items-center justify-end gap-3">
+        <div className="flex min-w-[240px] items-center justify-end gap-3">
           <Button
             variant="ghost"
             size="icon"
@@ -484,16 +511,39 @@ export const PersistentPlayer = React.memo(() => {
             )}
           </Button>
 
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.02}
-            value={isMuted ? 0 : volume}
-            onChange={handleVolumeInput}
-            aria-label="Volumen"
-            className="h-1.5 w-24 cursor-pointer appearance-none rounded-lg bg-slate-800 accent-red-500"
-          />
+          {/* Selector de volumen con relleno visual exacto e indicador dinámico */}
+          <div className="group relative flex h-4 w-28 cursor-pointer select-none items-center">
+            {/* Pista de fondo */}
+            <div className="relative h-1 w-full overflow-hidden rounded-full bg-slate-800 transition-all duration-150 group-hover:h-1.5">
+              {/* Relleno hasta el valor de volumen */}
+              <div
+                className="h-full bg-red-500 transition-none"
+                style={{ width: `${volumePercent}%` }}
+              />
+            </div>
+
+            {/* Indicador / Thumb pequeño que crece al acercar el ratón */}
+            <div
+              className="pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full bg-white shadow-md transition-all duration-150 group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-red-500"
+              style={{ left: `${volumePercent}%` }}
+            />
+
+            {/* Input range transparente */}
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={volumeValue}
+              onChange={handleVolumeInput}
+              aria-label="Control de volumen"
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+            />
+          </div>
+
+          <span className="w-8 text-right font-mono text-[11px] tabular-nums text-slate-400">
+            {Math.round(volumePercent)}%
+          </span>
 
           <Button
             variant={showQueue ? "secondary" : "ghost"}

@@ -440,14 +440,27 @@ impl TrackRepository for SqliteWorkspaceStore {
             .transaction()
             .map_err(|e| DomainError::PersistenceError(format!("Transaction error: {e}")))?;
 
-        tx.execute(
-            r"
-            INSERT INTO download_history (task_id, url, youtube_id, title, status, audio_format, error_message)
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
-            ",
-            params![task_id, url, youtube_id, title, status, format, error],
-        )
-        .map_err(|e| DomainError::PersistenceError(format!("Insert download history failed: {e}")))?;
+        let updated = tx
+            .execute(
+                r"
+                UPDATE download_history
+                SET title = ?4, status = ?5, audio_format = ?6, error_message = ?7, created_at = CURRENT_TIMESTAMP
+                WHERE youtube_id = ?3 AND (status = 'queued' OR status = 'downloading' OR status = 'processing')
+                ",
+                params![task_id, url, youtube_id, title, status, format, error],
+            )
+            .unwrap_or(0);
+
+        if updated == 0 {
+            tx.execute(
+                r"
+                INSERT INTO download_history (task_id, url, youtube_id, title, status, audio_format, error_message)
+                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+                ",
+                params![task_id, url, youtube_id, title, status, format, error],
+            )
+            .map_err(|e| DomainError::PersistenceError(format!("Insert download history failed: {e}")))?;
+        }
 
         tx.commit()
             .map_err(|e| DomainError::PersistenceError(format!("Commit failed: {e}")))
