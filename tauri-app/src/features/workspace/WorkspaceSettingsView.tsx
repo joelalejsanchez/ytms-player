@@ -288,7 +288,7 @@ export const WorkspaceSettingsView = React.memo(() => {
                   <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#48639c" }} title="Baltic Blue" />
                   <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#976391" }} title="Vintage Lavender" />
                   <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#eef0f2" }} title="Platinum" />
-                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#170312" }} title="Coffee Bean" />
+                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#0A0A0C" }} title="Onyx" />
                 </div>
               </button>
 
@@ -315,7 +315,7 @@ export const WorkspaceSettingsView = React.memo(() => {
                   <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#508ca4" }} title="Air Force Blue" />
                   <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#004f2d" }} title="Dark Spruce" />
                   <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#eef0f2" }} title="Platinum" />
-                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#170312" }} title="Coffee Bean" />
+                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#0A0A0C" }} title="Onyx" />
                 </div>
               </button>
 
@@ -342,7 +342,7 @@ export const WorkspaceSettingsView = React.memo(() => {
                   <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#ffba08" }} title="Amber Flame" />
                   <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#3f88c5" }} title="Steel Blue" />
                   <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#eef0f2" }} title="Platinum" />
-                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#170312" }} title="Coffee Bean" />
+                  <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: "#0A0A0C" }} title="Onyx" />
                 </div>
               </button>
             </div>

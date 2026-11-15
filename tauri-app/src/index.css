@@ -9,16 +9,17 @@
   :root,
   :root.light {
     /* Paleta base */
-    --coffee-bean: #170312;
+    --onyx: #0A0A0C;
+    --coffee-bean: var(--onyx);
     --platinum: #eef0f2;
 
     /* Semántica Shadcn Modo Claro */
     --background: var(--platinum);
-    --foreground: var(--coffee-bean);
+    --foreground: var(--onyx);
     --card: #ffffff;
-    --card-foreground: var(--coffee-bean);
+    --card-foreground: var(--onyx);
     --popover: #ffffff;
-    --popover-foreground: var(--coffee-bean);
+    --popover-foreground: var(--onyx);
     --muted: #e2e5e9;
     --muted-foreground: #5a606b;
     --border: #d2d6dc;
@@ -36,40 +37,40 @@
     --slate-400: #5a606b;
     --slate-300: #374151;
     --slate-200: #1f2937;
-    --slate-100: var(--coffee-bean);
+    --slate-100: var(--onyx);
     --slate-50: #0f172a;
 
     color-scheme: light;
   }
 
   /* =========================================================================
-     VARIABLES BASE MODO OSCURO
+     VARIABLES BASE MODO OSCURO (ONYX & NEUTRAL ELEVATED SURFACES)
      ========================================================================= */
   :root.dark {
     /* Semántica Shadcn Modo Oscuro */
-    --background: var(--coffee-bean);
+    --background: var(--onyx);
     --foreground: var(--platinum);
-    --card: #23081c;
+    --card: #121215;
     --card-foreground: var(--platinum);
-    --popover: #23081c;
+    --popover: #121215;
     --popover-foreground: var(--platinum);
-    --muted: #2d1024;
-    --muted-foreground: #a99baa;
-    --border: #3d1633;
-    --input: #3d1633;
+    --muted: #18181f;
+    --muted-foreground: #90929e;
+    --border: #23232b;
+    --input: #23232b;
     --destructive: #ef4444;
     --destructive-foreground: #ffffff;
 
     /* Mapeo de compatibilidad con escala slate */
-    --slate-950: var(--coffee-bean);
-    --slate-900: #23081c;
-    --slate-800: #2d1024;
-    --slate-700: #3d1633;
-    --slate-600: #63435b;
-    --slate-500: #887483;
-    --slate-400: #a99baa;
-    --slate-300: #d0c8cf;
-    --slate-200: #e5e0e4;
+    --slate-950: var(--onyx);
+    --slate-900: #121215;
+    --slate-800: #18181f;
+    --slate-700: #23232b;
+    --slate-600: #383842;
+    --slate-500: #656775;
+    --slate-400: #90929e;
+    --slate-300: #c0c2cc;
+    --slate-200: #e2e4ea;
     --slate-100: var(--platinum);
     --slate-50: #ffffff;
 
@@ -145,7 +146,7 @@
     --secondary: var(--steel-blue);
     --secondary-foreground: #ffffff;
     --accent: var(--amber-flame);
-    --accent-foreground: #170312;
+    --accent-foreground: var(--onyx);
     --ring: var(--brick-ember);
   }
 
@@ -155,7 +156,7 @@
     --secondary: var(--steel-blue);
     --secondary-foreground: #ffffff;
     --accent: var(--amber-flame);
-    --accent-foreground: #170312;
+    --accent-foreground: var(--onyx);
     --ring: #e63946;
   }
 

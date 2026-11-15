@@ -19,19 +19,19 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
   - Comportamiento predeterminado sin clase o con clase inicial en modo claro (`.light`) y familia Blue (`.blue`).
 - **Paletas de color incorporadas**:
   - **Familia Blue / Lavender (`.blue`):**
-    - `--coffee-bean`: `#170312` (Fondo oscuro)
+    - `--onyx`: `#0A0A0C` (Fondo oscuro)
     - `--platinum`: `#eef0f2` (Fondo claro)
     - `--baltic-blue`: `#48639c` (Secundario)
     - `--ocean-twilight`: `#4c4c9d` (Primario / Acento)
     - `--vintage-lavender`: `#976391` (Terciario / Acentos sutiles)
   - **Familia Teal / Spruce (`.teal`):**
-    - `--coffee-bean`: `#170312` (Fondo oscuro)
+    - `--onyx`: `#0A0A0C` (Fondo oscuro)
     - `--platinum`: `#eef0f2` (Fondo claro)
     - `--air-force-blue`: `#508ca4` (Secundario)
     - `--sea-green`: `#0a8754` (Primario)
     - `--dark-spruce`: `#004f2d` (Terciario / Acento)
   - **Familia Ember & Flame (`.ember`):**
-    - `--coffee-bean`: `#170312` (Fondo oscuro)
+    - `--onyx`: `#0A0A0C` (Fondo oscuro)
     - `--platinum`: `#eef0f2` (Fondo claro)
     - `--brick-ember`: `#d00000` (Primario / Acento cálido)
     - `--amber-flame`: `#ffba08` (Terciario / Acento dorado)
