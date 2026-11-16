@@ -50,6 +50,8 @@ export const PersistentPlayer = React.memo(() => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fadeAnimationRef = useRef<number | null>(null);
   const [showQueue, setShowQueue] = useState(false);
+  const [isSeekingLocally, setIsSeekingLocally] = useState(false);
+  const [localSeekTime, setLocalSeekTime] = useState(0);
 
   const currentTrack = usePlayerStore((s) => s.currentTrack);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
@@ -80,7 +82,6 @@ export const PersistentPlayer = React.memo(() => {
   const cycleRepeatMode = usePlayerStore((s) => s.cycleRepeatMode);
   const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
 
-  const audioBlobUrlCache = useRef<Map<string, string>>(new Map());
   const isChangingTrackRef = useRef(false);
   const currentTrackIdRef = useRef<string | null>(null);
   const prevIsPlayingRef = useRef(isPlaying);
@@ -111,7 +112,7 @@ export const PersistentPlayer = React.memo(() => {
     }
   }, []);
 
-  // Precargar de forma anticipada la siguiente pista de la cola directamente como Blob URL en memoria
+  // Precargar de forma anticipada los metadatos de la siguiente pista de la cola mediante streaming HTTP nativo
   const preloadNextTrack = useCallback(() => {
     const state = usePlayerStore.getState();
     const current = state.currentTrack;
@@ -130,25 +131,14 @@ export const PersistentPlayer = React.memo(() => {
 
     if (nextIdx >= 0) {
       const nextTrack = currentQueue[nextIdx];
-      if (
-        nextTrack &&
-        !nextTrack.is_missing &&
-        !audioBlobUrlCache.current.has(nextTrack.audio_path)
-      ) {
+      if (nextTrack && !nextTrack.is_missing) {
         tauriApi
-          .readAudioDataUrl(nextTrack.audio_path)
-          .then((dataUrl) => {
-            if (dataUrl) {
-              const blobUrl = dataUrlToBlobUrl(dataUrl);
-              if (audioBlobUrlCache.current.size >= 10) {
-                const oldestKey = audioBlobUrlCache.current.keys().next().value;
-                if (oldestKey) {
-                  const oldUrl = audioBlobUrlCache.current.get(oldestKey);
-                  if (oldUrl?.startsWith("blob:")) URL.revokeObjectURL(oldUrl);
-                  audioBlobUrlCache.current.delete(oldestKey);
-                }
-              }
-              audioBlobUrlCache.current.set(nextTrack.audio_path, blobUrl);
+          .getAudioStreamUrl(nextTrack.audio_path)
+          .then((streamUrl) => {
+            if (streamUrl) {
+              const probe = new Audio();
+              probe.preload = "metadata";
+              probe.src = streamUrl;
             }
           })
           .catch(() => {});
@@ -183,24 +173,17 @@ export const PersistentPlayer = React.memo(() => {
 
     const loadAndPlayTrack = async () => {
       try {
-        let playableSrc = audioBlobUrlCache.current.get(currentTrack.audio_path);
-        if (!playableSrc) {
+        let playableSrc: string | null = null;
+        try {
+          // Streaming nativo HTTP 206 Partial Content (Byte-Range) desde el backend en Rust
+          playableSrc = await tauriApi.getAudioStreamUrl(currentTrack.audio_path);
+        } catch (streamErr) {
+          console.warn("getAudioStreamUrl warning, falling back to dataUrl/toAssetUrl:", streamErr);
           try {
             const dataUrl = await tauriApi.readAudioDataUrl(currentTrack.audio_path);
-            if (dataUrl) {
-              playableSrc = dataUrlToBlobUrl(dataUrl);
-              if (audioBlobUrlCache.current.size >= 10) {
-                const oldestKey = audioBlobUrlCache.current.keys().next().value;
-                if (oldestKey) {
-                  const oldUrl = audioBlobUrlCache.current.get(oldestKey);
-                  if (oldUrl?.startsWith("blob:")) URL.revokeObjectURL(oldUrl);
-                  audioBlobUrlCache.current.delete(oldestKey);
-                }
-              }
-              audioBlobUrlCache.current.set(currentTrack.audio_path, playableSrc);
-            }
-          } catch (err) {
-            console.warn("readAudioDataUrl warning, falling back to toAssetUrl:", err);
+            if (dataUrl) playableSrc = dataUrlToBlobUrl(dataUrl);
+          } catch {
+            playableSrc = toAssetUrl(currentTrack.audio_path);
           }
         }
 
@@ -433,13 +416,25 @@ export const PersistentPlayer = React.memo(() => {
     }
   }, [playNext]);
 
-  const handleSeekInput = useCallback(
+  const handleSeekChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (isLoadingTrack || !currentTrack) return;
-      seekTo(Number(e.target.value));
+      const val = Number(e.target.value);
+      setLocalSeekTime(val);
+      setIsSeekingLocally(true);
     },
-    [isLoadingTrack, currentTrack, seekTo],
+    [isLoadingTrack, currentTrack],
   );
+
+  const handleSeekCommit = useCallback(() => {
+    if (isSeekingLocally && !isLoadingTrack) {
+      setIsSeekingLocally(false);
+      seekTo(localSeekTime);
+      if (audioRef.current) {
+        audioRef.current.currentTime = localSeekTime;
+      }
+    }
+  }, [isSeekingLocally, localSeekTime, seekTo, isLoadingTrack]);
 
   const handleVolumeInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -450,8 +445,9 @@ export const PersistentPlayer = React.memo(() => {
 
   const thumbnailSrc = toAssetUrl(currentTrack?.thumbnail_path);
 
+  const displayTime = isSeekingLocally ? localSeekTime : currentTime;
   const progressPercent =
-    duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0;
+    duration > 0 ? Math.min(100, Math.max(0, (displayTime / duration) * 100)) : 0;
   const volumeValue = isMuted ? 0 : volume;
   const volumePercent = Math.min(100, Math.max(0, volumeValue * 100));
 
@@ -616,7 +612,7 @@ export const PersistentPlayer = React.memo(() => {
 
           <div className="flex w-full items-center gap-3 text-xs text-muted-foreground">
             <span className="w-10 text-right tabular-nums">
-              {formatDuration(currentTime)}
+              {formatDuration(displayTime)}
             </span>
 
             {/* Barra de progreso de pista con bloqueo durante carga de track, relleno exacto e indicador dinámico */}
@@ -657,8 +653,11 @@ export const PersistentPlayer = React.memo(() => {
                 min={0}
                 max={duration > 0 ? duration : 100}
                 step={0.5}
-                value={currentTime}
-                onChange={handleSeekInput}
+                value={displayTime}
+                onChange={handleSeekChange}
+                onPointerDown={() => setIsSeekingLocally(true)}
+                onPointerUp={handleSeekCommit}
+                onKeyUp={handleSeekCommit}
                 disabled={!currentTrack || isLoadingTrack}
                 aria-label="Progreso de la canción"
                 aria-disabled={!currentTrack || isLoadingTrack}

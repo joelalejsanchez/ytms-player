@@ -6,13 +6,7 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 1. Prioridad Alta (Performance y Core Engine)
 
-- [ ] **Streaming nativo de audio mediante HTTP Byte-Range (HTTP 206 Partial Content / Zero-Copy):**
-  - **Problema actual:** El reproductor lee el archivo completo a memoria RAM mediante IPC en Base64 (`read_audio_data_url`), y el hilo de JavaScript lo convierte a `Blob` síncronamente. En canciones de larga duración (sets de 1 a 3 horas, podcasts, etc.) o archivos grandes, esto satura cientos de megabytes de RAM, bloquea el hilo de la UI varios segundos y demora el inicio de la reproducción. En archivos pequeños también introduce una sobrecarga innecesaria de serialización IPC.
-  - **Solución técnica planificada (Rust nativo en Tauri):**
-    - Implementar un servidor HTTP embebido local y ultra-ligero en Rust (dentro del ejecutable de Tauri, ej. con `axum`, `tiny_http` o listener `tokio` en `127.0.0.1:<puerto_libre>`): `http://127.0.0.1:<puerto>/audio?path=<ruta_archivo>`.
-    - Servir los archivos con soporte nativo de **HTTP 206 Partial Content (Range requests)** leyendo directamente bloques pequeños del disco bajo demanda (zero-copy / low-memory).
-    - **Independencia total del microservicio Go:** Permite que la app de escritorio reproduzca cualquier archivo local de forma autónoma, sin requerir Docker ni que el microservicio esté encendido (Go queda reservado únicamente para descargas con `yt-dlp` y sincronización OAuth con YouTube).
-    - El reproductor HTML5 solicitará únicamente los primeros ~64 KB de metadatos e iniciará la reproducción en menos de 50 ms (latencia imperceptible), permitiendo además saltos de reproducción (seek) instantáneos a cualquier punto de la línea temporal sin descargar todo el archivo y con consumo de RAM prácticamente cero.
+*(Actualmente no hay tareas de prioridad alta pendientes; el motor de streaming nativo HTTP 206 Partial Content fue integrado en la versión 1.3.0).*
 
 ---
 

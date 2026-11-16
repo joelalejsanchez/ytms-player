@@ -379,6 +379,27 @@ pub async fn check_microservice_health(state: State<'_, AppState>) -> DomainResu
         .map_err(|e| DomainError::MicroserviceError(format!("Check health task failed: {e}")))?
 }
 
+/// Obtiene la URL HTTP local para streaming nativo con soporte Byte-Range (HTTP 206 Partial Content).
+#[tauri::command]
+pub async fn get_audio_stream_url(
+    state: tauri::State<'_, AppState>,
+    file_path: String,
+) -> DomainResult<String> {
+    let path = std::path::Path::new(file_path.trim());
+    if !path.is_file() {
+        return Err(DomainError::ValidationError(format!(
+            "Audio file does not exist: {file_path}"
+        )));
+    }
+
+    let encoded_path: String = url::form_urlencoded::byte_serialize(file_path.as_bytes()).collect();
+    let url = format!(
+        "http://127.0.0.1:{}/stream?path={}",
+        state.audio_server_port, encoded_path
+    );
+    Ok(url)
+}
+
 /// Lee el contenido binario de un archivo de audio local como Base64 Data URL para reproducción HTML5 sin restricciones de protocolo.
 #[tauri::command]
 pub async fn read_audio_data_url(file_path: String) -> DomainResult<String> {

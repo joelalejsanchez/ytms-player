@@ -1,6 +1,6 @@
 [package]
 name = "ytms-player"
-version = "1.2.0"
+version = "1.3.0"
 description = "ytms-player Desktop Application - High performance YouTube media manager and player"
 authors = ["Joel Alejandro Sanchez Valdez <joelalejsanchez@gmail.com>"]
 edition = "2021"
@@ -16,8 +16,9 @@ tauri-plugin-fs = "2.0.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 rusqlite = { version = "0.32", features = ["bundled", "chrono"] }
-tokio = { version = "1.40", features = ["rt-multi-thread", "macros", "sync", "fs"] }
+tokio = { version = "1.40", features = ["rt-multi-thread", "macros", "sync", "fs", "net", "io-util", "time"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+url = "2.5"
 thiserror = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 

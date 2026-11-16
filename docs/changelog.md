@@ -6,6 +6,25 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.3.0] - 2026-11-16
+
+### Añadido
+
+#### Servidor Nativo de Streaming HTTP 206 (Byte-Range / Zero-Copy)
+- **Servidor HTTP embebido en Rust**: Implementación nativa ultraligera con `tokio::net::TcpListener` en `127.0.0.1:0` (puerto efímero dinámico).
+- **Soporte completo de Byte-Range (HTTP 206 Partial Content)**: Capacidad de servir fragmentos de audio bajo demanda directamente desde el disco mediante `tokio::io::copy` y `take` acotado sin cargar archivos completos en memoria RAM.
+- **Independencia absoluta del microservicio Go para reproducción**: La aplicación de escritorio reproduce cualquier archivo de audio local de forma autónoma sin requerir Docker ni servicios externos encendidos (Go queda reservado exclusivamente para descargas remotas y OAuth).
+- **Comando IPC `get_audio_stream_url`**: Resolución instantánea de rutas locales hacia URLs HTTP transmitibles (`http://127.0.0.1:<puerto>/stream?path=...`).
+- **Control granular de scrubbing en la línea temporal**: Interacción suave de arrastre (`isSeekingLocally`) con actualización visual a 60 FPS sin parpadeos y emisión del seek definitivo al soltar el cursor (`onPointerUp`).
+
+### Corregido
+
+- **Eliminación del silencio al iniciar pistas**: Al conectar directamente mediante HTTP 206, GStreamer y WebKitGTK solicitan únicamente los metadatos iniciales sin buffers forzados ni conversiones síncronas Base64 / Blob.
+- **Retrasos de salto temporal eliminados**: Al realizar un seek a cualquier punto de la línea temporal, el reproductor emite un Range request exacto y el backend en Rust se posiciona de inmediato en el byte correspondiente (`SeekFrom::Start`), logrando saltos instantáneos sin re-decodificar desde el segundo 0.
+- **Eliminación de sobrecarga en memoria RAM**: Purgado del caché de Blob URLs en memoria (`audioBlobUrlCache`), reduciendo a prácticamente cero el consumo de RAM durante la reproducción.
+
+---
+
 ## [1.2.0] - 2026-11-16
 
 ### Añadido

@@ -5,10 +5,11 @@ pub mod domain;
 pub mod infrastructure;
 pub mod interfaces;
 
+use infrastructure::audio_streaming_server::AudioStreamingServer;
 use interfaces::commands::{
     add_track_to_playlist, adopt_orphan_file, check_microservice_health, clear_download_history, confirm_sse_download,
     create_playlist, delete_orphan_file, delete_playlist, delete_track, get_app_settings,
-    get_download_history, get_missing_tracks, get_oauth_status, get_playlist_details, get_playlists,
+    get_audio_stream_url, get_download_history, get_missing_tracks, get_oauth_status, get_playlist_details, get_playlists,
     get_playlist_track_map, get_tracks, get_workspace_info, import_cookies_file, logout_oauth, open_oauth_login,
     preview_playlist_url, rate_video, read_audio_data_url, recover_track, refresh_track_metadata,
     register_track, remove_saved_workspace, remove_track_from_playlist, select_workspace,
@@ -18,17 +19,28 @@ use interfaces::commands::{
 use interfaces::state::AppState;
 
 fn main() {
+    let (server, std_listener) =
+        AudioStreamingServer::bind().expect("Failed to bind native audio streaming server");
+    let audio_server_port = server.port();
+
     let default_go_url =
         std::env::var("YTMS_PLAYER_GO_URL").unwrap_or_else(|_| "http://127.0.0.1:8080".to_string());
 
     let app_state =
-        AppState::new(&default_go_url).expect("Failed to initialize ytms-player application state");
+        AppState::new(&default_go_url, audio_server_port).expect("Failed to initialize ytms-player application state");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .setup(move |_app| {
+            tauri::async_runtime::spawn(async move {
+                AudioStreamingServer::run(std_listener).await;
+            });
+            Ok(())
+        })
         .manage(app_state)
         .invoke_handler(tauri::generate_handler![
+            get_audio_stream_url,
             select_workspace,
             get_workspace_info,
             verify_integrity,
