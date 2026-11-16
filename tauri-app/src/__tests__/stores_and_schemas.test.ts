@@ -511,3 +511,60 @@ describe("Visualizer API and Registry", () => {
     expect(emptyResult.current).toBeNull();
   });
 });
+
+describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
+  it("records logs with timestamps and formats text export accurately", async () => {
+    const { useLogStore, logger, formatLogTimestamp } = await import("@/stores/useLogStore");
+    const store = useLogStore.getState();
+    store.clearLogs();
+    expect(useLogStore.getState().logs).toHaveLength(0);
+
+    // Formateador de fecha
+    const ts = formatLogTimestamp(new Date("2026-11-16T12:00:00"));
+    expect(ts).toBe("2026-11-16 12:00:00");
+
+    // Registro mediante logger global
+    logger.error("Fallo de conexión", "El microservicio Go rechazó la petición", "streaming");
+    logger.warn("Poco espacio en disco", "Quedan menos de 500 MB", "system");
+    logger.info("Sincronización iniciada", "Verificando integridad", "library");
+
+    const currentLogs = useLogStore.getState().logs;
+    expect(currentLogs).toHaveLength(3);
+    expect(currentLogs[0].level).toBe("error");
+    expect(currentLogs[0].context).toBe("streaming");
+    expect(currentLogs[0].formattedTime).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+
+    // Exportación de reporte
+    const report = useLogStore.getState().exportLogsAsText();
+    expect(report).toContain("REPORTE DE ERRORES Y DIAGNÓSTICO");
+    expect(report).toContain("Fallo de conexión");
+    expect(report).toContain("[ERROR]");
+    expect(report).toContain("[streaming]");
+
+    // Limpieza
+    store.clearLogs();
+    expect(useLogStore.getState().logs).toHaveLength(0);
+  });
+
+  it("automatically intercepts toast.error and toast.warning into useLogStore", async () => {
+    const { useLogStore } = await import("@/stores/useLogStore");
+    const { toast } = await import("@/stores/useToastStore");
+
+    useLogStore.getState().clearLogs();
+
+    toast.error("Error de descarga", "404 Video Unavailable");
+    toast.warning("Aviso de red", "Conexión lenta detectada");
+
+    const captured = useLogStore.getState().logs;
+    expect(captured).toHaveLength(2);
+    expect(captured[0].title).toBe("Error de descarga");
+    expect(captured[0].level).toBe("error");
+    expect(captured[0].context).toBe("toast");
+
+    expect(captured[1].title).toBe("Aviso de red");
+    expect(captured[1].level).toBe("warn");
+    expect(captured[1].context).toBe("toast");
+
+    useLogStore.getState().clearLogs();
+  });
+});

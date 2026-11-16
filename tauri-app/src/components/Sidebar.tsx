@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  Bug,
   Download,
   Library,
   ListMusic,
@@ -14,6 +15,7 @@ import { Badge } from "@/components/ui/Primitives";
 import { cn } from "@/lib/utils";
 import { useDownloadStore } from "@/stores/useDownloadStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
+import { useLogStore } from "@/stores/useLogStore";
 import { type ColorFamily, useThemeStore } from "@/stores/useThemeStore";
 import type { NavigationTab } from "@/types/models";
 
@@ -109,6 +111,13 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
   const missingCount = useLibraryStore((s) => s.missingTracks.length);
   const trackCount = useLibraryStore((s) => s.tracks.length);
   const playlistCount = useLibraryStore((s) => s.playlists.length);
+
+  const errorLogs = useLogStore((s) => s.logs);
+  const setOpenLogModal = useLogStore((s) => s.setOpenModal);
+  const errorCount = useMemo(
+    () => errorLogs.filter((l) => l.level === "error").length,
+    [errorLogs],
+  );
 
   const mode = useThemeStore((s) => s.mode);
   const colorFamily = useThemeStore((s) => s.colorFamily);
@@ -327,6 +336,33 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
           >
             <Settings className="h-4 w-4 shrink-0" />
             {!isCollapsed && <span className="truncate">Configuración</span>}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setOpenLogModal(true)}
+            title={`Registro de Errores${errorCount > 0 ? ` (${errorCount} errores)` : ""}`}
+            className={cn(
+              "flex items-center rounded-lg transition-colors",
+              isCollapsed
+                ? "h-10 w-10 mx-auto justify-center p-0"
+                : "w-full justify-between px-3 py-2 text-sm font-medium",
+              errorCount > 0
+                ? "text-rose-500 hover:bg-rose-500/10"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            {isCollapsed ? (
+              <Bug className="h-4 w-4 shrink-0" />
+            ) : (
+              <>
+                <span className="flex items-center gap-3 min-w-0">
+                  <Bug className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Logs de errores</span>
+                </span>
+                {errorCount > 0 && <Badge tone="danger">{errorCount}</Badge>}
+              </>
+            )}
           </button>
         </div>
       </div>

@@ -6,6 +6,21 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.5.0] - 2026-11-16
+
+### Añadido
+
+#### Subsistema Transversal de Diagnóstico y Registro de Errores (Error Logs)
+- **Store global de eventos técnicos (`useLogStore` y API `logger`)**: Almacenamiento cronológico de todos los errores, advertencias e información de diagnóstico de la sesión con fecha y hora exacta (`YYYY-MM-DD HH:mm:ss`), nivel de severidad (`error`, `warn`, `info`) y contexto de ejecución (`streaming`, `player`, `toast`, `library`, `runtime`).
+- **Intercepción automática de notificaciones Toast**: Integración transparente en `useToastStore` que captura automáticamente el 100% de los errores y advertencias emitidos hacia las alertas toast, garantizando que ninguna falla pase desapercibida si el usuario mantiene la aplicación minimizada o en segundo plano.
+- **Escucha global de excepciones de ejecución**: Captura de errores no controlados (`window.onerror`) y rechazos de promesas asíncronas (`unhandledrejection`) con registro automático en memoria y persistencia en `localStorage` (acotado a los últimos 100 eventos).
+- **Visor interactivo modal (`ErrorLogsModal`)**: Modal accesible de diagnóstico completo con filtrado por nivel de severidad, barra de búsqueda en tiempo real, copia individual de registros y botón de "Copiar reporte" estructurado para soporte y depuración.
+- **Sección en Ajustes y acceso directo en Barra Lateral**:
+  - En *Ajustes*, nueva sección dedicada con contador de errores, estado de estabilidad, vista previa de los últimos eventos y botón para abrir el visor completo.
+  - En la barra lateral (`Sidebar`), botón de acceso directo con distintivo dinámico en rojo que indica el número de errores ocurridos durante la sesión.
+
+---
+
 ## [1.4.1] - 2026-11-16
 
 ### Añadido

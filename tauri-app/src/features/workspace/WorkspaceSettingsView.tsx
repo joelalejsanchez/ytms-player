@@ -2,6 +2,7 @@ import {
   Activity,
   AlertCircle,
   AudioWaveform,
+  Bug,
   Check,
   CheckCircle2,
   Cookie,
@@ -33,6 +34,7 @@ import { cn } from "@/lib/utils";
 import { tauriApi } from "@/services/tauriIpc";
 import { useDownloadStore } from "@/stores/useDownloadStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
+import { useLogStore } from "@/stores/useLogStore";
 import { getAllVisualizers, useVisualizerStore } from "@/features/visualizer";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import {
@@ -215,6 +217,11 @@ export const WorkspaceSettingsView = React.memo(() => {
   );
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [generalError, setGeneralError] = useState<string | null>(null);
+
+  // Estados para Registro de Errores (Error Logs)
+  const errorLogs = useLogStore((s) => s.logs);
+  const setOpenLogModal = useLogStore((s) => s.setOpenModal);
+  const clearErrorLogs = useLogStore((s) => s.clearLogs);
 
   const [isConnectingOAuth, setIsConnectingOAuth] = useState(false);
   const [isLoggingOutOAuth, setIsLoggingOutOAuth] = useState(false);
@@ -1187,6 +1194,123 @@ export const WorkspaceSettingsView = React.memo(() => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ============================================================== */}
+      {/* 4. SECCIÓN: DIAGNÓSTICO Y REGISTRO DE ERRORES (ERROR LOGS)     */}
+      {/* ============================================================== */}
+      <div className="space-y-5 rounded-xl border border-border bg-card p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Bug className="h-5 w-5 text-primary shrink-0" />
+            <div className="min-w-0">
+              <h3 className="text-base font-semibold text-foreground">
+                Diagnóstico y Registro de Errores (Error Logs)
+              </h3>
+              <p className="text-xs text-muted-foreground truncate">
+                Historial cronológico con fecha y hora de todos los fallos y avisos de la sesión
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {errorLogs.filter((l) => l.level === "error").length > 0 ? (
+              <Badge tone="danger">
+                {errorLogs.filter((l) => l.level === "error").length} errores registrados
+              </Badge>
+            ) : (
+              <Badge tone="success">0 errores en sesión</Badge>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setOpenLogModal(true)}
+              className="gap-1.5 text-xs"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              <span>Ver registro completo</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Resumen interactivo de registros */}
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between text-xs text-muted-foreground">
+            <span>
+              Total de eventos en memoria: <strong>{errorLogs.length}</strong>
+            </span>
+            {errorLogs.length > 0 && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={clearErrorLogs}
+                className="h-7 text-xs text-muted-foreground hover:text-destructive gap-1"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Limpiar registro</span>
+              </Button>
+            )}
+          </div>
+
+          {errorLogs.length === 0 ? (
+            <div className="flex items-center gap-3 p-4 rounded-xl border border-dashed border-border text-muted-foreground text-xs bg-muted/10">
+              <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
+              <div>
+                <p className="font-semibold text-foreground">
+                  No hay incidentes ni errores registrados en esta sesión.
+                </p>
+                <p className="text-muted-foreground text-[11px] mt-0.5">
+                  Si ocurre algún error en segundo plano o se muestra un aviso toast, se registrará aquí con su fecha, hora exacta y contexto.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+              {errorLogs.slice(-3).reverse().map((entry) => (
+                <div
+                  key={entry.id}
+                  onClick={() => setOpenLogModal(true)}
+                  className="flex cursor-pointer items-start justify-between gap-3 p-3 rounded-lg border border-border bg-muted/20 hover:border-primary/50 transition font-mono text-xs select-none"
+                >
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold text-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
+                        [{entry.formattedTime}]
+                      </span>
+                      <span
+                        className={cn(
+                          "text-[10px] uppercase font-bold px-1.5 py-0.5 rounded",
+                          entry.level === "error"
+                            ? "bg-destructive/20 text-destructive"
+                            : entry.level === "warn"
+                              ? "bg-amber-500/20 text-amber-500"
+                              : "bg-sky-500/20 text-sky-500",
+                        )}
+                      >
+                        {entry.level}
+                      </span>
+                      {entry.context && (
+                        <span className="text-[10px] text-muted-foreground">
+                          [{entry.context}]
+                        </span>
+                      )}
+                    </div>
+                    <p className="font-semibold text-foreground truncate mt-1">
+                      {entry.title}
+                    </p>
+                    {entry.description && (
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {entry.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

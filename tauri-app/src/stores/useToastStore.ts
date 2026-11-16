@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { logger } from "@/stores/useLogStore";
 
 export type ToastVariant = "info" | "success" | "warning" | "error";
 
@@ -35,6 +36,14 @@ export const useToastStore = create<ToastState>((set) => ({
       duration,
       createdAt: Date.now(),
     };
+
+    // Registrar automáticamente errores y advertencias en el registro de sesión
+    if (variant === "error") {
+      logger.error(title, description, "toast");
+    } else if (variant === "warning") {
+      logger.warn(title, description, "toast");
+    }
+
     set((state) => ({
       toasts: [...state.toasts.slice(-4), newItem],
     }));
