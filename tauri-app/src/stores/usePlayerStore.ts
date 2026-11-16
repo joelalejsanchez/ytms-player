@@ -42,6 +42,7 @@ export interface PlayerState {
   clearQueue: () => void;
   cycleRepeatMode: () => void;
   toggleShuffle: () => void;
+  updateTrackMetadata: (track: Partial<Track> & { youtube_id: string }) => void;
 }
 
 const STORAGE_KEY = "ytms_player_preferences";
@@ -416,5 +417,23 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         currentIndex: normalIndex >= 0 ? normalIndex : 0,
       });
     }
+  },
+
+  updateTrackMetadata: (updated) => {
+    set((state) => {
+      let nextCurrent = state.currentTrack;
+      if (state.currentTrack && state.currentTrack.youtube_id === updated.youtube_id) {
+        nextCurrent = { ...state.currentTrack, ...updated };
+      }
+      const updateList = (list: Track[]) =>
+        list.map((item) =>
+          item.youtube_id === updated.youtube_id ? { ...item, ...updated } : item,
+        );
+      return {
+        currentTrack: nextCurrent,
+        queue: updateList(state.queue),
+        originalQueue: updateList(state.originalQueue),
+      };
+    });
   },
 }));

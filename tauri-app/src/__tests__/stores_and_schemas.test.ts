@@ -436,6 +436,16 @@ describe("usePlayerStore - queue preservation and corrupted tracks", () => {
     store.toggleNowPlayingExpanded();
     expect(usePlayerStore.getState().isNowPlayingExpanded).toBe(false);
   });
+
+  it("updates track metadata reactively on currentTrack and queue", () => {
+    const store = usePlayerStore.getState();
+    store.playTrack(sampleTrack, [sampleTrack]);
+    expect(usePlayerStore.getState().currentTrack?.liked).toBe(true);
+
+    store.updateTrackMetadata({ youtube_id: sampleTrack.youtube_id, liked: false });
+    expect(usePlayerStore.getState().currentTrack?.liked).toBe(false);
+    expect(usePlayerStore.getState().queue[0].liked).toBe(false);
+  });
 });
 
 describe("Visualizer API and Registry", () => {

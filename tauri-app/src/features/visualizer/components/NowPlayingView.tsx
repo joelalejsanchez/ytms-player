@@ -32,7 +32,14 @@ export const NowPlayingView: React.FC = () => {
   const isNowPlayingExpanded = usePlayerStore((s) => s.isNowPlayingExpanded);
   const setNowPlayingExpanded = usePlayerStore((s) => s.setNowPlayingExpanded);
 
-  const currentTrack = usePlayerStore((s) => s.currentTrack);
+  const currentTrackFromPlayer = usePlayerStore((s) => s.currentTrack);
+  const liveTrackFromLibrary = useLibraryStore(
+    useCallback(
+      (s) => s.tracks.find((t) => t.youtube_id === currentTrackFromPlayer?.youtube_id),
+      [currentTrackFromPlayer?.youtube_id],
+    ),
+  );
+  const currentTrack = liveTrackFromLibrary ?? currentTrackFromPlayer;
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const volume = usePlayerStore((s) => s.volume);
   const isMuted = usePlayerStore((s) => s.isMuted);

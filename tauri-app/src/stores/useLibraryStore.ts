@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { tauriApi } from "@/services/tauriIpc";
+import { usePlayerStore } from "@/stores/usePlayerStore";
 import { toast } from "@/stores/useToastStore";
 import type {
   AppSettings,
@@ -307,6 +308,14 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
   },
 
   toggleLike: async (youtubeId, liked) => {
+    // 1. Actualización optimista inmediata en memoria para respuesta instantánea de la UI
+    const prevTrack = get().tracks.find((t) => t.youtube_id === youtubeId);
+    if (prevTrack) {
+      get().upsertTrackLocal({ ...prevTrack, liked });
+    } else {
+      usePlayerStore.getState().updateTrackMetadata({ youtube_id: youtubeId, liked });
+    }
+
     set((state) => ({
       syncStatusByTrack: {
         ...state.syncStatusByTrack,
@@ -330,7 +339,15 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
         err,
         "No se pudo sincronizar el estado de like con YouTube",
       );
+      // SQLite ya persistió el cambio localmente; recargar la lista de canciones actualizada
       await get().refreshTracks();
+      const persistedTrack = get().tracks.find((t) => t.youtube_id === youtubeId);
+      if (persistedTrack) {
+        usePlayerStore.getState().updateTrackMetadata(persistedTrack);
+      } else {
+        usePlayerStore.getState().updateTrackMetadata({ youtube_id: youtubeId, liked, synced: false });
+      }
+
       set((state) => ({
         syncStatusByTrack: {
           ...state.syncStatusByTrack,
@@ -511,6 +528,8 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
         missingTracks: nextMissing,
       };
     });
+    // Sincronizar metadatos en la cola y pista activa del reproductor
+    usePlayerStore.getState().updateTrackMetadata(track);
   },
 
   clearError: () => set({ error: null }),
