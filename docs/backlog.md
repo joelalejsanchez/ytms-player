@@ -30,6 +30,10 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 3. Prioridad Baja (Casos Específicos o Opcionales)
 
+- [ ] **Descarga independiente de videos completos:**
+  - Posibilidad de descargar el archivo de video completo (video + audio) desde YouTube sin reproducirlo en la aplicación.
+  - Almacenamiento directo en el directorio `/videos` dentro del workspace activo donde se realice la descarga.
+  - Funcionamiento desacoplado del motor de audio/reproducción, permitiendo almacenar y conservar los archivos para posterior gestión o uso externo.
 - [ ] **Sincronización selectiva de canciones en Playlists vinculadas:**
   - En playlists sincronizadas, elegir qué canciones individuales ignorar o congelar localmente aunque hayan sido eliminadas en el canal de YouTube.
 - [ ] **Editor manual de etiquetas de metadatos (Tag Editor integrado):**
