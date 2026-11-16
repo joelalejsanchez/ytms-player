@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { Button } from "@/components/ui/Primitives";
 import { ToastContainer } from "@/components/ui/ToastContainer";
 import { DownloadsView } from "@/features/downloads/DownloadsView";
+import { ErrorLogsModal } from "@/features/diagnostics/ErrorLogsModal";
 import { LibraryView } from "@/features/library/LibraryView";
 import { PlaylistsView } from "@/features/playlists/PlaylistsView";
 import { MissingFilesView } from "@/features/recovery/MissingFilesView";
@@ -12,6 +13,7 @@ import { NowPlayingView } from "@/features/visualizer";
 import { WorkspaceSettingsView } from "@/features/workspace/WorkspaceSettingsView";
 import { useSseProgress } from "@/hooks/useSseProgress";
 import { useLibraryStore } from "@/stores/useLibraryStore";
+import { logger } from "@/stores/useLogStore";
 import { toast } from "@/stores/useToastStore";
 import type { NavigationTab } from "@/types/models";
 
@@ -31,6 +33,31 @@ export const App: React.FC = () => {
     void loadInitialState();
     void checkHealth();
   }, [loadInitialState, checkHealth]);
+
+  // Capturar errores no controlados y promesas rechazadas para la auditoría de la sesión
+  useEffect(() => {
+    const handleGlobalError = (event: ErrorEvent) => {
+      logger.error("Error de ejecución no controlado", event.message, "runtime", {
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+      });
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason =
+        event.reason instanceof Error ? event.reason.message : String(event.reason);
+      logger.error("Promesa rechazada no controlada", reason, "runtime");
+    };
+
+    window.addEventListener("error", handleGlobalError);
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener("error", handleGlobalError);
+      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+    };
+  }, []);
 
   // Despachar errores globales como toasts no intrusivos sin empujar el layout
   useEffect(() => {
@@ -80,6 +107,7 @@ export const App: React.FC = () => {
       <PersistentPlayer />
       <NowPlayingView />
       <ToastContainer />
+      <ErrorLogsModal />
     </div>
   );
 };
