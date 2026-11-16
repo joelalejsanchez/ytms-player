@@ -52,6 +52,7 @@ export const NowPlayingView: React.FC = () => {
   const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
 
   const toggleLike = useLibraryStore((s) => s.toggleLike);
+  const syncStatusByTrack = useLibraryStore((s) => s.syncStatusByTrack);
 
   const activeVisualizerId = useVisualizerStore((s) => s.activeVisualizerId);
 
@@ -106,7 +107,32 @@ export const NowPlayingView: React.FC = () => {
   const volumeValue = isMuted ? 0 : volume;
   const volumePercent = Math.min(100, Math.max(0, volumeValue * 100));
 
-  const isLiked = Boolean(currentTrack?.liked);
+  // Estado unificado de Like y Sincronización con YouTube (idéntico a la vista general TrackRow)
+  const syncStatus = currentTrack ? syncStatusByTrack[currentTrack.youtube_id] : undefined;
+  const isSyncingLike = syncStatus?.status === "loading";
+  const isSynced = Boolean(currentTrack?.synced || syncStatus?.status === "synced");
+
+  const likeButtonTitle = !currentTrack
+    ? ""
+    : isSyncingLike
+      ? "Sincronizando con YouTube..."
+      : currentTrack.liked
+        ? isSynced
+          ? "Me gusta (Sincronizado con YouTube)"
+          : "Me gusta (Guardado local / No sincronizado)"
+        : isSynced
+          ? "Sin Me gusta (Sincronizado con YouTube)"
+          : "Sin Me gusta (Guardado local)";
+
+  const heartIconClass = !currentTrack
+    ? ""
+    : currentTrack.liked
+      ? isSynced
+        ? "fill-rose-500 text-rose-500" // Rojo si está con like y sincronizado
+        : "fill-amber-500 text-amber-500" // Naranja/Ámbar si está con like pero solo local
+      : isSynced
+        ? "text-emerald-500 hover:text-rose-500 hover:fill-rose-500/20" // Borde verde para estado sincronizado ante like nulo
+        : "text-muted-foreground/60 hover:text-rose-500 hover:fill-rose-500/20"; // Borde gris atenuado ante like nulo no sincronizado
 
   // Extraer color dominante de la carátula para iluminación ambiental en el fondo del visualizador
   const thumbnailSrc = useMemo(() => {
@@ -219,17 +245,18 @@ export const NowPlayingView: React.FC = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => void toggleLike(currentTrack.youtube_id, currentTrack.liked)}
-                title={isLiked ? "Quitar de Me gusta" : "Añadir a Me gusta"}
-                className="shrink-0 h-10 w-10"
+                disabled={isSyncingLike}
+                onClick={() => void toggleLike(currentTrack.youtube_id, !currentTrack.liked)}
+                title={likeButtonTitle}
+                className={`shrink-0 h-10 w-10 transition-colors ${
+                  !currentTrack.liked && isSynced ? "hover:bg-emerald-500/10" : ""
+                }`}
               >
-                <Heart
-                  className={`h-6 w-6 transition-transform hover:scale-110 active:scale-90 ${
-                    isLiked
-                      ? "fill-primary text-primary"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                />
+                {isSyncingLike ? (
+                  <Heart className="h-6 w-6 text-amber-500 fill-amber-500/40 animate-heart-pulse transform-gpu" />
+                ) : (
+                  <Heart className={`h-6 w-6 transition-colors ${heartIconClass}`} />
+                )}
               </Button>
             )}
           </div>
@@ -240,34 +267,42 @@ export const NowPlayingView: React.FC = () => {
               {formatDuration(displayTime)}
             </span>
 
+            {/* Barra de progreso de pista con fondo sólido visible al 100% */}
             <div
-              className={`group relative flex h-5 flex-1 select-none items-center ${
+              className={`group relative flex h-4 flex-1 select-none items-center ${
                 !currentTrack || isLoadingTrack
                   ? "cursor-not-allowed opacity-50 pointer-events-none"
                   : "cursor-pointer"
               }`}
+              title={isLoadingTrack ? "Cargando pista..." : undefined}
             >
-              {/* Fondo del carril */}
-              <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted/80 transition-all group-hover:h-2">
+              {/* Fondo sólido visible de la barra completa */}
+              <div
+                style={{ backgroundColor: "var(--muted)" }}
+                className="relative h-1 w-full overflow-hidden rounded-full bg-muted transition-all duration-150 group-hover:h-1.5"
+              >
+                {/* Relleno hasta el punto actual */}
                 <div
                   className={`h-full transition-none ${
-                    isLoadingTrack ? "bg-muted-foreground/40 animate-pulse" : "bg-primary"
+                    isLoadingTrack
+                      ? "bg-muted-foreground/40 animate-pulse"
+                      : "bg-primary"
                   }`}
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
 
-              {/* Indicador / Thumb de posición */}
+              {/* Indicador / Thumb dinámico */}
               <div
-                className={`pointer-events-none absolute h-3 w-3 -translate-x-1/2 rounded-full shadow-md transition-all duration-150 ${
+                className={`pointer-events-none absolute h-2.5 w-2.5 -translate-x-1/2 rounded-full shadow-md transition-all duration-150 ${
                   isLoadingTrack
                     ? "bg-muted-foreground opacity-40"
-                    : "bg-foreground group-hover:h-4 group-hover:w-4 group-hover:bg-primary"
+                    : "bg-foreground group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-primary"
                 }`}
                 style={{ left: `${progressPercent}%` }}
               />
 
-              {/* Input range transparente */}
+              {/* Input range transparente en primer plano para interacción nativa y fluida */}
               <input
                 type="range"
                 min={0}
@@ -290,8 +325,8 @@ export const NowPlayingView: React.FC = () => {
 
           {/* Fila de Controles de Reproducción y Volumen */}
           <div className="flex w-full items-center justify-between gap-4 pt-1">
-            {/* Espaciador izquierdo para centrar controles */}
-            <div className="hidden sm:block w-36" />
+            {/* Espaciador izquierdo para centrar controles principales simétricamente */}
+            <div className="hidden sm:block min-w-[200px]" />
 
             {/* Controles Principales Centrados */}
             <div className="flex items-center gap-4 sm:gap-6 mx-auto">
@@ -353,29 +388,43 @@ export const NowPlayingView: React.FC = () => {
               </Button>
             </div>
 
-            {/* Control de Volumen en Esquina Derecha */}
-            <div className="hidden sm:flex w-36 items-center justify-end gap-2 text-muted-foreground">
+            {/* Control de Volumen en Esquina Derecha con estilos unificados */}
+            <div className="hidden sm:flex min-w-[200px] items-center justify-end gap-3 text-muted-foreground">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={toggleMute}
-                title={isMuted ? "Reactivar sonido" : "Silenciar"}
+                title={isMuted ? "Reactivar audio" : "Silenciar"}
                 className="h-8 w-8 text-muted-foreground hover:text-foreground"
               >
                 {isMuted || volume === 0 ? (
-                  <VolumeX className="h-4 w-4" />
+                  <VolumeX className="h-4 w-4 text-rose-400" />
                 ) : (
                   <Volume2 className="h-4 w-4" />
                 )}
               </Button>
 
-              <div className="relative flex h-3 w-20 items-center">
-                <div className="relative h-1 w-full overflow-hidden rounded-full bg-muted">
+              {/* Selector de volumen con relleno visual exacto en color primario e indicador dinámico */}
+              <div className="group relative flex h-4 w-24 cursor-pointer select-none items-center">
+                {/* Pista de fondo sólida */}
+                <div
+                  style={{ backgroundColor: "var(--muted)" }}
+                  className="relative h-1 w-full overflow-hidden rounded-full bg-muted transition-all duration-150 group-hover:h-1.5"
+                >
+                  {/* Relleno hasta el valor de volumen con color primario del tema */}
                   <div
-                    className="h-full bg-foreground"
+                    className="h-full bg-primary transition-none"
                     style={{ width: `${volumePercent}%` }}
                   />
                 </div>
+
+                {/* Indicador / Thumb pequeño que crece al acercar el ratón */}
+                <div
+                  className="pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full bg-foreground shadow-md transition-all duration-150 group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-primary"
+                  style={{ left: `${volumePercent}%` }}
+                />
+
+                {/* Input range transparente */}
                 <input
                   type="range"
                   min={0}
@@ -383,10 +432,14 @@ export const NowPlayingView: React.FC = () => {
                   step={0.01}
                   value={volumeValue}
                   onChange={handleVolumeInput}
-                  aria-label="Volumen"
+                  aria-label="Control de volumen"
                   className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                 />
               </div>
+
+              <span className="w-8 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
+                {Math.round(volumePercent)}%
+              </span>
             </div>
           </div>
         </div>
