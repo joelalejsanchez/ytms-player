@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { renderHook } from "@testing-library/react";
 import { formatBytes, formatDuration } from "@/lib/utils";
 import {
   downloadFormSchema,
@@ -11,6 +12,14 @@ import { buildTaskKey, useDownloadStore } from "@/stores/useDownloadStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { useThemeStore } from "@/stores/useThemeStore";
 import { toast, useToastStore } from "@/stores/useToastStore";
+import {
+  getAllVisualizers,
+  getVisualizer,
+  registerVisualizer,
+  useCoverDominantColor,
+  useVisualizerStore,
+  visualizerRegistry,
+} from "@/features/visualizer";
 import type { Track } from "@/types/models";
 
 const sampleTrack: Track = {
@@ -430,8 +439,7 @@ describe("usePlayerStore - queue preservation and corrupted tracks", () => {
 });
 
 describe("Visualizer API and Registry", () => {
-  it("initializes with all 4 built-in visualizer modules", async () => {
-    const { getVisualizer, getAllVisualizers } = await import("@/features/visualizer");
+  it("initializes with all 4 built-in visualizer modules", () => {
     const vinyl = getVisualizer("vinyl");
     expect(vinyl).toBeDefined();
     expect(vinyl?.metadata.id).toBe("vinyl");
@@ -452,11 +460,7 @@ describe("Visualizer API and Registry", () => {
     expect(getAllVisualizers().length).toBe(4);
   });
 
-  it("allows registering and unregistering custom visualizer modules (Export API)", async () => {
-    const { registerVisualizer, getVisualizer, visualizerRegistry } = await import(
-      "@/features/visualizer"
-    );
-
+  it("allows registering and unregistering custom visualizer modules (Export API)", () => {
     const DummyComponent = () => null;
 
     registerVisualizer({
@@ -477,8 +481,7 @@ describe("Visualizer API and Registry", () => {
     expect(getVisualizer("custom-neon-wave")).toBeUndefined();
   });
 
-  it("manages active visualizer selection and persistence in useVisualizerStore", async () => {
-    const { useVisualizerStore } = await import("@/features/visualizer");
+  it("manages active visualizer selection and persistence in useVisualizerStore", () => {
     const store = useVisualizerStore.getState();
     expect(store.activeVisualizerId).toBe("vinyl");
 
@@ -488,5 +491,13 @@ describe("Visualizer API and Registry", () => {
 
     // Restaurar a vinyl
     store.setActiveVisualizer("vinyl");
+  });
+
+  it("handles null and empty image URLs gracefully in useCoverDominantColor", () => {
+    const { result } = renderHook(() => useCoverDominantColor(null));
+    expect(result.current).toBeNull();
+
+    const { result: emptyResult } = renderHook(() => useCoverDominantColor(""));
+    expect(emptyResult.current).toBeNull();
   });
 });

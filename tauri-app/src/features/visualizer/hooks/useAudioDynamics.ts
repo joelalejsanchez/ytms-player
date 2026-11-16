@@ -55,49 +55,62 @@ export function useAudioDynamics(
       lastTime = now;
 
       const currentValues = valuesRef.current;
-      const effectiveVol = Math.max(0.1, Math.min(1, volume));
 
       if (isPlaying) {
-        // Si hay analizador real con datos
+        // Si hay analizador real con datos Web Audio API
         if (analyserRef.current && dataArrayRef.current) {
           analyserRef.current.getByteFrequencyData(dataArrayRef.current);
           const binSize = Math.floor(dataArrayRef.current.length / barCount) || 1;
           for (let i = 0; i < barCount; i++) {
             const raw = dataArrayRef.current[i * binSize] || 0;
-            const target = (raw / 255) * effectiveVol;
-            // Suavizado exponencial
-            currentValues[i] = currentValues[i] * 0.7 + target * 0.3;
+            // Normalización con curva perceptual (expansión dinámica estándar de ecualizador)
+            // Desacoplado del slider de volumen del usuario para que las barras aprovechen
+            // el espacio vertical disponible en la interfaz (hasta un 96% de altura)
+            const normalized = raw / 255;
+            const target = Math.min(0.96, Math.max(0.06, Math.pow(normalized, 0.72) * 1.15));
+
+            // Respuesta rápida de subida, caída suave
+            if (target > currentValues[i]) {
+              currentValues[i] = currentValues[i] * 0.65 + target * 0.35;
+            } else {
+              currentValues[i] = Math.max(0.06, currentValues[i] - dt * 1.6);
+            }
           }
         } else {
-          // Motor armónico procedural: simula el comportamiento de frecuencias graves (centro/izquierda) y agudos (derecha)
+          // Motor armónico procedural: modela el espectro acústico (graves en centro/izq, agudos en der)
+          // Escalado al rango útil completo de la UI independientemente del nivel de volumen de escucha
           const t = now * 0.0035;
           for (let i = 0; i < barCount; i++) {
             const freqFactor = (i + 1) / barCount;
-            // Ondas compuestas con diferente frecuencia y fase
-            const wave1 = Math.sin(t * 2.2 + i * 0.35);
-            const wave2 = Math.cos(t * 3.8 - i * 0.25);
-            const wave3 = Math.sin(t * 1.2 + i * 0.7);
-            const beatPulse = Math.pow(Math.max(0, Math.sin(t * 1.5)), 3); // Pulso rítmico de bombo/bajos
+            // Ondas compuestas con diferente frecuencia y desfase
+            const wave1 = Math.sin(t * 2.4 + i * 0.38);
+            const wave2 = Math.cos(t * 4.2 - i * 0.28);
+            const wave3 = Math.sin(t * 1.4 + i * 0.75);
+            const beatPulse = Math.pow(Math.max(0, Math.sin(t * 1.6)), 2.8); // Pulso rítmico de percusión/bombo
 
-            // Mayor energía en graves y medios, atenuación natural en agudos
+            // Distribución de energía acústica: alta en bajas y medias frecuencias
             const profile = Math.sin(Math.PI * freqFactor);
-            const baseEnergy = 0.35 + 0.65 * profile;
+            const baseEnergy = 0.4 + 0.6 * profile;
 
-            const noise = (wave1 * 0.35 + wave2 * 0.35 + wave3 * 0.3) * baseEnergy;
-            const target = Math.max(0.05, Math.min(1.0, (noise * 0.65 + beatPulse * 0.35 + 0.2) * effectiveVol));
+            const noise = (wave1 * 0.4 + wave2 * 0.35 + wave3 * 0.25) * baseEnergy;
+            // Rango dinámico estándar: picos hasta 0.95 (95% de la UI), base viva ~0.15
+            const target = Math.min(
+              0.96,
+              Math.max(0.08, noise * 0.52 + beatPulse * 0.42 + 0.32),
+            );
 
-            // Respuesta rápida de subida, caída con amortiguación
+            // Respuesta rápida en el ataque (subida), amortiguación elástica en la liberación (caída)
             if (target > currentValues[i]) {
               currentValues[i] = currentValues[i] * 0.6 + target * 0.4;
             } else {
-              currentValues[i] = Math.max(0, currentValues[i] - dt * 1.8);
+              currentValues[i] = Math.max(0.06, currentValues[i] - dt * 1.6);
             }
           }
         }
       } else {
-        // Amortiguación gradual (decay suave hacia 0) al pausar
+        // Amortiguación gradual (decay suave hacia 0) al pausar o detener
         for (let i = 0; i < barCount; i++) {
-          currentValues[i] = Math.max(0, currentValues[i] * 0.9 - 0.01);
+          currentValues[i] = Math.max(0, currentValues[i] * 0.88 - 0.015);
         }
       }
 

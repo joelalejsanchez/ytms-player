@@ -52,7 +52,7 @@ export const SpectrumVisualizer: React.FC<VisualizerProps> = React.memo(
         {/* Contenedor del Ecualizador de Espectro */}
         <div className="relative z-10 flex items-end justify-center gap-1.5 sm:gap-2 h-44 sm:h-56 w-full px-4">
           {frequencyData.map((val, idx) => {
-            const heightPercent = Math.max(4, Math.round(val * 100));
+            const heightPercent = Math.max(4, Math.min(94, Math.round(val * 100)));
             return (
               <div
                 key={idx}

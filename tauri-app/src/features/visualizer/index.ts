@@ -2,6 +2,7 @@ export * from "./types";
 export * from "./registry";
 export * from "./useVisualizerStore";
 export * from "./hooks/useAudioDynamics";
+export * from "./hooks/useCoverDominantColor";
 export { NowPlayingView } from "./components/NowPlayingView";
 export { VinylVisualizer, VinylPreview } from "./components/VinylVisualizer";
 export { SpectrumVisualizer, SpectrumPreview } from "./components/SpectrumVisualizer";

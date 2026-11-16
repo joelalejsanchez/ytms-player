@@ -58,8 +58,8 @@ export const CoverWavesVisualizer: React.FC<VisualizerProps> = React.memo(
         {/* Ondas sonoras visuales directamente debajo de la carátula */}
         <div className="relative z-10 mt-6 flex items-center justify-center gap-1.5 h-16 w-full max-w-xs sm:max-w-sm px-4">
           {waveData.map((val, idx) => {
-            // Altura simétrica centrada tipo onda sonora de voz/música
-            const heightPercent = Math.max(8, Math.round(val * 100));
+            // Altura simétrica centrada tipo onda sonora de voz/música escalada al espacio de la UI
+            const heightPercent = Math.max(8, Math.min(94, Math.round(val * 100)));
             return (
               <div
                 key={idx}

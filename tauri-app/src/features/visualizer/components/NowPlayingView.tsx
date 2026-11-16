@@ -13,11 +13,12 @@ import {
   VolumeX,
   X,
 } from "lucide-react";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Primitives";
-import { formatDuration } from "@/lib/utils";
+import { formatDuration, toAssetUrl } from "@/lib/utils";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
+import { useCoverDominantColor } from "../hooks/useCoverDominantColor";
 import { visualizerRegistry } from "../registry";
 import { useVisualizerStore } from "../useVisualizerStore";
 
@@ -107,6 +108,12 @@ export const NowPlayingView: React.FC = () => {
 
   const isLiked = Boolean(currentTrack?.liked);
 
+  // Extraer color dominante de la carátula para iluminación ambiental en el fondo del visualizador
+  const thumbnailSrc = useMemo(() => {
+    return currentTrack?.thumbnail_path ? toAssetUrl(currentTrack.thumbnail_path) : null;
+  }, [currentTrack?.thumbnail_path]);
+  const dominantColor = useCoverDominantColor(thumbnailSrc);
+
   return (
     <div
       role="dialog"
@@ -156,7 +163,18 @@ export const NowPlayingView: React.FC = () => {
       </header>
 
       {/* Área Central: Visualizador Animado Activo */}
-      <main className="flex flex-1 items-center justify-center p-4 min-h-0 overflow-hidden">
+      <main className="relative flex flex-1 items-center justify-center p-4 min-h-0 overflow-hidden">
+        {/* Iluminación ambiental reactiva exclusiva para el fondo del visualizador */}
+        <div
+          className="absolute inset-0 pointer-events-none transition-all duration-1000 ease-out"
+          style={{
+            background: dominantColor
+              ? `radial-gradient(circle at 50% 45%, rgba(${dominantColor.r}, ${dominantColor.g}, ${dominantColor.b}, 0.38) 0%, rgba(${dominantColor.r}, ${dominantColor.g}, ${dominantColor.b}, 0.12) 50%, transparent 80%)`
+              : "radial-gradient(circle at 50% 45%, rgba(var(--primary-rgb, 59, 130, 246), 0.12) 0%, transparent 70%)",
+          }}
+          aria-hidden="true"
+        />
+
         {currentTrack ? (
           <ActiveVisualizerComponent
             track={currentTrack}
