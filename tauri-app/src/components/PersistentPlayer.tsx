@@ -554,62 +554,7 @@ export const PersistentPlayer = React.memo(() => {
 
         {/* Controles centrales + Barra de progreso */}
         <div className="flex max-w-xl flex-1 flex-col items-center gap-1.5">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={cycleRepeatMode}
-              title={`Modo repetición: ${repeatMode}`}
-              className={repeatMode !== "off" ? "text-primary" : ""}
-            >
-              {repeatMode === "one" ? (
-                <Repeat1 className="h-4 w-4" />
-              ) : (
-                <Repeat className="h-4 w-4" />
-              )}
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={playPrevious}
-              disabled={!currentTrack}
-              title="Anterior"
-            >
-              <SkipBack className="h-4 w-4" />
-            </Button>
-
-            <Button
-              variant="primary"
-              size="icon"
-              onClick={togglePlayPause}
-              disabled={!currentTrack}
-              aria-label={isPlaying ? "Pausar" : "Reproducir"}
-            >
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={playNext}
-              disabled={!currentTrack}
-              title="Siguiente"
-            >
-              <SkipForward className="h-4 w-4" />
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleShuffle}
-              title={`Aleatorio: ${isShuffle ? "Activado" : "Desactivado"}`}
-              className={isShuffle ? "text-primary" : "text-muted-foreground"}
-            >
-              <Shuffle className="h-4 w-4" />
-            </Button>
-          </div>
-
+          {/* Barra de progreso de pista (ubicada encima de los controles) */}
           <div className="flex w-full items-center gap-3 text-xs text-muted-foreground">
             <span className="w-10 text-right tabular-nums">
               {formatDuration(displayTime)}
@@ -666,6 +611,63 @@ export const PersistentPlayer = React.memo(() => {
             </div>
 
             <span className="w-10 tabular-nums">{formatDuration(duration)}</span>
+          </div>
+
+          {/* Botones de control de reproducción */}
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={cycleRepeatMode}
+              title={`Modo repetición: ${repeatMode}`}
+              className={repeatMode !== "off" ? "text-primary" : ""}
+            >
+              {repeatMode === "one" ? (
+                <Repeat1 className="h-4 w-4" />
+              ) : (
+                <Repeat className="h-4 w-4" />
+              )}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={playPrevious}
+              disabled={!currentTrack}
+              title="Anterior"
+            >
+              <SkipBack className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="primary"
+              size="icon"
+              onClick={togglePlayPause}
+              disabled={!currentTrack}
+              aria-label={isPlaying ? "Pausar" : "Reproducir"}
+            >
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={playNext}
+              disabled={!currentTrack}
+              title="Siguiente"
+            >
+              <SkipForward className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleShuffle}
+              title={`Aleatorio: ${isShuffle ? "Activado" : "Desactivado"}`}
+              className={isShuffle ? "text-primary" : "text-muted-foreground"}
+            >
+              <Shuffle className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 
