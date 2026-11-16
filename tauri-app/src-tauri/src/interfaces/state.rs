@@ -21,10 +21,11 @@ pub struct AppState {
     pub workspace_manager: LocalWorkspaceManager,
     pub settings_store: AppSettingsStore,
     pub microservice: RwLock<Arc<GoMicroserviceClient>>,
+    pub audio_server_port: u16,
 }
 
 impl AppState {
-    pub fn new(default_microservice_url: &str) -> DomainResult<Self> {
+    pub fn new(default_microservice_url: &str, audio_server_port: u16) -> DomainResult<Self> {
         let settings_store = AppSettingsStore::new();
         let persisted = settings_store.load(default_microservice_url);
         let effective_url = if persisted.microservice_url.trim().is_empty() {
@@ -56,6 +57,7 @@ impl AppState {
             workspace_manager,
             settings_store,
             microservice: RwLock::new(Arc::new(client)),
+            audio_server_port,
         })
     }
 

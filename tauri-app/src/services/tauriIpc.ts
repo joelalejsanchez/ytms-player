@@ -203,6 +203,10 @@ export const tauriApi = {
     return safeInvoke<Track>("refresh_track_metadata", { youtubeId });
   },
 
+  getAudioStreamUrl(filePath: string): Promise<string> {
+    return safeInvoke<string>("get_audio_stream_url", { filePath });
+  },
+
   readAudioDataUrl(filePath: string): Promise<string> {
     return safeInvoke<string>("read_audio_data_url", { filePath });
   },

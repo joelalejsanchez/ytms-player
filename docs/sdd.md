@@ -279,6 +279,7 @@ Responsabilidades:
 
 - Repositorios SQLite.
 - Operaciones del sistema de archivos.
+- Servidor HTTP local embebido de streaming de audio con soporte nativo de HTTP 206 Partial Content (Byte-Range).
 - Clientes HTTP.
 - Integración con yt-dlp.
 - Integración con FFmpeg.
@@ -292,7 +293,7 @@ Representa la capa de entrada y salida del sistema.
 
 **En Tauri:**
 
-- Comandos IPC.
+- Comandos IPC (incluyendo `get_audio_stream_url` para resolución instantánea de streams locales).
 - Componentes React.
 - Hooks.
 - Integración con Zustand.
