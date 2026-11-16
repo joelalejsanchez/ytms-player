@@ -430,13 +430,26 @@ describe("usePlayerStore - queue preservation and corrupted tracks", () => {
 });
 
 describe("Visualizer API and Registry", () => {
-  it("initializes with built-in Vinyl visualizer module", async () => {
+  it("initializes with all 4 built-in visualizer modules", async () => {
     const { getVisualizer, getAllVisualizers } = await import("@/features/visualizer");
     const vinyl = getVisualizer("vinyl");
     expect(vinyl).toBeDefined();
     expect(vinyl?.metadata.id).toBe("vinyl");
     expect(vinyl?.metadata.name).toContain("Vinilo");
-    expect(getAllVisualizers().length).toBeGreaterThanOrEqual(1);
+
+    const spectrum = getVisualizer("spectrum");
+    expect(spectrum).toBeDefined();
+    expect(spectrum?.metadata.id).toBe("spectrum");
+
+    const ambientAura = getVisualizer("ambient-aura");
+    expect(ambientAura).toBeDefined();
+    expect(ambientAura?.metadata.id).toBe("ambient-aura");
+
+    const coverWaves = getVisualizer("cover-waves");
+    expect(coverWaves).toBeDefined();
+    expect(coverWaves?.metadata.id).toBe("cover-waves");
+
+    expect(getAllVisualizers().length).toBe(4);
   });
 
   it("allows registering and unregistering custom visualizer modules (Export API)", async () => {
