@@ -620,8 +620,8 @@ export const WorkspaceSettingsView = React.memo(() => {
                   className={cn(
                     "flex cursor-pointer items-center justify-between gap-4 rounded-xl border p-3.5 transition w-full select-none relative overflow-hidden",
                     isSelected
-                      ? "border-primary bg-primary/10 shadow-xs"
-                      : "border-border bg-card/60 hover:border-primary/50 hover:bg-muted/40",
+                      ? "border-primary bg-card ring-1 ring-primary shadow-xs"
+                      : "border-border bg-card hover:border-primary",
                   )}
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -672,7 +672,7 @@ export const WorkspaceSettingsView = React.memo(() => {
             })}
 
             {/* Tarjetas informativas de visualizadores planificados */}
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-dashed border-border/70 p-3.5 opacity-60 bg-muted/20">
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-dashed border-border p-3.5 opacity-60 bg-muted">
               <div className="flex items-center gap-3">
                 <RadioButton checked={false} disabled />
                 <div className="flex items-center gap-2.5">
@@ -690,7 +690,7 @@ export const WorkspaceSettingsView = React.memo(() => {
               <Badge tone="default">Próximamente</Badge>
             </div>
 
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-dashed border-border/70 p-3.5 opacity-60 bg-muted/20">
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-dashed border-border p-3.5 opacity-60 bg-muted">
               <div className="flex items-center gap-3">
                 <RadioButton checked={false} disabled />
                 <div className="flex items-center gap-2.5">

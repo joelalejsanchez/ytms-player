@@ -14,6 +14,8 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 - **Modo expandido inmersivo**: Al hacer clic sobre la miniatura, título o botón de expandir en la barra de reproducción, se despliega una vista a pantalla completa dentro de la aplicación (`NowPlayingView`).
 - **Controles centrados con barra superior**: Disposición ergonómica con la barra de progreso de tiempo ubicada por encima de los botones de reproducción (botón Play/Pause destacado de 56px, Shuffle, Skip, Repeat y botón de Me gusta sincronizado).
 - **Cierre accesible**: Minimización fluida mediante botón superior, clic en chevron o tecla `Escape`.
+- **Transición de subida y bajada (Slide Up & Slide Down)**: Animación fluida de deslizamiento vertical (`translate-y-full` a `translate-y-0`) con curva de aceleración orgánica `cubic-bezier(0.16, 1, 0.3, 1)` de 500 ms tanto al abrir como al cerrar la vista.
+- **Fondo sólido y corrección de opacidad CSS**: Corrección de sintaxis incompatible de Tailwind CSS v3 sobre variables CSS (`bg-background/95`), aplicando un fondo sólido y 100% opaco (`bg-background` con superficie `var(--background)`) que cubre por completo el contenido inferior.
 
 #### Módulo de Visualización de Disco de Vinilo (33 RPM)
 - **Tocadiscos analógico realista (`VinylVisualizer`)**: Disco de acetato negro con surcos concéntricos reflexivos, destello cónico de luz especular, halo de resplandor ambiental reactivo y carátula central del álbum en rotación continua a 33⅓ RPM.

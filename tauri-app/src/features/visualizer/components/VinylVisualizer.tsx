@@ -18,15 +18,15 @@ export const VinylVisualizer: React.FC<VisualizerProps> = React.memo(
       <div className="relative flex flex-col items-center justify-center p-6 select-none overflow-hidden">
         {/* Halo de resplandor ambiental reactivo de fondo */}
         <div
-          className={`absolute h-80 w-80 rounded-full bg-primary/25 blur-3xl transition-all duration-1000 ${
-            isPlaying ? "scale-110 opacity-70" : "scale-95 opacity-30"
+          className={`absolute h-80 w-80 rounded-full bg-primary blur-3xl transition-all duration-1000 ${
+            isPlaying ? "scale-110 opacity-25" : "scale-95 opacity-10"
           }`}
           aria-hidden="true"
         />
 
         {/* Chasis / Contenedor del tocadiscos */}
         <div
-          className={`relative flex items-center justify-center rounded-3xl border border-border/40 bg-card/40 backdrop-blur-md shadow-2xl transition-all duration-500 ${
+          className={`relative flex items-center justify-center rounded-3xl border border-border bg-card shadow-2xl transition-all duration-500 ${
             isExpanded
               ? "h-[420px] w-[420px] max-w-[90vw] max-h-[50vh] sm:h-[460px] sm:w-[460px]"
               : "h-80 w-80"
@@ -78,7 +78,7 @@ export const VinylVisualizer: React.FC<VisualizerProps> = React.memo(
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center bg-muted/60 p-2 text-center text-muted-foreground">
+                <div className="flex h-full w-full flex-col items-center justify-center bg-muted p-2 text-center text-muted-foreground">
                   <Music2 className="h-7 w-7 text-primary/70 mb-1" />
                   <span className="text-[10px] font-semibold leading-tight line-clamp-1">
                     {track?.title || "ytms-player"}
@@ -142,9 +142,9 @@ export const VinylPreview: React.FC<VisualizerProps> = React.memo(
       : null;
 
     return (
-      <div className="group relative flex h-28 w-28 items-center justify-center rounded-2xl border border-border/60 bg-card p-2 shadow-inner">
+      <div className="group relative flex h-28 w-28 items-center justify-center rounded-2xl border border-border bg-card p-2 shadow-inner">
         {/* Halo dinámico en hover */}
-        <div className="absolute inset-2 rounded-full bg-primary/20 blur-md transition-opacity opacity-0 group-hover:opacity-100" />
+        <div className="absolute inset-2 rounded-full bg-primary blur-md transition-opacity opacity-0 group-hover:opacity-20" />
 
         {/* Mini disco */}
         <div
