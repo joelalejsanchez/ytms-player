@@ -1,8 +1,10 @@
 import {
+  Activity,
   AlertCircle,
   Check,
   CheckCircle2,
   Cookie,
+  Disc3,
   Download,
   Edit2,
   ExternalLink,
@@ -17,6 +19,7 @@ import {
   Palette,
   RefreshCw,
   Server,
+  Sparkles,
   Sun,
   Trash2,
 } from "lucide-react";
@@ -28,6 +31,8 @@ import { cn } from "@/lib/utils";
 import { tauriApi } from "@/services/tauriIpc";
 import { useDownloadStore } from "@/stores/useDownloadStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
+import { getAllVisualizers, useVisualizerStore } from "@/features/visualizer";
+import { usePlayerStore } from "@/stores/usePlayerStore";
 import {
   type ColorFamily,
   type ThemeMode,
@@ -187,6 +192,12 @@ export const WorkspaceSettingsView = React.memo(() => {
   const colorFamily = useThemeStore((s) => s.colorFamily);
   const setMode = useThemeStore((s) => s.setMode);
   const setColorFamily = useThemeStore((s) => s.setColorFamily);
+
+  const activeVisualizerId = useVisualizerStore((s) => s.activeVisualizerId);
+  const setActiveVisualizer = useVisualizerStore((s) => s.setActiveVisualizer);
+  const currentTrack = usePlayerStore((s) => s.currentTrack);
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const [hoveredVisualizerId, setHoveredVisualizerId] = useState<string | null>(null);
 
   // Estados para Microservicio
   const [urlInput, setUrlInput] = useState(microserviceUrl);
@@ -580,6 +591,122 @@ export const WorkspaceSettingsView = React.memo(() => {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* Subsección C: Visualizador de Reproducción (Now Playing) */}
+        <div className="space-y-3 pt-3 border-t border-border/60">
+          <div>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Visualizador de Reproducción
+            </h4>
+            <p className="text-[11px] text-muted-foreground">
+              Elige el estilo visual al ampliar la reproducción a pantalla completa. Posa el cursor sobre una opción para ver la animación en vivo.
+            </p>
+          </div>
+
+          <div className="space-y-2 w-full">
+            {getAllVisualizers().map((viz) => {
+              const isSelected = activeVisualizerId === viz.metadata.id;
+              const isHovered = hoveredVisualizerId === viz.metadata.id;
+              const PreviewComp = viz.PreviewComponent;
+
+              return (
+                <div
+                  key={viz.metadata.id}
+                  onClick={() => setActiveVisualizer(viz.metadata.id)}
+                  onMouseEnter={() => setHoveredVisualizerId(viz.metadata.id)}
+                  onMouseLeave={() => setHoveredVisualizerId(null)}
+                  className={cn(
+                    "flex cursor-pointer items-center justify-between gap-4 rounded-xl border p-3.5 transition w-full select-none relative overflow-hidden",
+                    isSelected
+                      ? "border-primary bg-primary/10 shadow-xs"
+                      : "border-border bg-card/60 hover:border-primary/50 hover:bg-muted/40",
+                  )}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <RadioButton
+                      checked={isSelected}
+                      onChange={() => setActiveVisualizer(viz.metadata.id)}
+                    />
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Disc3
+                        className={cn(
+                          "h-4 w-4 shrink-0",
+                          isSelected ? "text-primary" : "text-muted-foreground",
+                        )}
+                      />
+                      <div className="min-w-0">
+                        <span
+                          className={cn(
+                            "text-xs font-semibold block truncate",
+                            isSelected ? "text-primary" : "text-foreground",
+                          )}
+                        >
+                          {viz.metadata.name}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground block truncate">
+                          {viz.metadata.description}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Previsualización en vivo al hacer hover */}
+                  <div className="shrink-0 flex items-center gap-2">
+                    {PreviewComp && (
+                      <div className="transition-all duration-300">
+                        <PreviewComp
+                          track={currentTrack}
+                          isPlaying={isHovered || isPlaying}
+                          currentTime={0}
+                          duration={100}
+                          volume={1}
+                          isMuted={false}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Tarjetas informativas de visualizadores planificados */}
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-dashed border-border/70 p-3.5 opacity-60 bg-muted/20">
+              <div className="flex items-center gap-3">
+                <RadioButton checked={false} disabled />
+                <div className="flex items-center gap-2.5">
+                  <Activity className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <span className="text-xs font-semibold text-foreground">
+                      Barras Dinámicas de Espectro
+                    </span>
+                    <span className="text-[11px] text-muted-foreground block">
+                      Ecualizador visual reactivo a las frecuencias y volumen del audio
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <Badge tone="default">Próximamente</Badge>
+            </div>
+
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-dashed border-border/70 p-3.5 opacity-60 bg-muted/20">
+              <div className="flex items-center gap-3">
+                <RadioButton checked={false} disabled />
+                <div className="flex items-center gap-2.5">
+                  <Sparkles className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <span className="text-xs font-semibold text-foreground">
+                      Aura Líquida / Onda Resonante
+                    </span>
+                    <span className="text-[11px] text-muted-foreground block">
+                      Ondas orgánicas fluidas con gradientes dinámicos del tema activo
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <Badge tone="default">Próximamente</Badge>
+            </div>
           </div>
         </div>
       </div>

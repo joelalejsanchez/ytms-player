@@ -6,6 +6,26 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.4.0] - 2026-11-16
+
+### Añadido
+
+#### Vista En Reproducción a Pantalla Completa (Now Playing View)
+- **Modo expandido inmersivo**: Al hacer clic sobre la miniatura, título o botón de expandir en la barra de reproducción, se despliega una vista a pantalla completa dentro de la aplicación (`NowPlayingView`).
+- **Controles centrados con barra superior**: Disposición ergonómica con la barra de progreso de tiempo ubicada por encima de los botones de reproducción (botón Play/Pause destacado de 56px, Shuffle, Skip, Repeat y botón de Me gusta sincronizado).
+- **Cierre accesible**: Minimización fluida mediante botón superior, clic en chevron o tecla `Escape`.
+
+#### Módulo de Visualización de Disco de Vinilo (33 RPM)
+- **Tocadiscos analógico realista (`VinylVisualizer`)**: Disco de acetato negro con surcos concéntricos reflexivos, destello cónico de luz especular, halo de resplandor ambiental reactivo y carátula central del álbum en rotación continua a 33⅓ RPM.
+- **Brazo de aguja interactivo (Tonearm)**: Animación con transición física que posiciona la aguja sobre el disco al reproducir y la retira al pausar.
+
+#### API de Exportación y Registro Modular de Visualizadores
+- **Contrato público de integración (`VisualizerProps`, `VisualizerModule`)**: Definición tipada para crear y conectar nuevos efectos o visualizaciones personalizadas con acceso directo al estado de reproducción (`track`, `isPlaying`, `currentTime`, `duration`, `volume`, `isMuted`, `audioElement`).
+- **Registro extensible (`visualizerRegistry`, `registerVisualizer`)**: API de registro para incorporar animaciones dinámicas creadas por terceros o futuros parches.
+- **Configuración y Previsualización en Personalización**: Subsección en *Ajustes -> Personalización* con selector de visualizador y previsualización animada en vivo al posar el cursor (*hover*) utilizando la pista en reproducción actual.
+
+---
+
 ## [1.3.0] - 2026-11-16
 
 ### Añadido

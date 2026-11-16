@@ -1,5 +1,6 @@
 import {
   ListMusic,
+  Maximize2,
   Music,
   Pause,
   Play,
@@ -81,6 +82,7 @@ export const PersistentPlayer = React.memo(() => {
   const clearQueue = usePlayerStore((s) => s.clearQueue);
   const cycleRepeatMode = usePlayerStore((s) => s.cycleRepeatMode);
   const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
+  const toggleNowPlayingExpanded = usePlayerStore((s) => s.toggleNowPlayingExpanded);
 
   const isChangingTrackRef = useRef(false);
   const currentTrackIdRef = useRef<string | null>(null);
@@ -527,21 +529,27 @@ export const PersistentPlayer = React.memo(() => {
 
       <div className="flex items-center justify-between gap-6">
         {/* Track actual */}
-        <div className="flex min-w-[240px] max-w-[300px] items-center gap-3">
+        <div
+          onClick={currentTrack ? toggleNowPlayingExpanded : undefined}
+          title={currentTrack ? "Ampliar vista de visualización (Now Playing)" : undefined}
+          className={`flex min-w-[240px] max-w-[300px] items-center gap-3 transition-opacity ${
+            currentTrack ? "cursor-pointer group hover:opacity-85" : ""
+          }`}
+        >
           {thumbnailSrc ? (
             <img
               src={thumbnailSrc}
               alt={currentTrack?.title ?? "Miniatura"}
-              className="h-12 w-12 rounded-lg object-cover ring-1 ring-border"
+              className="h-12 w-12 rounded-lg object-cover ring-1 ring-border group-hover:scale-105 transition-transform"
             />
           ) : (
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-muted-foreground group-hover:scale-105 transition-transform">
               <Music className="h-5 w-5" />
             </div>
           )}
 
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-foreground">
+            <p className="truncate text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
               {currentTrack ? currentTrack.title : "Sin pista seleccionada"}
             </p>
             <p className="truncate text-xs text-muted-foreground">
@@ -728,6 +736,17 @@ export const PersistentPlayer = React.memo(() => {
           >
             <ListMusic className="h-4 w-4" />
             <span>{queue.length}</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleNowPlayingExpanded}
+            disabled={!currentTrack}
+            title="Expandir visualizador a pantalla completa"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <Maximize2 className="h-4 w-4" />
           </Button>
         </div>
       </div>

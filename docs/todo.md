@@ -27,14 +27,9 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 3. Prioridad Baja (Casos Específicos o Opcionales)
 
-- [ ] **Modo Pantalla Completa de la App y Visualizadores de Audio (Now Playing View):**
-  - **Vista expandida integrada:** Al hacer clic en el reproductor persistente o en la carátula, expandir una vista dedicada a pantalla completa dentro de la ventana de la aplicación (sin salir de la app ni requerir fullscreen del SO).
-  - **Disposición de controles centrados:** Controles de reproducción centrados en la parte inferior, con la barra de progreso de tiempo ubicada por encima de los botones (manteniendo la misma convención de la barra persistente).
-  - **Módulo superior de visualización animada (3 modalidades seleccionables):**
-    1. **Disco de Vinilo Giratorio:** Disco de vinilo clásico animado con la miniatura del tema en el centro girando continuamente a 33 RPM durante la reproducción y deteniéndose suavemente en pausa.
-    2. **Barras Dinámicas de Espectro:** Ecualizador visual reactivo con barras verticales que oscilan en frecuencia y amplitud relativa a la dinámica y volumen del audio en tiempo real mediante Web Audio API (`AudioContext` / `AnalyserNode`).
-    3. **Aura Líquida / Onda Resonante Ambiental (Sugerencia recomendada):** Orbe u ondas orgánicas fluidas concéntricas con gradientes dinámicos del tema activo que pulsan y respiran al ritmo de la música con resplandor ambiental (*ambient glow*), estilo Apple Music / Spotify Canvas.
-  - **Configuración y previsualización interactiva:** En el panel de *Ajustes -> Personalización*, permitir seleccionar el visualizador preferido con efecto *hover* que reproduzca una previsualización interactiva en vivo (empleando la canción activa o un fragmento de demostración).
+- [ ] **Módulos Adicionales de Visualización (Patches v1.4.x):**
+  - **Barras Dinámicas de Espectro:** Ecualizador visual reactivo con barras verticales que oscilen en frecuencia y amplitud relativa a la dinámica y volumen del audio en tiempo real mediante Web Audio API (`AudioContext` / `AnalyserNode`), integrable vía la API pública de visualizadores.
+  - **Aura Líquida / Onda Resonante Ambiental:** Orbe u ondas orgánicas fluidas concéntricas con gradientes dinámicos del tema activo que pulsen y respiren al ritmo de la música con resplandor ambiental (*ambient glow*), estilo Apple Music / Spotify Canvas.
 - [ ] **Sincronización selectiva de canciones en Playlists vinculadas:**
   - En playlists sincronizadas, elegir qué canciones individuales ignorar o congelar localmente aunque hayan sido eliminadas en el canal de YouTube.
 - [ ] **Editor manual de etiquetas de metadatos (Tag Editor integrado):**

@@ -416,4 +416,64 @@ describe("usePlayerStore - queue preservation and corrupted tracks", () => {
     expect(state.queue.map((t) => t.youtube_id)).toEqual(["track_A", "track_B", "track_C"]);
     expect(state.currentIndex).toBe(0);
   });
+
+  it("toggles and sets Now Playing expansion state", () => {
+    const store = usePlayerStore.getState();
+    expect(store.isNowPlayingExpanded).toBe(false);
+
+    store.setNowPlayingExpanded(true);
+    expect(usePlayerStore.getState().isNowPlayingExpanded).toBe(true);
+
+    store.toggleNowPlayingExpanded();
+    expect(usePlayerStore.getState().isNowPlayingExpanded).toBe(false);
+  });
+});
+
+describe("Visualizer API and Registry", () => {
+  it("initializes with built-in Vinyl visualizer module", async () => {
+    const { getVisualizer, getAllVisualizers } = await import("@/features/visualizer");
+    const vinyl = getVisualizer("vinyl");
+    expect(vinyl).toBeDefined();
+    expect(vinyl?.metadata.id).toBe("vinyl");
+    expect(vinyl?.metadata.name).toContain("Vinilo");
+    expect(getAllVisualizers().length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("allows registering and unregistering custom visualizer modules (Export API)", async () => {
+    const { registerVisualizer, getVisualizer, visualizerRegistry } = await import(
+      "@/features/visualizer"
+    );
+
+    const DummyComponent = () => null;
+
+    registerVisualizer({
+      metadata: {
+        id: "custom-neon-wave",
+        name: "Onda Neón Personalizada",
+        description: "Visualizador de prueba creado mediante la API pública",
+        version: "1.0.0",
+      },
+      Component: DummyComponent,
+    });
+
+    const registered = getVisualizer("custom-neon-wave");
+    expect(registered).toBeDefined();
+    expect(registered?.metadata.name).toBe("Onda Neón Personalizada");
+
+    visualizerRegistry.unregister("custom-neon-wave");
+    expect(getVisualizer("custom-neon-wave")).toBeUndefined();
+  });
+
+  it("manages active visualizer selection and persistence in useVisualizerStore", async () => {
+    const { useVisualizerStore } = await import("@/features/visualizer");
+    const store = useVisualizerStore.getState();
+    expect(store.activeVisualizerId).toBe("vinyl");
+
+    store.setActiveVisualizer("custom_mode");
+    expect(useVisualizerStore.getState().activeVisualizerId).toBe("custom_mode");
+    expect(window.localStorage.getItem("ytms_active_visualizer")).toBe("custom_mode");
+
+    // Restaurar a vinyl
+    store.setActiveVisualizer("vinyl");
+  });
 });
