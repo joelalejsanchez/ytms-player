@@ -1,4 +1,4 @@
-# Backlog de Features e Ideas Futuras (`docs/todo.md`)
+# Backlog de Features e Ideas Futuras (`docs/backlog.md`)
 
 Este documento registra las características, mejoras y extensiones que **no están presentes actualmente** en **ytms-player** y que podrían ser incorporables en versiones posteriores según la necesidad.
 
@@ -12,6 +12,13 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
+- [ ] **Historial y registro de errores de sesión con timestamp (Error Logs):**
+  - Registro acumulado en memoria/sesión de todas las fallas, excepciones y advertencias de la aplicación (descargas fallidas, errores de streaming, rechazos de red o problemas de reproducción).
+  - Soluciona la pérdida de visibilidad de las notificaciones toast cuando el usuario mantiene la aplicación minimizada o en segundo plano.
+  - Interfaz accesible (vista o modal dedicada en *Configuración -> Diagnósticos* o drawer de logs) con fecha, hora exacta (`[YYYY-MM-DD HH:MM:SS]`), contexto del error y opción de copiar reporte al portapapeles.
+- [ ] **Gestión dinámica de portadas para Playlists:**
+  - Asignación automática de la portada de la playlist utilizando la miniatura de la primera canción insertada.
+  - Al remover o desvincular una pista, comprobar si la carátula activa de la playlist corresponde a dicha pista; en caso afirmativo, seleccionar dinámicamente y de forma aleatoria otra canción presente en la lista para actualizar la portada (o recurrir a la primera restante; si la lista queda vacía, restaurar carátula genérica por defecto).
 - [ ] **Ampliación de opciones en el menú contextual de 3 puntos (`ActionMenu`):**
   - **Información detallada de la pista (Track Info):** Modal o panel lateral para inspeccionar los metadatos completos del archivo (codec de audio, bitrate, frecuencia de muestreo, tamaño en disco, fecha de descarga, ID original y enlace directo de YouTube).
   - **Información y estadísticas de Playlist:** Modal con duración total acumulada (horas/minutos), recuento de temas, tamaño estimado en disco, ID de sincronización y enlace original a YouTube.
