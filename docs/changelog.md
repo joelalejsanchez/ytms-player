@@ -20,12 +20,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 #### Cuadrícula Paralela y Tooltips en Ajustes de Personalización
 - **Disposición paralela vertical con Grid auto-fit**: Las opciones de visualización en *Ajustes -> Personalización* ahora se organizan en columnas paralelas adaptables (`grid-cols-[repeat(auto-fit,minmax(210px,1fr))]`), optimizando el aprovechamiento horizontal del espacio y la ergonomía visual.
 - **Descripción encapsulada en Tooltip con icono de información**: Se sustituyó el texto largo inferior por un icono `Info` con tooltip emergente flotante, dejando tarjetas más compactas, limpias y centradas en la previsualización interactiva.
+- **Workspaces y Cuenta de YouTube en paralelo**: Integración de una cuadrícula adaptable (`repeat(auto-fit, minmax(min(100%, 420px), 1fr))`) que coloca ambas secciones una al lado de la otra expandiéndose al ancho máximo disponible, y apilándolas automáticamente solo cuando la ventana se reduce, eliminando el desperdicio de espacio vertical.
 
 #### Dinámica y Rango Útil de Barras de Visualización
 - **Desacoplamiento de atenuación por volumen máster**: Las barras de espectro (`SpectrumVisualizer`) y ondas de carátula (`CoverWavesVisualizer`) ahora escalan su altura en función de la actividad y contenido armónico real de la pista en reproducción, en lugar de verse colapsadas si el usuario escucha a volumen bajo.
 - **Aprovechamiento completo del espacio de UI (hasta 94-96%)**: Curva perceptual y límites acotados que permiten a los picos de percusión y frecuencias medias y graves alcanzar la parte alta del contenedor visual sin desbordar los bordes de la interfaz.
 
 ### Corregido
+
+#### Unificación Visual y Funcional de la Vista En Reproducción (Now Playing)
+- **Corrección de fondo transparente en la barra de tiempo**: Se eliminó la sintaxis inválida `bg-muted/80` y se aplicó fondo sólido `var(--muted)` visible al 100%, permitiendo distinguir con total claridad la longitud completa de la pista frente al progreso reproducido.
+- **Control de volumen con diseño y estilos del reproductor general**: Se incorporó el relleno dinámico con color primario del tema, thumb interactivo, texto de porcentaje (`0% - 100%`) e icono `VolumeX` en tono rojizo (`text-rose-400`) al silenciar, homologándolo al reproductor persistente.
+- **Lógica y estados unificados en el botón de Me gusta**: Corrección de la alternancia de estado (`!currentTrack.liked`), vinculación del estado de sincronización con YouTube (`syncStatusByTrack`), animación de pulso ámbar en sincronización y paleta de colores coherente con `TrackRow` (rojo sincronizado, ámbar local y hover verde).
 
 #### Previsualización Exclusiva por Hover en Ajustes
 - **Aislamiento de estado en Personalización**: La animación interactiva de las tarjetas de visualizadores en *Configuración -> Personalización* ahora se activa **únicamente** cuando el cursor se posiciona sobre la opción (`isHovered`), corrigiendo el comportamiento previo donde la reproducción activa en segundo plano forzaba la animación constante de todas las tarjetas.

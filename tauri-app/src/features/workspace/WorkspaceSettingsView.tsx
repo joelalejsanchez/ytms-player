@@ -712,304 +712,308 @@ export const WorkspaceSettingsView = React.memo(() => {
       </div>
 
       {/* ============================================================== */}
-      {/* 2. SECCIÓN: CUENTA DE YOUTUBE                                 */}
+      {/* 2. SECCIONES EN PARALELO: WORKSPACES Y CUENTA DE YOUTUBE       */}
       {/* ============================================================== */}
-      <div className="space-y-5 rounded-xl border border-border bg-card p-5">
-        <div className="flex items-center justify-between border-b border-border pb-3">
-          <div className="flex items-center gap-2.5">
-            <KeyRound className="h-5 w-5 text-primary" />
-            <div>
-              <h3 className="text-base font-semibold text-foreground">
-                Cuenta de YouTube
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Conecta tu cuenta para sincronizar canciones favoritas y acceder a
-                contenido con restricción
-              </p>
+      <div
+        className="grid gap-6 items-stretch w-full"
+        style={{
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 420px), 1fr))",
+        }}
+      >
+        {/* Sub-sección: Workspaces */}
+        <div className="flex flex-col space-y-4 rounded-xl border border-border bg-card p-5 h-full">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <HardDrive className="h-5 w-5 text-primary shrink-0" />
+              <div className="min-w-0">
+                <h3 className="text-base font-semibold text-foreground">Workspaces</h3>
+                <p className="text-xs text-muted-foreground truncate">
+                  Carpetas donde se guardan tus canciones descargadas y listas
+                </p>
+              </div>
             </div>
+
+            {/* Botón a la derecha en la zona header */}
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => void handleAddWorkspace()}
+              disabled={isAddingWorkspace}
+              className="shrink-0"
+            >
+              {isAddingWorkspace ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FolderPlus className="h-4 w-4" />
+              )}
+              <span>Agregar carpeta</span>
+            </Button>
           </div>
-          <div className="flex items-center gap-2">
-            {oauthStatus?.mock_mode && <Badge tone="warning">Modo Prueba</Badge>}
-            <Badge tone={oauthStatus?.authenticated ? "success" : "default"}>
-              {oauthStatus?.authenticated ? "Conectado" : "No conectado"}
-            </Badge>
+
+          {/* Lista inferior de Workspaces con cards y RadioButton */}
+          <div className="space-y-2.5 flex-1">
+            {!appSettings || appSettings.recent_workspaces.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+                <p className="font-medium text-foreground">
+                  Aún no tienes ninguna carpeta agregada.
+                </p>
+                <p className="mt-1">
+                  Pulsa en <strong>"Agregar carpeta"</strong> para seleccionar dónde
+                  guardar tu música.
+                </p>
+              </div>
+            ) : (
+              appSettings.recent_workspaces.map((saved) => {
+                const isCurrent = workspace?.root_path === saved.path;
+                const folderName =
+                  saved.name ||
+                  saved.path.split(/[/\\]/).filter(Boolean).pop() ||
+                  "Workspace";
+
+                return (
+                  <div
+                    key={saved.path}
+                    onClick={() => {
+                      if (!isCurrent && saved.is_available) {
+                        void handleSwitchWorkspace(saved.path);
+                      }
+                    }}
+                    className={cn(
+                      "flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-4 transition select-none",
+                      isCurrent
+                        ? "border-primary bg-primary/10 shadow-xs"
+                        : "border-border bg-card/60 hover:border-primary/50 hover:bg-muted/40",
+                      !saved.is_available && "opacity-60 cursor-not-allowed",
+                    )}
+                  >
+                    <div className="flex min-w-0 items-center gap-3.5 flex-1">
+                      <RadioButton
+                        checked={isCurrent}
+                        disabled={
+                          !saved.is_available || switchingWorkspace === saved.path
+                        }
+                        onChange={() => {
+                          if (!isCurrent && saved.is_available) {
+                            void handleSwitchWorkspace(saved.path);
+                          }
+                        }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-sm text-foreground truncate">
+                            {folderName}
+                          </span>
+                          {isCurrent && <Badge tone="info">En uso</Badge>}
+                          {!saved.is_available && (
+                            <Badge tone="warning">Carpeta no encontrada</Badge>
+                          )}
+                          {switchingWorkspace === saved.path && (
+                            <span className="flex items-center gap-1 text-[11px] text-primary">
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              Activando...
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-1 truncate font-mono text-xs text-muted-foreground">
+                          {saved.path}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div
+                      className="flex shrink-0 items-center gap-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ActionMenu
+                        isLoading={removingWorkspace === saved.path}
+                        title="Opciones de carpeta"
+                        items={[
+                          {
+                            label: "Quitar de la lista",
+                            icon: <Trash2 className="h-3.5 w-3.5" />,
+                            variant: "danger",
+                            onClick: async () => {
+                              setRemovingWorkspace(saved.path);
+                              try {
+                                await removeSavedWorkspace(saved.path);
+                              } finally {
+                                setRemovingWorkspace(null);
+                              }
+                            },
+                          },
+                        ]}
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
-        {/* OAuth / Google Account */}
-        <div className="space-y-3">
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Sincronización con YouTube
-            </h4>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Sincroniza tus canciones con Me gusta directamente con tu cuenta de
-              YouTube.
-            </p>
+        {/* Sub-sección: Cuenta de YouTube */}
+        <div className="flex flex-col space-y-5 rounded-xl border border-border bg-card p-5 h-full">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <KeyRound className="h-5 w-5 text-primary shrink-0" />
+              <div className="min-w-0">
+                <h3 className="text-base font-semibold text-foreground">
+                  Cuenta de YouTube
+                </h3>
+                <p className="text-xs text-muted-foreground truncate">
+                  Conecta tu cuenta para sincronizar favoritos y acceder a contenido
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {oauthStatus?.mock_mode && <Badge tone="warning">Modo Prueba</Badge>}
+              <Badge tone={oauthStatus?.authenticated ? "success" : "default"}>
+                {oauthStatus?.authenticated ? "Conectado" : "No conectado"}
+              </Badge>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isConnectingOAuth || isLoggingOutOAuth}
-              onClick={() => void handleConnectOAuth()}
-            >
-              {isConnectingOAuth ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <ExternalLink className="h-4 w-4" />
-              )}
-              {isConnectingOAuth
-                ? "Conectando..."
-                : oauthStatus?.authenticated
-                  ? "Reconectar cuenta"
-                  : "Conectar con Google"}
-            </Button>
+          {/* OAuth / Google Account */}
+          <div className="space-y-3 flex-1">
+            <div>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Sincronización con YouTube
+              </h4>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Sincroniza tus canciones con Me gusta directamente con tu cuenta de
+                YouTube.
+              </p>
+            </div>
 
-            {oauthStatus?.authenticated && (
+            <div className="flex flex-wrap items-center gap-2.5">
               <Button
                 type="button"
                 variant="outline"
-                className="border-destructive/40 text-destructive hover:bg-destructive/10"
-                disabled={isLoggingOutOAuth || isConnectingOAuth}
-                onClick={() => void handleLogoutOAuth()}
+                disabled={isConnectingOAuth || isLoggingOutOAuth}
+                onClick={() => void handleConnectOAuth()}
               >
-                {isLoggingOutOAuth ? (
+                {isConnectingOAuth ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
-                ) : null}
-                {isLoggingOutOAuth ? "Cerrando..." : "Cerrar sesión"}
+                ) : (
+                  <ExternalLink className="h-4 w-4" />
+                )}
+                {isConnectingOAuth
+                  ? "Conectando..."
+                  : oauthStatus?.authenticated
+                    ? "Reconectar cuenta"
+                    : "Conectar con Google"}
               </Button>
-            )}
 
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isCheckingOAuth}
-              onClick={() => void handleCheckOAuth()}
-            >
-              <RefreshCw className={cn("h-4 w-4", isCheckingOAuth && "animate-spin")} />
-              {isCheckingOAuth ? "Comprobando..." : "Comprobar estado"}
-            </Button>
-          </div>
-        </div>
-
-        {/* Cookies */}
-        <div className="space-y-3 pt-3 border-t border-border/60">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Archivo de cookies
-              </h4>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Permite descargar canciones con restricción de edad o contenido
-                exclusivo de tu cuenta
-              </p>
-            </div>
-            <Badge tone={appSettings?.cookies_file_path ? "success" : "default"}>
-              {appSettings?.cookies_file_path ? "Configurado" : "Opcional"}
-            </Badge>
-          </div>
-
-          <div className="flex items-center gap-2 w-full">
-            <Input
-              value={cookiesInput}
-              onChange={(e) => setCookiesInput(e.target.value)}
-              readOnly={!isEditingCookies}
-              disabled={!isEditingCookies}
-              placeholder="Ruta de tu archivo de cookies..."
-              aria-label="Ruta de archivo cookies"
-              className={cn(
-                "flex-1 w-full font-mono text-xs",
-                !isEditingCookies &&
-                  "bg-muted/40 cursor-not-allowed opacity-80 text-foreground",
-              )}
-            />
-
-            {!isEditingCookies ? (
-              <Button
-                type="button"
-                variant="secondary"
-                size="icon"
-                onClick={() => setIsEditingCookies(true)}
-                title="Editar ruta de cookies"
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => void handleBrowseCookies()}
-                  title="Examinar archivo de cookies"
-                >
-                  <FolderOpen className="h-4 w-4" />
-                  <span>Buscar</span>
-                </Button>
-
+              {oauthStatus?.authenticated && (
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={isImportingCookies}
-                  onClick={() => void handleImportCookies()}
+                  className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                  disabled={isLoggingOutOAuth || isConnectingOAuth}
+                  onClick={() => void handleLogoutOAuth()}
                 >
-                  {isImportingCookies ? (
+                  {isLoggingOutOAuth ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Cookie className="h-4 w-4" />
-                  )}
-                  <span>{isImportingCookies ? "Guardando..." : "Guardar cookies"}</span>
+                  ) : null}
+                  {isLoggingOutOAuth ? "Cerrando..." : "Cerrar sesión"}
                 </Button>
+              )}
 
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isCheckingOAuth}
+                onClick={() => void handleCheckOAuth()}
+              >
+                <RefreshCw className={cn("h-4 w-4", isCheckingOAuth && "animate-spin")} />
+                {isCheckingOAuth ? "Comprobando..." : "Comprobar estado"}
+              </Button>
+            </div>
+          </div>
+
+          {/* Cookies */}
+          <div className="space-y-3 pt-3 border-t border-border/60">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Archivo de cookies
+                </h4>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Permite descargar canciones con restricción de edad o contenido exclusivo
+                </p>
+              </div>
+              <Badge tone={appSettings?.cookies_file_path ? "success" : "default"}>
+                {appSettings?.cookies_file_path ? "Configurado" : "Opcional"}
+              </Badge>
+            </div>
+
+            <div className="flex items-center gap-2 w-full">
+              <Input
+                value={cookiesInput}
+                onChange={(e) => setCookiesInput(e.target.value)}
+                readOnly={!isEditingCookies}
+                disabled={!isEditingCookies}
+                placeholder="Ruta de tu archivo de cookies..."
+                aria-label="Ruta de archivo cookies"
+                className={cn(
+                  "flex-1 w-full font-mono text-xs",
+                  !isEditingCookies &&
+                    "bg-muted/40 cursor-not-allowed opacity-80 text-foreground",
+                )}
+              />
+
+              {!isEditingCookies ? (
                 <Button
                   type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    setCookiesInput(appSettings?.cookies_file_path ?? "");
-                    setIsEditingCookies(false);
-                  }}
-                  disabled={isImportingCookies}
+                  variant="secondary"
+                  size="icon"
+                  onClick={() => setIsEditingCookies(true)}
+                  title="Editar ruta de cookies"
                 >
-                  Cancelar
+                  <Edit2 className="h-4 w-4" />
                 </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ============================================================== */}
-      {/* 3. SECCIÓN: WORKSPACES                                         */}
-      {/* ============================================================== */}
-      <div className="space-y-4 rounded-xl border border-border bg-card p-5">
-        <div className="flex items-center justify-between border-b border-border pb-3">
-          <div className="flex items-center gap-2.5">
-            <HardDrive className="h-5 w-5 text-primary" />
-            <div>
-              <h3 className="text-base font-semibold text-foreground">Workspaces</h3>
-              <p className="text-xs text-muted-foreground">
-                Carpetas donde se guardan tus canciones descargadas y listas de
-                reproducción
-              </p>
-            </div>
-          </div>
-
-          {/* Botón a la derecha en la zona header */}
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            onClick={() => void handleAddWorkspace()}
-            disabled={isAddingWorkspace}
-          >
-            {isAddingWorkspace ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <FolderPlus className="h-4 w-4" />
-            )}
-            <span>Agregar carpeta</span>
-          </Button>
-        </div>
-
-        {/* Lista inferior de Workspaces con cards y RadioButton */}
-        <div className="space-y-2.5">
-          {!appSettings || appSettings.recent_workspaces.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
-              <p className="font-medium text-foreground">
-                Aún no tienes ninguna carpeta agregada.
-              </p>
-              <p className="mt-1">
-                Pulsa en <strong>"Agregar carpeta"</strong> para seleccionar dónde
-                guardar tu música.
-              </p>
-            </div>
-          ) : (
-            appSettings.recent_workspaces.map((saved) => {
-              const isCurrent = workspace?.root_path === saved.path;
-              const folderName =
-                saved.name ||
-                saved.path.split(/[/\\]/).filter(Boolean).pop() ||
-                "Workspace";
-
-              return (
-                <div
-                  key={saved.path}
-                  onClick={() => {
-                    if (!isCurrent && saved.is_available) {
-                      void handleSwitchWorkspace(saved.path);
-                    }
-                  }}
-                  className={cn(
-                    "flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-4 transition select-none",
-                    isCurrent
-                      ? "border-primary bg-primary/10 shadow-xs"
-                      : "border-border bg-card/60 hover:border-primary/50 hover:bg-muted/40",
-                    !saved.is_available && "opacity-60 cursor-not-allowed",
-                  )}
-                >
-                  <div className="flex min-w-0 items-center gap-3.5 flex-1">
-                    <RadioButton
-                      checked={isCurrent}
-                      disabled={
-                        !saved.is_available || switchingWorkspace === saved.path
-                      }
-                      onChange={() => {
-                        if (!isCurrent && saved.is_available) {
-                          void handleSwitchWorkspace(saved.path);
-                        }
-                      }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm text-foreground truncate">
-                          {folderName}
-                        </span>
-                        {isCurrent && <Badge tone="info">En uso</Badge>}
-                        {!saved.is_available && (
-                          <Badge tone="warning">Carpeta no encontrada</Badge>
-                        )}
-                        {switchingWorkspace === saved.path && (
-                          <span className="flex items-center gap-1 text-[11px] text-primary">
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                            Activando...
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-1 truncate font-mono text-xs text-muted-foreground">
-                        {saved.path}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div
-                    className="flex shrink-0 items-center gap-2"
-                    onClick={(e) => e.stopPropagation()}
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => void handleBrowseCookies()}
+                    title="Examinar archivo de cookies"
                   >
-                    <ActionMenu
-                      isLoading={removingWorkspace === saved.path}
-                      title="Opciones de carpeta"
-                      items={[
-                        {
-                          label: "Quitar de la lista",
-                          icon: <Trash2 className="h-3.5 w-3.5" />,
-                          variant: "danger",
-                          onClick: async () => {
-                            setRemovingWorkspace(saved.path);
-                            try {
-                              await removeSavedWorkspace(saved.path);
-                            } finally {
-                              setRemovingWorkspace(null);
-                            }
-                          },
-                        },
-                      ]}
-                    />
-                  </div>
+                    <FolderOpen className="h-4 w-4" />
+                    <span>Buscar</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isImportingCookies}
+                    onClick={() => void handleImportCookies()}
+                  >
+                    {isImportingCookies ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Cookie className="h-4 w-4" />
+                    )}
+                    <span>{isImportingCookies ? "Guardando..." : "Guardar cookies"}</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setCookiesInput(appSettings?.cookies_file_path ?? "");
+                      setIsEditingCookies(false);
+                    }}
+                    disabled={isImportingCookies}
+                  >
+                    Cancelar
+                  </Button>
                 </div>
-              );
-            })
-          )}
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
