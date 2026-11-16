@@ -6,6 +6,19 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.5.1] - 2026-11-16
+
+### Añadido
+
+#### Persistencia Física de Logs en Disco (`/logs/app.log`) con Rotación y Límite de Tamaño
+- **Almacenamiento físico en el Workspace**: Creación y validación automática del directorio `/logs` dentro de cada workspace (`LocalWorkspaceManager::initialize_or_validate`).
+- **Archivo de registro estructurado (`app.log`)**: Escritura en disco de cada evento, advertencia o fallo con formato cronológico `[YYYY-MM-DD HH:mm:ss] [NIVEL] [contexto] mensaje`.
+- **Límite optimizado y rotación automática (1 MB)**: Prevención de crecimiento desmedido en disco mediante rotación a `app.log.old` cuando el archivo supera 1 MB, conservando el historial sin saturar el almacenamiento.
+- **Comandos Tauri nativos**: Incorporación de `append_log_entry`, `clear_log_file` y `open_logs_folder` para manipular el archivo físico y abrir directamente la carpeta en el explorador de archivos nativo (Nautilus/Dolphin, Windows Explorer, macOS Finder).
+- **Acceso rápido desde la interfaz**: Botón *"Abrir /logs"* integrado tanto en el modal de diagnóstico `ErrorLogsModal` como en la Sección 4 de *Configuración del Workspace*.
+
+---
+
 ## [1.5.0] - 2026-11-16
 
 ### Añadido

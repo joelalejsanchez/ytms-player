@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { isTauriEnvironment } from "@/lib/utils";
+import { tauriApi } from "@/services/tauriIpc";
 
 export type LogLevel = "error" | "warn" | "info";
 
@@ -71,6 +73,7 @@ export interface LogState {
   setSearchQuery: (query: string) => void;
   setOpenModal: (isOpen: boolean) => void;
   exportLogsAsText: () => string;
+  openLogsFolder: () => Promise<string | null>;
 }
 
 const initialLogs = loadPersistedLogs();
@@ -105,6 +108,27 @@ export const useLogStore = create<LogState>((set, get) => ({
       };
     });
 
+    if (isTauriEnvironment()) {
+      let detailsStr: string | undefined;
+      if (details !== undefined && details !== null) {
+        try {
+          detailsStr = typeof details === "string" ? details : JSON.stringify(details);
+        } catch {
+          detailsStr = String(details);
+        }
+      }
+      tauriApi
+        .appendLogEntry({
+          formatted_time: newEntry.formattedTime,
+          level,
+          title,
+          description,
+          context,
+          details: detailsStr,
+        })
+        .catch(() => {});
+    }
+
     return newEntry;
   },
 
@@ -113,6 +137,20 @@ export const useLogStore = create<LogState>((set, get) => ({
     if (typeof window !== "undefined" && window.localStorage) {
       window.localStorage.removeItem(STORAGE_KEY);
     }
+    if (isTauriEnvironment()) {
+      tauriApi.clearLogFile().catch(() => {});
+    }
+  },
+
+  openLogsFolder: async () => {
+    if (isTauriEnvironment()) {
+      try {
+        return await tauriApi.openLogsFolder();
+      } catch {
+        return null;
+      }
+    }
+    return null;
   },
 
   markAllRead: () => set({ unreadCount: 0 }),

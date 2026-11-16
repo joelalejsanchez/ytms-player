@@ -8,8 +8,9 @@ use crate::application::{
 };
 use crate::domain::entities::{
     AppSettings, DownloadCommandInput, DownloadHistoryEntry, HealthStatusDto, IntegrityReport,
-    LikeSyncResponseDto, MicroserviceDownloadItem, MicroserviceDownloadResponse, NewTrack,
-    OAuthStatusDto, Playlist, PlaylistPreviewDto, PlaylistWithTracks, Track, WorkspaceInfo,
+    LikeSyncResponseDto, LogEntryPayload, MicroserviceDownloadItem, MicroserviceDownloadResponse,
+    NewTrack, OAuthStatusDto, Playlist, PlaylistPreviewDto, PlaylistWithTracks, Track,
+    WorkspaceInfo,
 };
 use crate::domain::errors::{validate_youtube_id, DomainError, DomainResult};
 use crate::domain::ports::{MicroserviceClientPort, TrackRepository, WorkspaceManagerPort};
@@ -741,4 +742,58 @@ fn open_url_in_system_browser(url: &str) -> DomainResult<()> {
     status
         .map(|_| ())
         .map_err(|e| DomainError::MicroserviceError(format!("Failed to open browser: {e}")))
+}
+
+/// Registra una entrada en el archivo físico `<workspace>/logs/app.log` con rotación por tamaño límite.
+#[tauri::command]
+pub fn append_log_entry(entry: LogEntryPayload, state: State<'_, AppState>) -> DomainResult<()> {
+    let Ok(ctx) = state.active_workspace() else {
+        return Ok(());
+    };
+
+    let mut line = format!(
+        "[{}] [{}]",
+        entry.formatted_time,
+        entry.level.to_uppercase()
+    );
+    if let Some(ctx_name) = &entry.context {
+        if !ctx_name.is_empty() {
+            line.push_str(&format!(" [{}]", ctx_name));
+        }
+    }
+    line.push_str(&format!(" {}", entry.title));
+    if let Some(desc) = &entry.description {
+        if !desc.is_empty() {
+            line.push_str(&format!(" - {}", desc));
+        }
+    }
+    if let Some(det) = &entry.details {
+        if !det.is_empty() {
+            line.push_str(&format!(" | Details: {}", det));
+        }
+    }
+
+    state.workspace_manager.append_log_entry(&ctx.root_path, &line)
+}
+
+/// Limpia el archivo de logs `<workspace>/logs/app.log` y sus rotaciones.
+#[tauri::command]
+pub fn clear_log_file(state: State<'_, AppState>) -> DomainResult<()> {
+    let Ok(ctx) = state.active_workspace() else {
+        return Ok(());
+    };
+    state.workspace_manager.clear_log_file(&ctx.root_path)
+}
+
+/// Abre la carpeta física `/logs` del workspace en el explorador de archivos nativo del sistema operativo.
+#[tauri::command]
+pub fn open_logs_folder(state: State<'_, AppState>) -> DomainResult<String> {
+    let ctx = state.active_workspace()?;
+    let logs_dir = ctx.root_path.join("logs");
+    if !logs_dir.exists() {
+        let _ = std::fs::create_dir_all(&logs_dir);
+    }
+    let path_str = logs_dir.to_string_lossy().to_string();
+    open_url_in_system_browser(&path_str)?;
+    Ok(path_str)
 }

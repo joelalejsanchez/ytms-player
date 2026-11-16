@@ -85,6 +85,8 @@ pub trait WorkspaceManagerPort: Send + Sync {
         root_path: &Path,
         known_youtube_ids: &[String],
     ) -> DomainResult<Vec<OrphanTrackFile>>;
+    fn append_log_entry(&self, root_path: &Path, entry_line: &str) -> DomainResult<()>;
+    fn clear_log_file(&self, root_path: &Path) -> DomainResult<()>;
 }
 
 /// Puerto de comunicación HTTP con el microservicio Go (SDD Sección 6).

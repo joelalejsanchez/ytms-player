@@ -5,6 +5,7 @@ import {
   Check,
   CheckCircle2,
   Copy,
+  FolderOpen,
   Info,
   Search,
   Trash2,
@@ -25,6 +26,7 @@ export const ErrorLogsModal: React.FC = React.memo(() => {
   const searchQuery = useLogStore((s) => s.searchQuery);
   const setSearchQuery = useLogStore((s) => s.setSearchQuery);
   const exportLogsAsText = useLogStore((s) => s.exportLogsAsText);
+  const openLogsFolder = useLogStore((s) => s.openLogsFolder);
 
   const [copiedAll, setCopiedAll] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -184,8 +186,20 @@ export const ErrorLogsModal: React.FC = React.memo(() => {
             ))}
           </div>
 
-          {/* Acciones: Copiar Todo y Limpiar */}
+          {/* Acciones: Abrir /logs, Copiar Todo y Limpiar */}
           <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void openLogsFolder()}
+              title="Abrir carpeta física /logs del workspace en el explorador"
+              className="h-8 text-xs gap-1.5"
+            >
+              <FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />
+              <span>Abrir /logs</span>
+            </Button>
+
             <Button
               type="button"
               variant="outline"

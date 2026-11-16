@@ -58,6 +58,7 @@ pub struct WorkspaceInfo {
     pub root_path: String,
     pub tracks_dir: String,
     pub thumbnails_dir: String,
+    pub logs_dir: String,
     pub database_path: String,
     pub is_valid: bool,
     pub total_tracks: usize,
@@ -230,6 +231,17 @@ pub struct HealthStatusDto {
     pub service: String,
     pub version: String,
     pub dependencies: Option<std::collections::HashMap<String, String>>,
+}
+
+/// DTO para registrar entradas en el archivo físico de logs del workspace.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LogEntryPayload {
+    pub formatted_time: String,
+    pub level: String,
+    pub title: String,
+    pub description: Option<String>,
+    pub context: Option<String>,
+    pub details: Option<String>,
 }
 
 /// Estado de autenticación OAuth 2.0 en `GET /api/oauth/status` (SDD 6.3 y 8.2).
