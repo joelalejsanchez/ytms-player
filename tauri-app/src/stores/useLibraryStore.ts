@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { tauriApi } from "@/services/tauriIpc";
+import { toast } from "@/stores/useToastStore";
 import type {
   AppSettings,
   DownloadHistoryEntry,
@@ -334,12 +335,16 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
         syncStatusByTrack: {
           ...state.syncStatusByTrack,
           [youtubeId]: {
-            status: "error",
+            status: "local",
             error: message,
           },
         },
-        error: message,
       }));
+      toast.warning(
+        "Guardado localmente",
+        "No se pudo sincronizar con YouTube (microservicio no disponible)",
+        3000,
+      );
     }
   },
 

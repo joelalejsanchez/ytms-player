@@ -1,10 +1,10 @@
 import {
   AlertCircle,
+  AlertTriangle,
   FolderPlus,
   Heart,
   Link,
   ListPlus,
-  Loader2,
   Music,
   Play,
   Trash2,
@@ -14,6 +14,7 @@ import { ActionMenu } from "@/components/ui/ActionMenu";
 import { PlaylistBookmarkMenu } from "@/components/ui/PlaylistBookmarkMenu";
 import { Badge, Button } from "@/components/ui/Primitives";
 import { formatDuration, toAssetUrl } from "@/lib/utils";
+import { usePlayerStore } from "@/stores/usePlayerStore";
 import type { TrackSyncInfo } from "@/stores/useLibraryStore";
 import type { Playlist, Track } from "@/types/models";
 
@@ -58,40 +59,40 @@ export const TrackRow = React.memo(
   }: TrackRowProps) => {
     const thumbUrl = toAssetUrl(track.thumbnail_path);
     const isSyncingLike = syncStatus?.status === "loading";
-    const isSyncError = syncStatus?.status === "error";
     const isSynced = track.synced || syncStatus?.status === "synced";
+    const isCorrupted = usePlayerStore((s) =>
+      s.corruptedTrackIds.includes(track.youtube_id),
+    );
 
     // Unificación de estado de Like y Sincronización en el botón de corazón
     const likeButtonTitle = isSyncingLike
       ? "Sincronizando con YouTube..."
-      : isSyncError
-        ? `Error al sincronizar con YouTube: ${syncStatus?.error ?? "Fallo desconocido"}`
-        : track.liked
-          ? isSynced
-            ? "Me gusta (Sincronizado con YouTube)"
-            : "Me gusta (Solo local / No sincronizado)"
-          : isSynced
-            ? "Sin Me gusta (Sincronizado con YouTube)"
-            : "Sin Me gusta (Solo local)";
-
-    const heartIconClass = isSyncError
-      ? "text-destructive"
       : track.liked
         ? isSynced
-          ? "fill-rose-500 text-rose-500" // Rojo si está con like y sincronizado
-          : "fill-amber-500 text-amber-500" // Naranja/Ámbar si está con like pero desincronizado
+          ? "Me gusta (Sincronizado con YouTube)"
+          : "Me gusta (Guardado local / No sincronizado)"
         : isSynced
-          ? "text-emerald-500 hover:text-rose-500 hover:fill-rose-500/20" // Borde verde para estado sincronizado ante like nulo
-          : "text-muted-foreground/60 hover:text-rose-500 hover:fill-rose-500/20"; // Borde gris atenuado ante like nulo no sincronizado
+          ? "Sin Me gusta (Sincronizado con YouTube)"
+          : "Sin Me gusta (Guardado local)";
+
+    const heartIconClass = track.liked
+      ? isSynced
+        ? "fill-rose-500 text-rose-500" // Rojo si está con like y sincronizado
+        : "fill-amber-500 text-amber-500" // Naranja/Ámbar si está con like pero solo local
+      : isSynced
+        ? "text-emerald-500 hover:text-rose-500 hover:fill-rose-500/20" // Borde verde para estado sincronizado ante like nulo
+        : "text-muted-foreground/60 hover:text-rose-500 hover:fill-rose-500/20"; // Borde gris atenuado ante like nulo no sincronizado
 
     return (
       <div
         className={`group flex h-[60px] max-h-[60px] box-border select-none items-center justify-between gap-4 rounded-xl border px-4 py-2 transition-colors hover:z-30 focus-within:z-40 ${
           track.is_missing
             ? "border-amber-500/50 bg-amber-500/10"
-            : isCurrent
-              ? "border-primary bg-card"
-              : "border-border bg-card hover:border-primary/30 hover:bg-muted/60"
+            : isCorrupted
+              ? "border-destructive/50 bg-destructive/10"
+              : isCurrent
+                ? "border-primary bg-card"
+                : "border-border bg-card hover:border-primary/30 hover:bg-muted/60"
         }`}
       >
         {/* Miniatura + Título + Artista */}
@@ -136,6 +137,12 @@ export const TrackRow = React.memo(
                   Extraviado
                 </Badge>
               )}
+              {isCorrupted && (
+                <Badge tone="danger" className="text-[10px]">
+                  <AlertTriangle className="h-3 w-3" />
+                  Dañado
+                </Badge>
+              )}
             </div>
             <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
               <span className="truncate">{track.artist}</span>
@@ -163,7 +170,7 @@ export const TrackRow = React.memo(
             }`}
           >
             {isSyncingLike ? (
-              <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+              <Heart className="h-4 w-4 text-amber-500 fill-amber-500/40 animate-heart-pulse transform-gpu" />
             ) : (
               <Heart className={`h-4 w-4 transition-colors ${heartIconClass}`} />
             )}

@@ -214,9 +214,26 @@ export const LibraryView = React.memo(() => {
   );
 
   const handlePlayAll = useCallback(() => {
-    const firstPlayable = filteredTracks.find((t) => !t.is_missing);
-    if (firstPlayable) {
-      playTrack(firstPlayable, filteredTracks);
+    const playableFiltered = filteredTracks.filter((t) => !t.is_missing);
+    if (playableFiltered.length === 0) return;
+
+    const currentTrack = usePlayerStore.getState().currentTrack;
+    const isCurrentInFilter = Boolean(
+      currentTrack &&
+        playableFiltered.some((t) => t.youtube_id === currentTrack.youtube_id),
+    );
+
+    if (isCurrentInFilter) {
+      // La canción actual está en el filtro: no interrumpir la reproducción actual,
+      // solo actualizar la cola de reproducción según estándar Spotify
+      usePlayerStore.getState().setQueuePreservingCurrent(playableFiltered);
+      if (!usePlayerStore.getState().isPlaying) {
+        usePlayerStore.getState().setPlaying(true);
+      }
+    } else {
+      // La canción actual no existe en el filtro: reproducir la primera del filtro
+      const firstPlayable = playableFiltered[0];
+      playTrack(firstPlayable, playableFiltered);
     }
   }, [filteredTracks, playTrack]);
 

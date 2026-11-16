@@ -6,6 +6,36 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.2.0] - 2026-11-16
+
+### Añadido
+
+#### Sistema de Notificaciones Flotantes (Toasts)
+- **API global desacoplada (`useToastStore`)**: Helpers reutilizables (`toast.info`, `toast.warning`, `toast.error`, `toast.success`).
+- **Contenedor flotante (`ToastContainer`)**: Ubicación en esquina inferior derecha (`fixed bottom-24 right-6`) por encima del reproductor persistente sin empujar el flujo ni el layout de la interfaz.
+- **Reloj temporizador circular**: Indicador de progreso SVG con gradiente circular animado (`primary` a `accent`) de 3 segundos sin texto numérico y botón de descarte inmediato ("X").
+
+#### Experiencia de Like y Animación de Corazón
+- **Animación orgánica de carga (`animate-heart-pulse`)**: El propio icono SVG del corazón pulsa suavemente durante la sincronización remota sin recurrir a spinners genéricos.
+- **Estado desacoplado sin microservicio**: Si el microservicio Go está apagado o falla la conexión remota, el like se persiste localmente en SQLite y el corazón se pinta directamente en color naranja/ámbar (`fill-amber-500 text-amber-500`), notificando el estado mediante un Toast de advertencia y eliminando el banner superior intrusivo de error.
+
+#### Detección y Gestión de Archivos Corruptos
+- **Identificación visual de pistas dañadas**: Detección de fallos de decodificación (`MEDIA_ERR_DECODE`) y marcado dinámico en la biblioteca con etiqueta **Dañado** y estilizado de advertencia.
+- **Salto automático protegido**: Notificación Toast técnica con el código del fallo y salto automático a la siguiente pista (`playNext()`), con límite de protección de hasta 4 fallos consecutivos.
+
+#### Reproducción y Cola de Reproducción Estándar Spotify
+- **Preservación de reproducción con filtros activos**: Al filtrar en biblioteca y presionar "Reproducir todos", si la canción actual está en el filtro, no se interrumpe ni corta la música; solo se actualiza la cola de reproducción.
+- **Estándar Spotify en modo Aleatorio**: La pista en reproducción se conserva como la `#0` y el resto de canciones filtradas se barajan mediante Fisher-Yates detrás de ella.
+- **Restauración de orden normal (`originalQueue`)**: Al desactivar el modo aleatorio (Shuffle OFF), se restituye de forma instantánea el orden secuencial normal del filtro activo de la biblioteca con el cursor en la posición correspondiente.
+
+### Corregido
+
+- **Eliminación del corte de audio y salto inicial**: Corrección de condición de carrera y eliminación del seek artificial (`currentTime = 0`) que provocaba vaciados de buffer y silencios en GStreamer/WebKitGTK al iniciar pistas.
+- **Caché en memoria de Blob URLs (`audioBlobUrlCache`)**: Conversión y almacenamiento directo de objetos Blob en memoria para transiciones fluidas de 0 ms entre pistas sin congelar el hilo principal.
+- **Desbloqueo de selector de tiempo**: Corrección del estado `isLoadingTrack` que quedaba congelado al pulsar reproducir sobre la misma canción activa.
+
+---
+
 ## [1.1.0] - 2026-11-15
 
 ### Añadido y Mejorado

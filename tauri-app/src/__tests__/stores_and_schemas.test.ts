@@ -10,6 +10,7 @@ import {
 import { buildTaskKey, useDownloadStore } from "@/stores/useDownloadStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { useThemeStore } from "@/stores/useThemeStore";
+import { toast, useToastStore } from "@/stores/useToastStore";
 import type { Track } from "@/types/models";
 
 const sampleTrack: Track = {
@@ -302,5 +303,117 @@ describe("useThemeStore", () => {
       document.documentElement.classList.contains("light") ||
         document.documentElement.classList.contains("dark"),
     ).toBe(true);
+  });
+});
+
+describe("useToastStore and toast API", () => {
+  beforeEach(() => {
+    useToastStore.getState().clear();
+  });
+
+  it("adds, displays and dismisses toasts cleanly", () => {
+    const id = toast.info("Probando info", "Detalle de prueba");
+    expect(useToastStore.getState().toasts).toHaveLength(1);
+    expect(useToastStore.getState().toasts[0].title).toBe("Probando info");
+    expect(useToastStore.getState().toasts[0].variant).toBe("info");
+
+    toast.warning("Alerta de prueba");
+    toast.error("Error crítico");
+    expect(useToastStore.getState().toasts).toHaveLength(3);
+
+    toast.dismiss(id);
+    expect(useToastStore.getState().toasts).toHaveLength(2);
+    expect(useToastStore.getState().toasts.some((t) => t.id === id)).toBe(false);
+
+    useToastStore.getState().clear();
+    expect(useToastStore.getState().toasts).toHaveLength(0);
+  });
+});
+
+describe("usePlayerStore - queue preservation and corrupted tracks", () => {
+  const trackA: Track = { ...sampleTrack, id: 10, youtube_id: "track_A", title: "A" };
+  const trackB: Track = { ...sampleTrack, id: 20, youtube_id: "track_B", title: "B" };
+  const trackC: Track = { ...sampleTrack, id: 30, youtube_id: "track_C", title: "C" };
+
+  beforeEach(() => {
+    usePlayerStore.getState().clearQueue();
+  });
+
+  it("preserves currently playing track and updates queue according to Spotify standard in shuffle mode", () => {
+    const store = usePlayerStore.getState();
+    store.playTrack(trackB, [trackA, trackB, trackC]);
+    if (!store.isShuffle) {
+      store.toggleShuffle();
+    }
+    expect(usePlayerStore.getState().isShuffle).toBe(true);
+
+    // Reproducir todos con filtro [trackA, trackB, trackC]
+    usePlayerStore.getState().setQueuePreservingCurrent([trackA, trackB, trackC]);
+    const updated = usePlayerStore.getState();
+    // Canción actual debe mantenerse en la posición #0 en shuffle
+    expect(updated.queue[0].youtube_id).toBe("track_B");
+    expect(updated.currentIndex).toBe(0);
+    expect(updated.queue).toHaveLength(3);
+  });
+
+  it("preserves currently playing track and places index in order when shuffle is off", () => {
+    const store = usePlayerStore.getState();
+    if (store.isShuffle) {
+      store.toggleShuffle();
+    }
+    expect(usePlayerStore.getState().isShuffle).toBe(false);
+
+    store.playTrack(trackB, [trackA, trackB, trackC]);
+    usePlayerStore.getState().setQueuePreservingCurrent([trackA, trackB, trackC]);
+    const updated = usePlayerStore.getState();
+    expect(updated.currentIndex).toBe(1);
+    expect(updated.queue[1].youtube_id).toBe("track_B");
+  });
+
+  it("marks and unmarks corrupted tracks", () => {
+    const store = usePlayerStore.getState();
+    expect(store.corruptedTrackIds).toEqual([]);
+
+    store.markTrackCorrupted("corrupt_1");
+    expect(usePlayerStore.getState().corruptedTrackIds).toContain("corrupt_1");
+
+    store.markTrackCorrupted("corrupt_1"); // idempotente
+    expect(usePlayerStore.getState().corruptedTrackIds).toHaveLength(1);
+
+    store.clearCorruptedTrack("corrupt_1");
+    expect(usePlayerStore.getState().corruptedTrackIds).toHaveLength(0);
+  });
+
+  it("does not leave isLoadingTrack stuck on true when playing the already active track", () => {
+    const store = usePlayerStore.getState();
+    store.playTrack(trackA, [trackA, trackB]);
+    expect(usePlayerStore.getState().isLoadingTrack).toBe(true);
+
+    // Simular que el audio ya terminó de cargar
+    store.setIsLoadingTrack(false);
+    expect(usePlayerStore.getState().isLoadingTrack).toBe(false);
+
+    // Re-invocar playTrack sobre la misma canción
+    usePlayerStore.getState().playTrack(trackA);
+    // No debe ponerse en true si es la misma canción ya cargada
+    expect(usePlayerStore.getState().isLoadingTrack).toBe(false);
+  });
+
+  it("restores original normal queue and sets correct index when toggling shuffle off", () => {
+    const store = usePlayerStore.getState();
+    // Iniciar con lista ordenada A, B, C
+    store.playTrack(trackA, [trackA, trackB, trackC]);
+    // Activar shuffle
+    if (!usePlayerStore.getState().isShuffle) {
+      store.toggleShuffle();
+    }
+    expect(usePlayerStore.getState().isShuffle).toBe(true);
+
+    // Desactivar shuffle: debe volver al orden normal [A, B, C]
+    store.toggleShuffle();
+    const state = usePlayerStore.getState();
+    expect(state.isShuffle).toBe(false);
+    expect(state.queue.map((t) => t.youtube_id)).toEqual(["track_A", "track_B", "track_C"]);
+    expect(state.currentIndex).toBe(0);
   });
 });

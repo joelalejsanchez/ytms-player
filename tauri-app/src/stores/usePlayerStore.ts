@@ -13,11 +13,16 @@ export interface PlayerState {
   currentTime: number;
   seekTarget: number | null;
   queue: Track[];
+  originalQueue: Track[];
   currentIndex: number;
   repeatMode: RepeatMode;
   isShuffle: boolean;
+  corruptedTrackIds: string[];
 
   playTrack: (track: Track, newQueue?: Track[]) => void;
+  setQueuePreservingCurrent: (newQueue: Track[]) => void;
+  markTrackCorrupted: (youtubeId: string) => void;
+  clearCorruptedTrack: (youtubeId: string) => void;
   togglePlayPause: () => void;
   setPlaying: (playing: boolean) => void;
   setIsLoadingTrack: (loading: boolean) => void;
@@ -92,16 +97,78 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   currentTime: savedPrefs.currentTime || 0,
   seekTarget: null,
   queue: savedPrefs.currentTrack ? [savedPrefs.currentTrack] : [],
+  originalQueue: savedPrefs.currentTrack ? [savedPrefs.currentTrack] : [],
   currentIndex: savedPrefs.currentTrack ? 0 : -1,
   repeatMode: savedPrefs.repeatMode ?? "off",
   isShuffle: Boolean(savedPrefs.isShuffle),
+  corruptedTrackIds: [],
+
+  markTrackCorrupted: (youtubeId) =>
+    set((state) => ({
+      corruptedTrackIds: state.corruptedTrackIds.includes(youtubeId)
+        ? state.corruptedTrackIds
+        : [...state.corruptedTrackIds, youtubeId],
+    })),
+
+  clearCorruptedTrack: (youtubeId) =>
+    set((state) => ({
+      corruptedTrackIds: state.corruptedTrackIds.filter((id) => id !== youtubeId),
+    })),
+
+  setQueuePreservingCurrent: (newQueue) => {
+    const { currentTrack, isShuffle } = get();
+    const playable = newQueue.filter((t) => !t.is_missing);
+    if (!currentTrack) {
+      if (playable.length > 0) {
+        get().playTrack(playable[0], playable);
+      }
+      return;
+    }
+
+    const exists = playable.some((t) => t.youtube_id === currentTrack.youtube_id);
+    if (!exists) {
+      if (playable.length > 0) {
+        get().playTrack(playable[0], playable);
+      }
+      return;
+    }
+
+    // La pista actual pertenece al filtro: preservar reproducción y actualizar cola según estándar Spotify
+    if (isShuffle) {
+      const rest = playable.filter((t) => t.youtube_id !== currentTrack.youtube_id);
+      for (let i = rest.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [rest[i], rest[j]] = [rest[j], rest[i]];
+      }
+      set({
+        queue: [currentTrack, ...rest],
+        originalQueue: playable,
+        currentIndex: 0,
+      });
+    } else {
+      const idx = playable.findIndex((t) => t.youtube_id === currentTrack.youtube_id);
+      set({
+        queue: playable,
+        originalQueue: playable,
+        currentIndex: idx >= 0 ? idx : 0,
+      });
+    }
+  },
 
   playTrack: (track, newQueue) => {
     if (track.is_missing) {
       return;
     }
+    const current = get().currentTrack;
+    const isSameTrack = current?.youtube_id === track.youtube_id;
+
     const hasNewQueue = newQueue !== undefined;
     const playableQueue = (newQueue ?? get().queue).filter((item) => !item.is_missing);
+    const resolvedOriginalQueue = hasNewQueue
+      ? playableQueue
+      : get().originalQueue.length > 0
+        ? get().originalQueue
+        : playableQueue;
 
     let updatedQueue: Track[];
     let nextIndex: number;
@@ -119,15 +186,16 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       nextIndex = existingIndex >= 0 ? existingIndex : updatedQueue.length - 1;
     }
 
-    savePersistedPreferences({ currentTrack: track, currentTime: 0 });
+    savePersistedPreferences({ currentTrack: track, currentTime: isSameTrack ? get().currentTime : 0 });
 
     set({
       currentTrack: track,
       isPlaying: true,
-      isLoadingTrack: true,
-      currentTime: 0,
+      isLoadingTrack: !isSameTrack,
+      currentTime: isSameTrack ? get().currentTime : 0,
       duration: track.duration || 0,
       queue: updatedQueue,
+      originalQueue: resolvedOriginalQueue,
       currentIndex: nextIndex,
     });
   },
@@ -262,21 +330,24 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         return state;
       }
       const nextQueue = [...state.queue, track];
+      const nextOrig = [...state.originalQueue, track];
       if (!state.currentTrack) {
         return {
           queue: nextQueue,
+          originalQueue: nextOrig,
           currentTrack: track,
           currentIndex: 0,
           duration: track.duration || 0,
         };
       }
-      return { queue: nextQueue };
+      return { queue: nextQueue, originalQueue: nextOrig };
     });
   },
 
   removeFromQueue: (youtubeId) => {
     set((state) => {
       const nextQueue = state.queue.filter((item) => item.youtube_id !== youtubeId);
+      const nextOrig = state.originalQueue.filter((item) => item.youtube_id !== youtubeId);
       const nextIndex = state.currentTrack
         ? nextQueue.findIndex(
             (item) => item.youtube_id === state.currentTrack?.youtube_id,
@@ -284,6 +355,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         : -1;
       return {
         queue: nextQueue,
+        originalQueue: nextOrig,
         currentIndex: nextIndex,
       };
     });
@@ -292,6 +364,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   clearQueue: () =>
     set({
       queue: [],
+      originalQueue: [],
       currentIndex: -1,
       currentTrack: null,
       isPlaying: false,
@@ -307,18 +380,33 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   toggleShuffle: () => {
-    const { isShuffle, queue, currentTrack } = get();
+    const { isShuffle, queue, originalQueue, currentTrack } = get();
     const nextShuffle = !isShuffle;
     savePersistedPreferences({ isShuffle: nextShuffle });
-    if (nextShuffle && queue.length > 1) {
-      const shuffledQueue = shuffleTracksWithFirst(queue, currentTrack);
-      set({
-        isShuffle: true,
-        queue: shuffledQueue,
-        currentIndex: currentTrack ? 0 : -1,
-      });
+    if (nextShuffle) {
+      const baseList = originalQueue.length > 0 ? originalQueue : queue;
+      if (baseList.length > 1) {
+        const shuffledQueue = shuffleTracksWithFirst(baseList, currentTrack);
+        set({
+          isShuffle: true,
+          queue: shuffledQueue,
+          originalQueue: baseList,
+          currentIndex: currentTrack ? 0 : -1,
+        });
+      } else {
+        set({ isShuffle: true });
+      }
     } else {
-      set({ isShuffle: nextShuffle });
+      // Al desactivar aleatorio, continuar en el orden "normal" (filtro original de biblioteca)
+      const normalQueue = originalQueue.length > 0 ? originalQueue : [...queue];
+      const normalIndex = currentTrack
+        ? normalQueue.findIndex((t) => t.youtube_id === currentTrack.youtube_id)
+        : -1;
+      set({
+        isShuffle: false,
+        queue: normalQueue,
+        currentIndex: normalIndex >= 0 ? normalIndex : 0,
+      });
     }
   },
 }));

@@ -18,6 +18,29 @@ import { Button } from "@/components/ui/Primitives";
 import { formatDuration, toAssetUrl } from "@/lib/utils";
 import { tauriApi } from "@/services/tauriIpc";
 import { usePlayerStore } from "@/stores/usePlayerStore";
+import { toast } from "@/stores/useToastStore";
+
+function dataUrlToBlobUrl(dataUrl: string): string {
+  if (!dataUrl.startsWith("data:")) return dataUrl;
+  try {
+    const parts = dataUrl.split(",");
+    if (parts.length >= 2) {
+      const mimeMatch = parts[0].match(/:(.*?);/);
+      const mime = mimeMatch ? mimeMatch[1] : "audio/mp4";
+      const bstr = atob(parts[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      const blob = new Blob([u8arr], { type: mime });
+      return URL.createObjectURL(blob);
+    }
+  } catch (err) {
+    console.warn("Error converting Data URL to Blob URL:", err);
+  }
+  return dataUrl;
+}
 
 /**
  * Reproductor de audio persistente ubicado en la parte inferior de la aplicación (SDD 7.1).
@@ -57,11 +80,11 @@ export const PersistentPlayer = React.memo(() => {
   const cycleRepeatMode = usePlayerStore((s) => s.cycleRepeatMode);
   const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
 
-  const audioDataUrlCache = useRef<Map<string, string>>(new Map());
-  const activeBlobUrlRef = useRef<string | null>(null);
+  const audioBlobUrlCache = useRef<Map<string, string>>(new Map());
   const isChangingTrackRef = useRef(false);
   const currentTrackIdRef = useRef<string | null>(null);
   const prevIsPlayingRef = useRef(isPlaying);
+  const consecutiveFailuresRef = useRef(0);
 
   // Referencias para cálculo reactivo de volumen objetivo
   const volumeRef = useRef(volume);
@@ -88,7 +111,7 @@ export const PersistentPlayer = React.memo(() => {
     }
   }, []);
 
-  // Precargar de forma anticipada la siguiente pista de la cola en caché de memoria
+  // Precargar de forma anticipada la siguiente pista de la cola directamente como Blob URL en memoria
   const preloadNextTrack = useCallback(() => {
     const state = usePlayerStore.getState();
     const current = state.currentTrack;
@@ -110,19 +133,22 @@ export const PersistentPlayer = React.memo(() => {
       if (
         nextTrack &&
         !nextTrack.is_missing &&
-        !audioDataUrlCache.current.has(nextTrack.audio_path)
+        !audioBlobUrlCache.current.has(nextTrack.audio_path)
       ) {
         tauriApi
           .readAudioDataUrl(nextTrack.audio_path)
           .then((dataUrl) => {
             if (dataUrl) {
-              if (audioDataUrlCache.current.size >= 15) {
-                const oldestKey = audioDataUrlCache.current.keys().next().value;
+              const blobUrl = dataUrlToBlobUrl(dataUrl);
+              if (audioBlobUrlCache.current.size >= 10) {
+                const oldestKey = audioBlobUrlCache.current.keys().next().value;
                 if (oldestKey) {
-                  audioDataUrlCache.current.delete(oldestKey);
+                  const oldUrl = audioBlobUrlCache.current.get(oldestKey);
+                  if (oldUrl?.startsWith("blob:")) URL.revokeObjectURL(oldUrl);
+                  audioBlobUrlCache.current.delete(oldestKey);
                 }
               }
-              audioDataUrlCache.current.set(nextTrack.audio_path, dataUrl);
+              audioBlobUrlCache.current.set(nextTrack.audio_path, blobUrl);
             }
           })
           .catch(() => {});
@@ -138,11 +164,12 @@ export const PersistentPlayer = React.memo(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    // Pausar de inmediato la reproducción previa para silenciarla y detener el contador de tiempo
+    // Pausar y resetear de inmediato la reproducción previa para silenciarla y purgar buffers residuales
     audio.pause();
+    audio.removeAttribute("src");
+    audio.load();
 
     if (!currentTrack || currentTrack.is_missing) {
-      audio.removeAttribute("src");
       currentTrackIdRef.current = null;
       isChangingTrackRef.current = false;
       setIsLoadingTrack(false);
@@ -156,25 +183,29 @@ export const PersistentPlayer = React.memo(() => {
 
     const loadAndPlayTrack = async () => {
       try {
-        let src = audioDataUrlCache.current.get(currentTrack.audio_path);
-        if (!src) {
+        let playableSrc = audioBlobUrlCache.current.get(currentTrack.audio_path);
+        if (!playableSrc) {
           try {
             const dataUrl = await tauriApi.readAudioDataUrl(currentTrack.audio_path);
             if (dataUrl) {
-              src = dataUrl;
-              if (audioDataUrlCache.current.size >= 15) {
-                const oldestKey = audioDataUrlCache.current.keys().next().value;
-                if (oldestKey) audioDataUrlCache.current.delete(oldestKey);
+              playableSrc = dataUrlToBlobUrl(dataUrl);
+              if (audioBlobUrlCache.current.size >= 10) {
+                const oldestKey = audioBlobUrlCache.current.keys().next().value;
+                if (oldestKey) {
+                  const oldUrl = audioBlobUrlCache.current.get(oldestKey);
+                  if (oldUrl?.startsWith("blob:")) URL.revokeObjectURL(oldUrl);
+                  audioBlobUrlCache.current.delete(oldestKey);
+                }
               }
-              audioDataUrlCache.current.set(currentTrack.audio_path, dataUrl);
+              audioBlobUrlCache.current.set(currentTrack.audio_path, playableSrc);
             }
           } catch (err) {
             console.warn("readAudioDataUrl warning, falling back to toAssetUrl:", err);
           }
         }
 
-        if (!src) {
-          src = toAssetUrl(currentTrack.audio_path);
+        if (!playableSrc) {
+          playableSrc = toAssetUrl(currentTrack.audio_path);
         }
 
         if (
@@ -185,47 +216,79 @@ export const PersistentPlayer = React.memo(() => {
           return;
         }
 
-        let playableSrc = src;
-        if (src.startsWith("data:")) {
-          try {
-            const parts = src.split(",");
-            if (parts.length >= 2) {
-              const mimeMatch = parts[0].match(/:(.*?);/);
-              const mime = mimeMatch ? mimeMatch[1] : "audio/mp4";
-              const bstr = atob(parts[1]);
-              let n = bstr.length;
-              const u8arr = new Uint8Array(n);
-              while (n--) {
-                u8arr[n] = bstr.charCodeAt(n);
-              }
-              const blob = new Blob([u8arr], { type: mime });
-              if (activeBlobUrlRef.current && activeBlobUrlRef.current.startsWith("blob:")) {
-                URL.revokeObjectURL(activeBlobUrlRef.current);
-              }
-              playableSrc = URL.createObjectURL(blob);
-              activeBlobUrlRef.current = playableSrc;
-            }
-          } catch (blobErr) {
-            console.warn("Blob conversion error, using raw data url:", blobErr);
-          }
-        }
-
         audio.src = playableSrc;
-        audio.currentTime = 0;
 
         const tgtVol = getTargetVolume();
         audio.volume = tgtVol;
         audio.muted = isMutedRef.current;
 
+        // Esperar a que el nuevo recurso esté listo sin forzar seek artificial
+        await new Promise<void>((resolve, reject) => {
+          let handled = false;
+          const onCanPlay = () => {
+            if (handled) return;
+            handled = true;
+            audio.removeEventListener("canplay", onCanPlay);
+            audio.removeEventListener("error", onError);
+            // No llamar a audio.currentTime = 0; la nueva fuente ya inicia en 0.0s de forma nativa.
+            // Asignar currentTime provocaba un seek asíncrono con vaciado de buffer (silenciado).
+            resolve();
+          };
+
+          const onError = () => {
+            if (handled) return;
+            handled = true;
+            audio.removeEventListener("canplay", onCanPlay);
+            audio.removeEventListener("error", onError);
+            const errCode = audio.error?.code ?? "UNKNOWN";
+            const errMsg = audio.error?.message || "Error al decodificar audio";
+            reject(new Error(`Code ${errCode}: ${errMsg}`));
+          };
+
+          audio.addEventListener("canplay", onCanPlay, { once: true });
+          audio.addEventListener("error", onError, { once: true });
+        });
+
+        if (
+          isCancelled ||
+          !audioRef.current ||
+          currentTrackIdRef.current !== currentTrack.youtube_id
+        ) {
+          return;
+        }
+
         if (usePlayerStore.getState().isPlaying) {
           await audio.play();
         }
+        consecutiveFailuresRef.current = 0;
         preloadNextTrack();
       } catch (err) {
         if (!isCancelled && currentTrackIdRef.current === currentTrack.youtube_id) {
           console.error("Error al iniciar reproducción:", err);
           setPlaying(false);
           setIsLoadingTrack(false);
+
+          consecutiveFailuresRef.current += 1;
+          const track = currentTrack;
+          usePlayerStore.getState().markTrackCorrupted(track.youtube_id);
+
+          const errorDetail = err instanceof Error ? err.message : String(err);
+          toast.error(
+            `Error al reproducir "${track.title}"`,
+            `Archivo posiblemente dañado (${errorDetail}). Saltando a la siguiente...`,
+            4000,
+          );
+
+          if (consecutiveFailuresRef.current < 4) {
+            playNext();
+          } else {
+            consecutiveFailuresRef.current = 0;
+            toast.error(
+              "Reproducción detenida",
+              "Múltiples archivos consecutivos no se pudieron reproducir.",
+              4000,
+            );
+          }
         }
       } finally {
         if (!isCancelled) {
@@ -311,6 +374,7 @@ export const PersistentPlayer = React.memo(() => {
   const handleTimeUpdate = useCallback(() => {
     if (audioRef.current && !isChangingTrackRef.current) {
       setCurrentTime(audioRef.current.currentTime);
+      consecutiveFailuresRef.current = 0;
     }
   }, [setCurrentTime]);
 
@@ -323,17 +387,39 @@ export const PersistentPlayer = React.memo(() => {
 
   const handleCanPlay = useCallback(() => {
     setIsLoadingTrack(false);
+    consecutiveFailuresRef.current = 0;
   }, [setIsLoadingTrack]);
 
   const handleAudioError = useCallback((e: React.SyntheticEvent<HTMLAudioElement, Event>) => {
     const audioEl = e.currentTarget;
+    const track = usePlayerStore.getState().currentTrack;
+    const errCode = audioEl.error?.code ?? "UNKNOWN";
+    const errMsg = audioEl.error?.message || "Error al decodificar audio";
     console.error(
       "Audio playback error event:",
-      audioEl.error?.code,
-      audioEl.error?.message,
+      errCode,
+      errMsg,
     );
     setIsLoadingTrack(false);
-  }, [setIsLoadingTrack]);
+
+    if (track) {
+      usePlayerStore.getState().markTrackCorrupted(track.youtube_id);
+      consecutiveFailuresRef.current += 1;
+
+      toast.error(
+        `Error al reproducir "${track.title}"`,
+        `Archivo posiblemente dañado (Code ${errCode}: ${errMsg}). Saltando a la siguiente...`,
+        4000,
+      );
+
+      if (consecutiveFailuresRef.current < 4) {
+        playNext();
+      } else {
+        consecutiveFailuresRef.current = 0;
+        setPlaying(false);
+      }
+    }
+  }, [setIsLoadingTrack, playNext, setPlaying]);
 
   const handleEnded = useCallback(() => {
     const repeat = usePlayerStore.getState().repeatMode;

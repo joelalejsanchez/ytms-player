@@ -4,7 +4,19 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ---
 
-## 1. Prioridad Media (Roadmap v1.x)
+## 1. Prioridad Alta (Performance y Core Engine)
+
+- [ ] **Streaming nativo de audio mediante HTTP Byte-Range (HTTP 206 Partial Content / Zero-Copy):**
+  - **Problema actual:** El reproductor lee el archivo completo a memoria RAM mediante IPC en Base64 (`read_audio_data_url`), y el hilo de JavaScript lo convierte a `Blob` síncronamente. En canciones de larga duración (sets de 1 a 3 horas, podcasts, etc.) o archivos grandes, esto satura cientos de megabytes de RAM, bloquea el hilo de la UI varios segundos y demora el inicio de la reproducción. En archivos pequeños también introduce una sobrecarga innecesaria de serialización IPC.
+  - **Solución técnica planificada (Rust nativo en Tauri):**
+    - Implementar un servidor HTTP embebido local y ultra-ligero en Rust (dentro del ejecutable de Tauri, ej. con `axum`, `tiny_http` o listener `tokio` en `127.0.0.1:<puerto_libre>`): `http://127.0.0.1:<puerto>/audio?path=<ruta_archivo>`.
+    - Servir los archivos con soporte nativo de **HTTP 206 Partial Content (Range requests)** leyendo directamente bloques pequeños del disco bajo demanda (zero-copy / low-memory).
+    - **Independencia total del microservicio Go:** Permite que la app de escritorio reproduzca cualquier archivo local de forma autónoma, sin requerir Docker ni que el microservicio esté encendido (Go queda reservado únicamente para descargas con `yt-dlp` y sincronización OAuth con YouTube).
+    - El reproductor HTML5 solicitará únicamente los primeros ~64 KB de metadatos e iniciará la reproducción en menos de 50 ms (latencia imperceptible), permitiendo además saltos de reproducción (seek) instantáneos a cualquier punto de la línea temporal sin descargar todo el archivo y con consumo de RAM prácticamente cero.
+
+---
+
+## 2. Prioridad Media (Roadmap v1.x)
 
 - [ ] **Ampliación de opciones en el menú contextual de 3 puntos (`ActionMenu`):**
   - **Información detallada de la pista (Track Info):** Modal o panel lateral para inspeccionar los metadatos completos del archivo (codec de audio, bitrate, frecuencia de muestreo, tamaño en disco, fecha de descarga, ID original y enlace directo de YouTube).
@@ -19,7 +31,7 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ---
 
-## 2. Prioridad Baja (Casos Específicos o Opcionales)
+## 3. Prioridad Baja (Casos Específicos o Opcionales)
 
 - [ ] **Sincronización selectiva de canciones en Playlists vinculadas:**
   - En playlists sincronizadas, elegir qué canciones individuales ignorar o congelar localmente aunque hayan sido eliminadas en el canal de YouTube.

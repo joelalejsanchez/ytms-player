@@ -336,3 +336,31 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--muted-foreground);
 }
+
+/* =========================================================================
+   ANIMACIONES: TOAST COUNTDOWN & HEART PULSE
+   ========================================================================= */
+@keyframes toast-countdown {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 62.83;
+  }
+}
+
+@keyframes heart-pulse-loading {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+}
+
+.animate-heart-pulse {
+  animation: heart-pulse-loading 0.8s ease-in-out infinite;
+  transform-origin: center;
+}
