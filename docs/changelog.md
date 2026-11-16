@@ -17,6 +17,10 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ### Mejorado
 
+#### Cuadrícula Paralela y Tooltips en Ajustes de Personalización
+- **Disposición paralela vertical con Grid auto-fit**: Las opciones de visualización en *Ajustes -> Personalización* ahora se organizan en columnas paralelas adaptables (`grid-cols-[repeat(auto-fit,minmax(210px,1fr))]`), optimizando el aprovechamiento horizontal del espacio y la ergonomía visual.
+- **Descripción encapsulada en Tooltip con icono de información**: Se sustituyó el texto largo inferior por un icono `Info` con tooltip emergente flotante, dejando tarjetas más compactas, limpias y centradas en la previsualización interactiva.
+
 #### Dinámica y Rango Útil de Barras de Visualización
 - **Desacoplamiento de atenuación por volumen máster**: Las barras de espectro (`SpectrumVisualizer`) y ondas de carátula (`CoverWavesVisualizer`) ahora escalan su altura en función de la actividad y contenido armónico real de la pista en reproducción, en lugar de verse colapsadas si el usuario escucha a volumen bajo.
 - **Aprovechamiento completo del espacio de UI (hasta 94-96%)**: Curva perceptual y límites acotados que permiten a los picos de percusión y frecuencias medias y graves alcanzar la parte alta del contenedor visual sin desbordar los bordes de la interfaz.

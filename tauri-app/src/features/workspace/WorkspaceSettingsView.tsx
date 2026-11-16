@@ -12,6 +12,7 @@ import {
   FolderOpen,
   FolderPlus,
   HardDrive,
+  Info,
   KeyRound,
   Loader2,
   Monitor,
@@ -605,7 +606,8 @@ export const WorkspaceSettingsView = React.memo(() => {
             </p>
           </div>
 
-          <div className="space-y-2 w-full">
+          {/* Cuadrícula paralela vertical con auto-fit */}
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-4 w-full">
             {getAllVisualizers().map((viz) => {
               const isSelected = activeVisualizerId === viz.metadata.id;
               const isHovered = hoveredVisualizerId === viz.metadata.id;
@@ -618,18 +620,15 @@ export const WorkspaceSettingsView = React.memo(() => {
                   onMouseEnter={() => setHoveredVisualizerId(viz.metadata.id)}
                   onMouseLeave={() => setHoveredVisualizerId(null)}
                   className={cn(
-                    "flex cursor-pointer items-center justify-between gap-4 rounded-xl border p-3.5 transition w-full select-none relative overflow-hidden",
+                    "group flex flex-col cursor-pointer justify-between gap-3.5 rounded-xl border p-4 transition w-full select-none relative overflow-hidden",
                     isSelected
                       ? "border-primary bg-card ring-1 ring-primary shadow-xs"
                       : "border-border bg-card hover:border-primary",
                   )}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <RadioButton
-                      checked={isSelected}
-                      onChange={() => setActiveVisualizer(viz.metadata.id)}
-                    />
-                    <div className="flex items-center gap-2.5 min-w-0">
+                  {/* Encabezado: Icono, Título con Tooltip Info y RadioButton */}
+                  <div className="flex items-center justify-between gap-2 w-full">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       {viz.metadata.id === "vinyl" && (
                         <Disc3
                           className={cn(
@@ -662,26 +661,38 @@ export const WorkspaceSettingsView = React.memo(() => {
                           )}
                         />
                       )}
-                      <div className="min-w-0">
-                        <span
-                          className={cn(
-                            "text-xs font-semibold block truncate",
-                            isSelected ? "text-primary" : "text-foreground",
-                          )}
-                        >
-                          {viz.metadata.name}
-                        </span>
-                        <span className="text-[11px] text-muted-foreground block truncate">
+                      <span
+                        className={cn(
+                          "text-xs font-semibold truncate",
+                          isSelected ? "text-primary" : "text-foreground",
+                        )}
+                      >
+                        {viz.metadata.name}
+                      </span>
+
+                      {/* Tooltip con icono de información */}
+                      <div
+                        className="relative group/info inline-flex items-center shrink-0"
+                        title={viz.metadata.description}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Info className="h-3.5 w-3.5 text-muted-foreground/60 hover:text-foreground transition-colors cursor-help" />
+                        <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden w-48 rounded-md bg-popover p-2 text-[11px] text-popover-foreground shadow-md border border-border group-hover/info:block z-30 text-center leading-tight">
                           {viz.metadata.description}
-                        </span>
+                        </div>
                       </div>
                     </div>
+
+                    <RadioButton
+                      checked={isSelected}
+                      onChange={() => setActiveVisualizer(viz.metadata.id)}
+                    />
                   </div>
 
-                  {/* Previsualización en vivo exclusiva al hacer hover */}
-                  <div className="shrink-0 flex items-center gap-2">
+                  {/* Previsualización en vivo centrada (activa exclusivamente al posar el cursor) */}
+                  <div className="flex items-center justify-center py-2 w-full">
                     {PreviewComp && (
-                      <div className="transition-all duration-300">
+                      <div className="transition-transform duration-300 group-hover:scale-105">
                         <PreviewComp
                           track={currentTrack}
                           isPlaying={isHovered}
