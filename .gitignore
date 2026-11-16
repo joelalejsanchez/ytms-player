@@ -40,6 +40,8 @@ tauri-app/dist/
 tauri-app/coverage/
 tauri-app/.eslintcache
 tauri-app/*.tsbuildinfo
+tauri-app/.vite/
+.vite/
 
 # Tauri / Rust Backend
 tauri-app/src-tauri/target/
