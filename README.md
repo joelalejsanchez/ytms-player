@@ -11,7 +11,7 @@ Aplicación de escritorio nativa de alto rendimiento construida con **Tauri v2 (
 
 - [Guía de Instalación y Puesta en Marcha (`docs/setup.md`)](docs/setup.md): Requisitos del sistema, configuración de Google Cloud OAuth 2.0 y ejecución.
 - [Registro de Cambios (`docs/changelog.md`)](docs/changelog.md): Historial de características y notas de la versión 1.1.0.
-- [Backlog e Ideas Futuras (`docs/todo.md`)](docs/todo.md): Hoja de ruta para extensiones y versiones posteriores.
+- [Backlog e Ideas Futuras (`docs/backlog.md`)](docs/backlog.md): Hoja de ruta para extensiones y versiones posteriores.
 - [Especificación de Diseño de Software (`docs/sdd.md`)](docs/sdd.md): Arquitectura detallada, diagramas y contratos de API.
 
 ---
