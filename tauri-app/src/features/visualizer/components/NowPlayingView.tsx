@@ -95,11 +95,8 @@ export const NowPlayingView: React.FC = () => {
     [setVolume],
   );
 
-  if (!isNowPlayingExpanded) {
-    return null;
-  }
-
-  const activeModule = visualizerRegistry.get(activeVisualizerId) || visualizerRegistry.get("vinyl")!;
+  const activeModule =
+    visualizerRegistry.get(activeVisualizerId) || visualizerRegistry.get("vinyl")!;
   const ActiveVisualizerComponent = activeModule.Component;
 
   const displayTime = isSeekingLocally ? localSeekTime : currentTime;
@@ -115,10 +112,18 @@ export const NowPlayingView: React.FC = () => {
       role="dialog"
       aria-modal="true"
       aria-label="Vista En Reproducción a Pantalla Completa"
-      className="fixed inset-0 z-40 flex flex-col bg-background/95 backdrop-blur-2xl transition-all duration-300 animate-in fade-in select-none"
+      style={{ backgroundColor: "var(--background)" }}
+      className={`fixed inset-0 z-40 flex flex-col bg-background text-foreground transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] select-none ${
+        isNowPlayingExpanded
+          ? "translate-y-0 opacity-100 pointer-events-auto shadow-2xl"
+          : "translate-y-full opacity-0 pointer-events-none"
+      }`}
     >
-      {/* Barra Superior de la Vista Expandida */}
-      <header className="flex items-center justify-between px-8 py-5 border-b border-border/30">
+      {/* Barra Superior de la Vista Expandida con fondo sólido y borde */}
+      <header
+        style={{ backgroundColor: "var(--card)" }}
+        className="flex items-center justify-between px-8 py-5 border-b border-border bg-card"
+      >
         <Button
           variant="ghost"
           size="sm"
@@ -175,8 +180,11 @@ export const NowPlayingView: React.FC = () => {
         )}
       </main>
 
-      {/* Área Inferior: Metadatos y Controles Centrados */}
-      <footer className="w-full border-t border-border/40 bg-card/60 px-8 py-6 backdrop-blur-md">
+      {/* Área Inferior: Metadatos y Controles Centrados con fondo sólido */}
+      <footer
+        style={{ backgroundColor: "var(--card)" }}
+        className="w-full border-t border-border bg-card px-8 py-6 shadow-lg"
+      >
         <div className="mx-auto flex max-w-4xl flex-col items-center gap-4">
           {/* Título, Artista y Acción de Like */}
           <div className="flex w-full items-center justify-between gap-4">
