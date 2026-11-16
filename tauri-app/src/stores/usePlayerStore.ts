@@ -18,11 +18,14 @@ export interface PlayerState {
   repeatMode: RepeatMode;
   isShuffle: boolean;
   corruptedTrackIds: string[];
+  isNowPlayingExpanded: boolean;
 
   playTrack: (track: Track, newQueue?: Track[]) => void;
   setQueuePreservingCurrent: (newQueue: Track[]) => void;
   markTrackCorrupted: (youtubeId: string) => void;
   clearCorruptedTrack: (youtubeId: string) => void;
+  setNowPlayingExpanded: (expanded: boolean) => void;
+  toggleNowPlayingExpanded: () => void;
   togglePlayPause: () => void;
   setPlaying: (playing: boolean) => void;
   setIsLoadingTrack: (loading: boolean) => void;
@@ -102,6 +105,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   repeatMode: savedPrefs.repeatMode ?? "off",
   isShuffle: Boolean(savedPrefs.isShuffle),
   corruptedTrackIds: [],
+  isNowPlayingExpanded: false,
+
+  setNowPlayingExpanded: (expanded) => set({ isNowPlayingExpanded: expanded }),
+  toggleNowPlayingExpanded: () =>
+    set((state) => ({ isNowPlayingExpanded: !state.isNowPlayingExpanded })),
 
   markTrackCorrupted: (youtubeId) =>
     set((state) => ({

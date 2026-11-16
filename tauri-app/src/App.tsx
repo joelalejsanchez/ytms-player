@@ -8,6 +8,7 @@ import { DownloadsView } from "@/features/downloads/DownloadsView";
 import { LibraryView } from "@/features/library/LibraryView";
 import { PlaylistsView } from "@/features/playlists/PlaylistsView";
 import { MissingFilesView } from "@/features/recovery/MissingFilesView";
+import { NowPlayingView } from "@/features/visualizer";
 import { WorkspaceSettingsView } from "@/features/workspace/WorkspaceSettingsView";
 import { useSseProgress } from "@/hooks/useSseProgress";
 import { useLibraryStore } from "@/stores/useLibraryStore";
@@ -77,6 +78,7 @@ export const App: React.FC = () => {
       </div>
 
       <PersistentPlayer />
+      <NowPlayingView />
       <ToastContainer />
     </div>
   );
