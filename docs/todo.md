@@ -27,9 +27,6 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 3. Prioridad Baja (Casos Específicos o Opcionales)
 
-- [ ] **Módulos Adicionales de Visualización (Patches v1.4.x):**
-  - **Barras Dinámicas de Espectro:** Ecualizador visual reactivo con barras verticales que oscilen en frecuencia y amplitud relativa a la dinámica y volumen del audio en tiempo real mediante Web Audio API (`AudioContext` / `AnalyserNode`), integrable vía la API pública de visualizadores.
-  - **Aura Líquida / Onda Resonante Ambiental:** Orbe u ondas orgánicas fluidas concéntricas con gradientes dinámicos del tema activo que pulsen y respiren al ritmo de la música con resplandor ambiental (*ambient glow*), estilo Apple Music / Spotify Canvas.
 - [ ] **Sincronización selectiva de canciones en Playlists vinculadas:**
   - En playlists sincronizadas, elegir qué canciones individuales ignorar o congelar localmente aunque hayan sido eliminadas en el canal de YouTube.
 - [ ] **Editor manual de etiquetas de metadatos (Tag Editor integrado):**

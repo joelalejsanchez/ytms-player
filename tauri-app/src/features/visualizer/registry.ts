@@ -1,3 +1,6 @@
+import { AmbientAuraPreview, AmbientAuraVisualizer } from "./components/AmbientAuraVisualizer";
+import { CoverWavesPreview, CoverWavesVisualizer } from "./components/CoverWavesVisualizer";
+import { SpectrumPreview, SpectrumVisualizer } from "./components/SpectrumVisualizer";
 import { VinylPreview, VinylVisualizer } from "./components/VinylVisualizer";
 import type { VisualizerModule } from "./types";
 
@@ -10,7 +13,7 @@ class VisualizerRegistry {
   private modules = new Map<string, VisualizerModule>();
 
   constructor() {
-    // 1. Disco de Vinilo (33 RPM) - Implementación base
+    // 1. Disco de Vinilo (33 RPM)
     this.register({
       metadata: {
         id: "vinyl",
@@ -23,6 +26,51 @@ class VisualizerRegistry {
       },
       Component: VinylVisualizer,
       PreviewComponent: VinylPreview,
+    });
+
+    // 2. Barras Dinámicas de Espectro
+    this.register({
+      metadata: {
+        id: "spectrum",
+        name: "Barras Dinámicas de Espectro",
+        description:
+          "Ecualizador visual reactivo con barras verticales que responden en tiempo real al volumen, graves y agudos del audio.",
+        author: "ytms-player Core",
+        version: "1.0.0",
+        tags: ["ecualizador", "frecuencia", "reactivo"],
+      },
+      Component: SpectrumVisualizer,
+      PreviewComponent: SpectrumPreview,
+    });
+
+    // 3. Aura Líquida / Onda Resonante Ambiental
+    this.register({
+      metadata: {
+        id: "ambient-aura",
+        name: "Aura Líquida / Onda Resonante",
+        description:
+          "Anillos concéntricos fluidos y ondas de resplandor ambiental que respiran orgánicamente al ritmo de la música.",
+        author: "ytms-player Core",
+        version: "1.0.0",
+        tags: ["aura", "ambiental", "ondas"],
+      },
+      Component: AmbientAuraVisualizer,
+      PreviewComponent: AmbientAuraPreview,
+    });
+
+    // 4. Carátula con Ondas Sonoras
+    this.register({
+      metadata: {
+        id: "cover-waves",
+        name: "Carátula con Ondas Sonoras",
+        description:
+          "Portada estática enmarcada con ondas sonoras dinámicas directamente debajo que representan la vibración del sonido.",
+        author: "ytms-player Core",
+        version: "1.0.0",
+        tags: ["caratula", "ondas", "minimalista"],
+      },
+      Component: CoverWavesVisualizer,
+      PreviewComponent: CoverWavesPreview,
     });
   }
 

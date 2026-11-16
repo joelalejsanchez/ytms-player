@@ -17,9 +17,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 - **Transición de subida y bajada (Slide Up & Slide Down)**: Animación fluida de deslizamiento vertical (`translate-y-full` a `translate-y-0`) con curva de aceleración orgánica `cubic-bezier(0.16, 1, 0.3, 1)` de 500 ms tanto al abrir como al cerrar la vista.
 - **Fondo sólido y corrección de opacidad CSS**: Corrección de sintaxis incompatible de Tailwind CSS v3 sobre variables CSS (`bg-background/95`), aplicando un fondo sólido y 100% opaco (`bg-background` con superficie `var(--background)`) que cubre por completo el contenido inferior.
 
-#### Módulo de Visualización de Disco de Vinilo (33 RPM)
-- **Tocadiscos analógico realista (`VinylVisualizer`)**: Disco de acetato negro con surcos concéntricos reflexivos, destello cónico de luz especular, halo de resplandor ambiental reactivo y carátula central del álbum en rotación continua a 33⅓ RPM.
-- **Brazo de aguja interactivo (Tonearm)**: Animación con transición física que posiciona la aguja sobre el disco al reproducir y la retira al pausar.
+#### Suite Completa de 4 Visualizadores de Reproducción
+- **Disco de Vinilo Analógico (`VinylVisualizer`)**: Acetato negro con surcos concéntricos reflexivos, destello cónico de luz especular, aguja interactiva con física realista y carátula central en rotación continua a 33⅓ RPM.
+- **Barras Dinámicas de Espectro (`SpectrumVisualizer`)**: Ecualizador gráfico de 36 bandas reactivas impulsado por dinámicas de audio en tiempo real a 60 FPS, con barras de picos en suspensión gravitacional, gradientes visuales y reflejo especular invertido.
+- **Aura Líquida / Onda Resonante Ambiental (`AmbientAuraVisualizer`)**: Anillos concéntricos fluidos y bioluminiscentes que se expanden, respiran y modulan su brillo y escala en sintonía con las frecuencias y armónicos de la música.
+- **Carátula con Ondas Sonoras (`CoverWavesVisualizer`)**: Carátula del álbum fija y enmarcada con acabado estético de vinilo/CD y un osciloscopio simétrico de ondas de sonido vibrando activamente bajo la portada en función directa del volumen y ritmo musical.
+- **Motor de Dinámicas de Audio en Tiempo Real (`useAudioDynamics`)**: Hook optimizado a 60 FPS que se enlaza a nodos de análisis Web Audio API (`AnalyserNode`) junto con un modelo armónico procedural de respaldo que decae naturalmente a cero al pausar o silenciar la reproducción.
 
 #### API de Exportación y Registro Modular de Visualizadores
 - **Contrato público de integración (`VisualizerProps`, `VisualizerModule`)**: Definición tipada para crear y conectar nuevos efectos o visualizaciones personalizadas con acceso directo al estado de reproducción (`track`, `isPlaying`, `currentTime`, `duration`, `volume`, `isMuted`, `audioElement`).

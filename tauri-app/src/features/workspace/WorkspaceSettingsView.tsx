@@ -1,6 +1,7 @@
 import {
   Activity,
   AlertCircle,
+  AudioWaveform,
   Check,
   CheckCircle2,
   Cookie,
@@ -630,12 +631,38 @@ export const WorkspaceSettingsView = React.memo(() => {
                       onChange={() => setActiveVisualizer(viz.metadata.id)}
                     />
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <Disc3
-                        className={cn(
-                          "h-4 w-4 shrink-0",
-                          isSelected ? "text-primary" : "text-muted-foreground",
-                        )}
-                      />
+                      {viz.metadata.id === "vinyl" && (
+                        <Disc3
+                          className={cn(
+                            "h-4 w-4 shrink-0",
+                            isSelected ? "text-primary" : "text-muted-foreground",
+                          )}
+                        />
+                      )}
+                      {viz.metadata.id === "spectrum" && (
+                        <Activity
+                          className={cn(
+                            "h-4 w-4 shrink-0",
+                            isSelected ? "text-primary" : "text-muted-foreground",
+                          )}
+                        />
+                      )}
+                      {viz.metadata.id === "ambient-aura" && (
+                        <Sparkles
+                          className={cn(
+                            "h-4 w-4 shrink-0",
+                            isSelected ? "text-primary" : "text-muted-foreground",
+                          )}
+                        />
+                      )}
+                      {viz.metadata.id === "cover-waves" && (
+                        <AudioWaveform
+                          className={cn(
+                            "h-4 w-4 shrink-0",
+                            isSelected ? "text-primary" : "text-muted-foreground",
+                          )}
+                        />
+                      )}
                       <div className="min-w-0">
                         <span
                           className={cn(
@@ -670,43 +697,6 @@ export const WorkspaceSettingsView = React.memo(() => {
                 </div>
               );
             })}
-
-            {/* Tarjetas informativas de visualizadores planificados */}
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-dashed border-border p-3.5 opacity-60 bg-muted">
-              <div className="flex items-center gap-3">
-                <RadioButton checked={false} disabled />
-                <div className="flex items-center gap-2.5">
-                  <Activity className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <span className="text-xs font-semibold text-foreground">
-                      Barras Dinámicas de Espectro
-                    </span>
-                    <span className="text-[11px] text-muted-foreground block">
-                      Ecualizador visual reactivo a las frecuencias y volumen del audio
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <Badge tone="default">Próximamente</Badge>
-            </div>
-
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-dashed border-border p-3.5 opacity-60 bg-muted">
-              <div className="flex items-center gap-3">
-                <RadioButton checked={false} disabled />
-                <div className="flex items-center gap-2.5">
-                  <Sparkles className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <span className="text-xs font-semibold text-foreground">
-                      Aura Líquida / Onda Resonante
-                    </span>
-                    <span className="text-[11px] text-muted-foreground block">
-                      Ondas orgánicas fluidas con gradientes dinámicos del tema activo
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <Badge tone="default">Próximamente</Badge>
-            </div>
           </div>
         </div>
       </div>
