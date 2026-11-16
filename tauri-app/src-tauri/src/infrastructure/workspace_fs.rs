@@ -6,6 +6,7 @@ use crate::domain::errors::{DomainError, DomainResult};
 use crate::domain::ports::WorkspaceManagerPort;
 
 pub const WORKSPACE_CONTROL_FILENAME: &str = ".ytms-player-workspace";
+pub const MAX_LOG_FILE_SIZE_BYTES: u64 = 1024 * 1024; // 1 MB límite por archivo de log con rotación
 
 /// Implementación del gestor de sistema de archivos para Workspaces de ytms-player (SDD Sección 3).
 #[derive(Debug, Default, Clone)]
@@ -14,6 +15,54 @@ pub struct LocalWorkspaceManager;
 impl LocalWorkspaceManager {
     pub fn new() -> Self {
         Self
+    }
+
+    pub fn append_log_to_file(root_path: &Path, entry_line: &str) -> DomainResult<()> {
+        let logs_dir = root_path.join("logs");
+        if !logs_dir.is_dir() {
+            fs::create_dir_all(&logs_dir).map_err(|e| {
+                DomainError::FilesystemError(format!("Failed to create /logs directory: {e}"))
+            })?;
+        }
+
+        let log_file = logs_dir.join("app.log");
+        let old_file = logs_dir.join("app.log.old");
+
+        let entry_bytes_len = entry_line.len() as u64 + 1;
+        if let Ok(meta) = fs::metadata(&log_file) {
+            if meta.len() + entry_bytes_len > MAX_LOG_FILE_SIZE_BYTES {
+                let _ = fs::rename(&log_file, &old_file);
+            }
+        }
+
+        use std::io::Write;
+        let mut file = fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&log_file)
+            .map_err(|e| {
+                DomainError::FilesystemError(format!("Failed to open log file for append: {e}"))
+            })?;
+
+        writeln!(file, "{}", entry_line).map_err(|e| {
+            DomainError::FilesystemError(format!("Failed to write to log file: {e}"))
+        })?;
+
+        Ok(())
+    }
+
+    pub fn clear_log_files(root_path: &Path) -> DomainResult<()> {
+        let logs_dir = root_path.join("logs");
+        let log_file = logs_dir.join("app.log");
+        let old_file = logs_dir.join("app.log.old");
+
+        if log_file.exists() {
+            let _ = fs::remove_file(log_file);
+        }
+        if old_file.exists() {
+            let _ = fs::remove_file(old_file);
+        }
+        Ok(())
     }
 }
 
@@ -34,6 +83,7 @@ impl WorkspaceManagerPort for LocalWorkspaceManager {
 
         let tracks_dir = root_path.join("tracks");
         let thumbnails_dir = root_path.join("thumbnails");
+        let logs_dir = root_path.join("logs");
         let control_file = root_path.join(WORKSPACE_CONTROL_FILENAME);
         let db_path = root_path.join("ytms-player.db");
 
@@ -43,6 +93,10 @@ impl WorkspaceManagerPort for LocalWorkspaceManager {
 
         fs::create_dir_all(&thumbnails_dir).map_err(|e| {
             DomainError::FilesystemError(format!("Failed to create /thumbnails directory: {e}"))
+        })?;
+
+        fs::create_dir_all(&logs_dir).map_err(|e| {
+            DomainError::FilesystemError(format!("Failed to create /logs directory: {e}"))
         })?;
 
         if !control_file.exists() {
@@ -55,12 +109,16 @@ impl WorkspaceManagerPort for LocalWorkspaceManager {
             })?;
         }
 
-        let is_valid = control_file.is_file() && tracks_dir.is_dir() && thumbnails_dir.is_dir();
+        let is_valid = control_file.is_file()
+            && tracks_dir.is_dir()
+            && thumbnails_dir.is_dir()
+            && logs_dir.is_dir();
 
         Ok(WorkspaceInfo {
             root_path: root_path.to_string_lossy().to_string(),
             tracks_dir: tracks_dir.to_string_lossy().to_string(),
             thumbnails_dir: thumbnails_dir.to_string_lossy().to_string(),
+            logs_dir: logs_dir.to_string_lossy().to_string(),
             database_path: db_path.to_string_lossy().to_string(),
             is_valid,
             total_tracks: 0,
@@ -182,5 +240,13 @@ impl WorkspaceManagerPort for LocalWorkspaceManager {
         }
 
         Ok(orphans)
+    }
+
+    fn append_log_entry(&self, root_path: &Path, entry_line: &str) -> DomainResult<()> {
+        Self::append_log_to_file(root_path, entry_line)
+    }
+
+    fn clear_log_file(&self, root_path: &Path) -> DomainResult<()> {
+        Self::clear_log_files(root_path)
     }
 }

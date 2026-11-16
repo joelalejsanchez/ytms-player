@@ -7,14 +7,16 @@ pub mod interfaces;
 
 use infrastructure::audio_streaming_server::AudioStreamingServer;
 use interfaces::commands::{
-    add_track_to_playlist, adopt_orphan_file, check_microservice_health, clear_download_history, confirm_sse_download,
-    create_playlist, delete_orphan_file, delete_playlist, delete_track, get_app_settings,
-    get_audio_stream_url, get_download_history, get_missing_tracks, get_oauth_status, get_playlist_details, get_playlists,
-    get_playlist_track_map, get_tracks, get_workspace_info, import_cookies_file, logout_oauth, open_oauth_login,
-    preview_playlist_url, rate_video, read_audio_data_url, recover_track, refresh_track_metadata,
-    register_track, remove_saved_workspace, remove_track_from_playlist, select_workspace,
-    set_microservice_url, set_preferred_audio_format, start_download, sync_likes,
-    sync_playlist_tracks, toggle_track_like, verify_integrity,
+    add_track_to_playlist, adopt_orphan_file, append_log_entry, check_microservice_health,
+    clear_download_history, clear_log_file, confirm_sse_download, create_playlist,
+    delete_orphan_file, delete_playlist, delete_track, get_app_settings, get_audio_stream_url,
+    get_download_history, get_missing_tracks, get_oauth_status, get_playlist_details,
+    get_playlists, get_playlist_track_map, get_tracks, get_workspace_info, import_cookies_file,
+    logout_oauth, open_logs_folder, open_oauth_login, preview_playlist_url, rate_video,
+    read_audio_data_url, recover_track, refresh_track_metadata, register_track,
+    remove_saved_workspace, remove_track_from_playlist, select_workspace, set_microservice_url,
+    set_preferred_audio_format, start_download, sync_likes, sync_playlist_tracks,
+    toggle_track_like, verify_integrity,
 };
 use interfaces::state::AppState;
 
@@ -78,6 +80,9 @@ fn main() {
             logout_oauth,
             rate_video,
             refresh_track_metadata,
+            append_log_entry,
+            clear_log_file,
+            open_logs_folder,
         ])
         .run(tauri::generate_context!())
         .expect("Error while running ytms-player Tauri application");
@@ -115,6 +120,46 @@ mod tests {
         assert!(ws_dir.join(".ytms-player-workspace").is_file());
         assert!(ws_dir.join("tracks").is_dir());
         assert!(ws_dir.join("thumbnails").is_dir());
+        assert!(ws_dir.join("logs").is_dir());
+        assert_eq!(info.logs_dir, ws_dir.join("logs").to_string_lossy());
+
+        let _ = fs::remove_dir_all(&ws_dir);
+    }
+
+    #[test]
+    fn test_workspace_log_file_append_and_rotation() {
+        let ws_dir = temp_workspace_dir("logs");
+        let manager = LocalWorkspaceManager::new();
+        manager
+            .initialize_or_validate(&ws_dir)
+            .expect("init workspace");
+
+        let log_file = ws_dir.join("logs").join("app.log");
+        let old_file = ws_dir.join("logs").join("app.log.old");
+
+        // 1. Escribir entrada de log
+        manager
+            .append_log_entry(&ws_dir, "[2026-11-16 12:00:00] [ERROR] [toast] Sample error")
+            .expect("append log");
+        assert!(log_file.is_file());
+
+        let content = fs::read_to_string(&log_file).expect("read log");
+        assert!(content.contains("Sample error"));
+
+        // 2. Simular rotación creando un archivo que supere el límite
+        let huge_line = "A".repeat(1024 * 1024 + 10);
+        manager
+            .append_log_entry(&ws_dir, &huge_line)
+            .expect("append huge line");
+
+        // Tras superar el tamaño, el archivo anterior debió rotar a app.log.old
+        assert!(old_file.is_file());
+        assert!(log_file.is_file());
+
+        // 3. Limpiar logs
+        manager.clear_log_file(&ws_dir).expect("clear logs");
+        assert!(!log_file.exists());
+        assert!(!old_file.exists());
 
         let _ = fs::remove_dir_all(&ws_dir);
     }

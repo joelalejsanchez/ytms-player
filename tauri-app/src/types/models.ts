@@ -54,10 +54,20 @@ export interface WorkspaceInfo {
   root_path: string;
   tracks_dir: string;
   thumbnails_dir: string;
+  logs_dir: string;
   database_path: string;
   is_valid: boolean;
   total_tracks: number;
   missing_tracks: number;
+}
+
+export interface LogEntryPayload {
+  formatted_time: string;
+  level: string;
+  title: string;
+  description?: string;
+  context?: string;
+  details?: string;
 }
 
 export interface SavedWorkspaceEntry {

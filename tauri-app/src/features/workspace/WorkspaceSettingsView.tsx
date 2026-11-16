@@ -222,6 +222,7 @@ export const WorkspaceSettingsView = React.memo(() => {
   const errorLogs = useLogStore((s) => s.logs);
   const setOpenLogModal = useLogStore((s) => s.setOpenModal);
   const clearErrorLogs = useLogStore((s) => s.clearLogs);
+  const openLogsFolder = useLogStore((s) => s.openLogsFolder);
 
   const [isConnectingOAuth, setIsConnectingOAuth] = useState(false);
   const [isLoggingOutOAuth, setIsLoggingOutOAuth] = useState(false);
@@ -1226,6 +1227,17 @@ export const WorkspaceSettingsView = React.memo(() => {
               type="button"
               variant="outline"
               size="sm"
+              onClick={() => void openLogsFolder()}
+              className="gap-1.5 text-xs"
+              title="Abrir carpeta física /logs del workspace"
+            >
+              <FolderOpen className="h-3.5 w-3.5" />
+              <span>Abrir /logs</span>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
               onClick={() => setOpenLogModal(true)}
               className="gap-1.5 text-xs"
             >
@@ -1237,9 +1249,9 @@ export const WorkspaceSettingsView = React.memo(() => {
 
         {/* Resumen interactivo de registros */}
         <div className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between text-xs text-muted-foreground">
-            <span>
-              Total de eventos en memoria: <strong>{errorLogs.length}</strong>
+          <div className="flex flex-wrap items-center justify-between text-xs text-muted-foreground gap-2">
+            <span className="truncate">
+              Archivo físico: <code className="text-foreground bg-muted px-1.5 py-0.5 rounded text-[11px] font-mono">/logs/app.log</code> (Límite optimizado: 1 MB con rotación automática)
             </span>
             {errorLogs.length > 0 && (
               <Button

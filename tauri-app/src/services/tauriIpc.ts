@@ -8,6 +8,7 @@ import type {
   HealthStatusDto,
   IntegrityReport,
   LikeSyncResponseDto,
+  LogEntryPayload,
   MicroserviceDownloadItem,
   MicroserviceDownloadResponse,
   NewTrack,
@@ -239,5 +240,17 @@ export const tauriApi = {
 
   deleteOrphanFile(youtubeId: string, fileExtension: string): Promise<void> {
     return safeInvoke<void>("delete_orphan_file", { youtubeId, fileExtension });
+  },
+
+  appendLogEntry(entry: LogEntryPayload): Promise<void> {
+    return safeInvoke<void>("append_log_entry", { entry });
+  },
+
+  clearLogFile(): Promise<void> {
+    return safeInvoke<void>("clear_log_file");
+  },
+
+  openLogsFolder(): Promise<string> {
+    return safeInvoke<string>("open_logs_folder");
   },
 };
