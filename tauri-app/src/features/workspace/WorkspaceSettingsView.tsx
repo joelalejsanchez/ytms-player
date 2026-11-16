@@ -197,7 +197,6 @@ export const WorkspaceSettingsView = React.memo(() => {
   const activeVisualizerId = useVisualizerStore((s) => s.activeVisualizerId);
   const setActiveVisualizer = useVisualizerStore((s) => s.setActiveVisualizer);
   const currentTrack = usePlayerStore((s) => s.currentTrack);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
   const [hoveredVisualizerId, setHoveredVisualizerId] = useState<string | null>(null);
 
   // Estados para Microservicio
@@ -679,13 +678,13 @@ export const WorkspaceSettingsView = React.memo(() => {
                     </div>
                   </div>
 
-                  {/* Previsualización en vivo al hacer hover */}
+                  {/* Previsualización en vivo exclusiva al hacer hover */}
                   <div className="shrink-0 flex items-center gap-2">
                     {PreviewComp && (
                       <div className="transition-all duration-300">
                         <PreviewComp
                           track={currentTrack}
-                          isPlaying={isHovered || isPlaying}
+                          isPlaying={isHovered}
                           currentTime={0}
                           duration={100}
                           volume={1}

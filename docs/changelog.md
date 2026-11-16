@@ -6,6 +6,28 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.4.1] - 2026-11-16
+
+### Añadido
+
+#### Extracción de Color Dominante e Iluminación Ambiental de Portada
+- **Hook de extracción cromática (`useCoverDominantColor`)**: Análisis instantáneo de la miniatura del álbum mediante un `<canvas>` offscreen de 32×32 con filtrado ITU-R BT.601, discriminación de extremos acromáticos (blancos y negros) y ponderación por saturación para aislar el color más vibrante y representativo del álbum.
+- **Resplandor ambiental dinámico en `NowPlayingView`**: Proyección de gradiente radial suave en el fondo detrás del visualizador (`<main>`) utilizando el color dominante extraído de la carátula, manteniendo intactos los fondos sólidos y de alto contraste en los controles (`<footer>`) y la barra superior (`<header>`).
+- **Transición cromática atmosférica**: Desvanecimiento suave (`transition: all 1s ease-out`) al cambiar de pista entre las tonalidades de cada carátula.
+
+### Mejorado
+
+#### Dinámica y Rango Útil de Barras de Visualización
+- **Desacoplamiento de atenuación por volumen máster**: Las barras de espectro (`SpectrumVisualizer`) y ondas de carátula (`CoverWavesVisualizer`) ahora escalan su altura en función de la actividad y contenido armónico real de la pista en reproducción, en lugar de verse colapsadas si el usuario escucha a volumen bajo.
+- **Aprovechamiento completo del espacio de UI (hasta 94-96%)**: Curva perceptual y límites acotados que permiten a los picos de percusión y frecuencias medias y graves alcanzar la parte alta del contenedor visual sin desbordar los bordes de la interfaz.
+
+### Corregido
+
+#### Previsualización Exclusiva por Hover en Ajustes
+- **Aislamiento de estado en Personalización**: La animación interactiva de las tarjetas de visualizadores en *Configuración -> Personalización* ahora se activa **únicamente** cuando el cursor se posiciona sobre la opción (`isHovered`), corrigiendo el comportamiento previo donde la reproducción activa en segundo plano forzaba la animación constante de todas las tarjetas.
+
+---
+
 ## [1.4.0] - 2026-11-16
 
 ### Añadido
