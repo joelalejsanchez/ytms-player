@@ -12,13 +12,6 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
-- [x] **Página de bienvenida y Dashboard principal (Home View):**
-  - Cuadrícula de playlists en tarjetas/cuadros con carátula y botón de reproducción rápida ("Quick Play") con un solo clic.
-  - Panel superior con estadísticas clave de la biblioteca (métricas sugeridas):
-    - *Volumen de la biblioteca:* Conteo total de canciones y duración acumulada (ej. `250 canciones • 14h 32m`).
-    - *Almacenamiento:* Espacio físico total ocupado en disco por los archivos descargados.
-    - *Favoritos:* Recuento de canciones con "Me gusta".
-    - *Actividad reciente:* Acceso rápido a las últimas playlists reproducidas o pistas recientemente añadidas.
 - [ ] **Acción rápida para redescarga de Playlists vinculadas:**
   - Botón directo en la vista de playlist para aquellas que posean un `youtube_playlist_id`.
   - Redirecciona automáticamente a la vista de Descargas precargando el ID o enlace de la lista para facilitar la re-descarga y recuperación de audios corruptos o faltantes.
@@ -37,9 +30,6 @@ Este documento registra las características, mejoras y extensiones que **no est
 - [ ] **Estabilización de ancho y prevención de saltos visuales en selects de Tracks (`LibraryView`):**
   - Los desplegables `CustomSelect` de formato y ordenamiento varían dinámicamente de anchura según la longitud del texto de la opción activa (ej. al alternar entre *"Todos los formatos"* vs *"MP3"*, o *"Fecha de descarga"* vs *"Título"*), provocando desplazamientos horizontales bruscos en los controles adyacentes (botón ASC/DESC).
   - Asignar anchos mínimos consistentes o anchos fijos calibrados (`min-w-[130px]` / `min-w-[150px]` o `w-36` / `w-40`) a los contenedores/triggers de `CustomSelect` para garantizar estabilidad en la interfaz sin saltos de layout al cambiar filtros.
-- [x] **Gestión dinámica de portadas para Playlists:**
-  - Asignación automática de la portada de la playlist utilizando la miniatura de la primera canción insertada.
-  - Al remover o desvincular una pista, comprobar si la carátula activa de la playlist corresponde a dicha pista; en caso afirmativo, seleccionar dinámicamente y de forma aleatoria otra canción presente en la lista para actualizar la portada (o recurrir a la primera restante; si la lista queda vacía, restaurar carátula genérica por defecto).
 - [ ] **Ampliación de opciones en el menú contextual de 3 puntos (`ActionMenu`):**
   - **Información detallada de la pista (Track Info):** Modal o panel lateral para inspeccionar los metadatos completos del archivo (codec de audio, bitrate, frecuencia de muestreo, tamaño en disco, fecha de descarga, ID original y enlace directo de YouTube).
   - **Información y estadísticas de Playlist:** Modal con duración total acumulada (horas/minutos), recuento de temas, tamaño estimado en disco, ID de sincronización y enlace original a YouTube.
