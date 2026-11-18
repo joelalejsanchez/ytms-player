@@ -12,10 +12,8 @@ Aplicación de escritorio nativa de alto rendimiento construida con **Tauri v2 (
 
 ## Características Principales
 
-* 🎵 **Motor de Streaming Nativo (HTTP 206 Partial Content):** Reproducción de audio en memoria casi instantánea con bajo consumo de CPU y RAM.
-* 🖼️ **Portadas Dinámicas de Playlists:** Asignación automática de carátulas basada en las canciones añadidas y reasignación aleatoria al eliminar pistas.
+* 🎵 **Motor de Streaming Nativo (HTTP 206 Partial Content):** Reproducción de audio local eficiente directamente desde disco con bajo consumo de CPU y memoria.
 * 📁 **Workspaces Aislados:** Múltiples bibliotecas independientes organizadas con base de datos SQLite embebida por cada directorio de música.
-* 📊 **Suite de Visualizadores en Tiempo Real:** 4 visualizadores reactivos a 60 FPS (Vinilo analógico, Espectro armónico de barras, Aura ambiental y Ondas de carátula).
 * ❤️ **Favoritos y Likes Híbridos:** Sistema local de canciones favoritas en SQLite con soporte de sincronización bidireccional opcional con tu cuenta de YouTube.
 
 ---
