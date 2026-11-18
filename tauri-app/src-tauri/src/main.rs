@@ -27,6 +27,17 @@ fn main() {
         if std::env::var("WEBKIT_DISABLE_DMABUF_RENDERER").is_err() {
             std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
         }
+
+        // Permite que WebKitGTK y GStreamer ubiquen los códecs y sumideros de audio (appsink, autoaudiosink)
+        // del sistema anfitrión cuando la aplicación se ejecuta empaquetada como AppImage
+        if std::env::var("APPIMAGE").is_ok() || std::env::var("APPDIR").is_ok() {
+            if std::env::var("GST_PLUGIN_SYSTEM_PATH_1_0").is_err() {
+                std::env::set_var(
+                    "GST_PLUGIN_SYSTEM_PATH_1_0",
+                    "/usr/lib/gstreamer-1.0:/usr/lib64/gstreamer-1.0:/usr/lib/x86_64-linux-gnu/gstreamer-1.0",
+                );
+            }
+        }
     }
 
     let (server, std_listener) =
