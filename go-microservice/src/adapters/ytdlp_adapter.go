@@ -43,11 +43,15 @@ type ytdlpJSONEntry struct {
 }
 
 func (a *YtDlpAdapter) appendCookieArgs(args []string) []string {
-	if a.cookiesPath == "" {
-		return args
+	if a.cookiesPath != "" {
+		if info, err := os.Stat(a.cookiesPath); err == nil && !info.IsDir() && info.Size() > 0 {
+			return append(args, "--cookies", a.cookiesPath)
+		}
 	}
-	if info, err := os.Stat(a.cookiesPath); err == nil && !info.IsDir() && info.Size() > 0 {
-		return append(args, "--cookies", a.cookiesPath)
+	// Fallback inteligente: buscar en /app/workspace/cookies.txt
+	workspaceCookies := "/app/workspace/cookies.txt"
+	if info, err := os.Stat(workspaceCookies); err == nil && !info.IsDir() && info.Size() > 0 {
+		return append(args, "--cookies", workspaceCookies)
 	}
 	return args
 }

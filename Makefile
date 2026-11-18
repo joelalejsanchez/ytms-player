@@ -1,4 +1,4 @@
-.PHONY: help fmt fmt-check lint test check docker-up docker-down dev build build-bin release make-release build-appimage desktop-shortcut
+.PHONY: help fmt fmt-check lint test check docker-up docker-down dev build build-bin release make-release build-appimage
 
 help: ## Muestra los comandos disponibles en la raíz del monorepo
 	@echo "Comandos disponibles en ytms-player Monorepo:"
@@ -13,7 +13,6 @@ help: ## Muestra los comandos disponibles en la raíz del monorepo
 	@echo "  make build            - Compila el ejecutable nativo en tauri-app (entorno de desarrollo)"
 	@echo "  make release          - Genera el ejecutable de producción en la raíz (/release/ytms-player)"
 	@echo "  make build-appimage   - Genera el instalador portable AppImage para Linux"
-	@echo "  make desktop-shortcut - Instala el acceso directo .desktop e icono a partir del binario en /release"
 
 fmt:
 	$(MAKE) -C go-microservice fmt
@@ -62,8 +61,5 @@ make-release: release
 
 build-appimage:
 	cd tauri-app && npm run tauri build -- -b appimage
-
-desktop-shortcut:
-	@./scripts/install-desktop-shortcut.sh
 
 

@@ -88,18 +88,6 @@ impl AppSettingsStore {
                 return PathBuf::from(trimmed);
             }
         }
-        // Si existe la carpeta ./config o ../config del monorepo para el volumen Docker, sincronizar también allí
-        let candidates = [
-            PathBuf::from("../config/cookies.txt"),
-            PathBuf::from("./config/cookies.txt"),
-        ];
-        for candidate in candidates {
-            if let Some(parent) = candidate.parent() {
-                if parent.is_dir() {
-                    return candidate;
-                }
-            }
-        }
         config_dir.join("cookies.txt")
     }
 
@@ -239,10 +227,43 @@ impl AppSettingsStore {
                 fs::set_permissions(&self.cookies_target_path, fs::Permissions::from_mode(0o600));
         }
 
+        // Si existen carpetas de desarrollo locales ./config o ../config, mantener compatibilidad
+        let dev_candidates = [
+            PathBuf::from("../config/cookies.txt"),
+            PathBuf::from("./config/cookies.txt"),
+        ];
+        for candidate in &dev_candidates {
+            if let Some(parent) = candidate.parent() {
+                if parent.is_dir() {
+                    let _ = fs::write(candidate, content.as_bytes());
+                }
+            }
+        }
+
         let mut settings = self.load(default_microservice_url);
         settings.cookies_file_path = Some(self.cookies_target_path.to_string_lossy().to_string());
         self.save(&settings)?;
         Ok(settings)
+    }
+
+    /// Sincroniza la copia maestra de `cookies.txt` desde AppData / .config hacia el workspace activo
+    /// para que el contenedor de Docker pueda acceder a ella sin montar carpetas del sistema.
+    pub fn sync_cookies_to_workspace(&self, workspace_root: &Path) -> DomainResult<()> {
+        if self.cookies_target_path.is_file() {
+            let dest_path = workspace_root.join("cookies.txt");
+            let content = fs::read(&self.cookies_target_path).map_err(|e| {
+                DomainError::FilesystemError(format!("Failed to read master cookies.txt: {e}"))
+            })?;
+            fs::write(&dest_path, &content).map_err(|e| {
+                DomainError::FilesystemError(format!("Failed to sync cookies.txt to workspace: {e}"))
+            })?;
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let _ = fs::set_permissions(&dest_path, fs::Permissions::from_mode(0o600));
+            }
+        }
+        Ok(())
     }
 
     pub fn update_preferred_format(

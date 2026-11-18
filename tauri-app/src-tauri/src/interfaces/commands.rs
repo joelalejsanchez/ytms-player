@@ -48,6 +48,9 @@ pub fn select_workspace(path: String, state: State<'_, AppState>) -> DomainResul
         .settings_store
         .record_workspace_opened(&root_path, &current_url);
 
+    // Sincronizar automáticamente cookies maestras desde AppData hacia el workspace para Docker
+    let _ = state.settings_store.sync_cookies_to_workspace(&root_path);
+
     Ok(info)
 }
 
@@ -505,9 +508,16 @@ pub fn import_cookies_file(
     state: State<'_, AppState>,
 ) -> DomainResult<AppSettings> {
     let current_url = state.microservice_client()?.base_url().to_string();
-    state
+    let settings = state
         .settings_store
-        .import_cookies_file(&PathBuf::from(source_path.trim()), &current_url)
+        .import_cookies_file(&PathBuf::from(source_path.trim()), &current_url)?;
+
+    // Sincronizar automáticamente hacia el workspace activo si existe
+    if let Ok(ctx) = state.active_workspace() {
+        let _ = state.settings_store.sync_cookies_to_workspace(&ctx.root_path);
+    }
+
+    Ok(settings)
 }
 
 /// Obtiene el historial reciente de descargas registradas en el Workspace.

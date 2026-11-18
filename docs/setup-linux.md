@@ -117,13 +117,10 @@ npm run tauri build
 Los paquetes quedarán en `tauri-app/src-tauri/target/release/bundle/`.
 
 ### Opción B: Binario nativo aislado en `/release`
-Si deseas compilar el binario nativo directo sin empaquetar:
+Si deseas compilar el binario nativo directo sin empaquetar para pruebas rápidas:
 ```bash
 just release
 # O con make:
 make release
 ```
-El ejecutable resultante quedará en `/release/ytms-player`. Para registrarlo en tu menú de aplicaciones de escritorio en Linux, ejecuta el script auxiliar:
-```bash
-./scripts/install-desktop-shortcut.sh
-```
+El ejecutable resultante quedará disponible en `/release/ytms-player`.
