@@ -1,7 +1,7 @@
 # justfile para ytms-player Monorepo
 # https://github.com/casey/just
 
-# Muestra los comandos disponibles
+# Muestra los comandos disponibles en el monorepo
 default:
     @just --list
 
@@ -44,10 +44,26 @@ docker-down:
 dev:
     cd tauri-app && npm run tauri dev
 
-# Compila el ejecutable nativo en tauri-app (entorno de desarrollo)
-build:
+# Compila el ejecutable nativo en tauri-app (entorno de desarrollo sin empaquetar)
+build: build-bin
+
+# Compila el binario directo en tauri-app/src-tauri/target/release
+build-bin:
     cd tauri-app && npm run tauri build -- --no-bundle
 
-# Genera el binario de producción en la carpeta raíz (/release/)
-release: build
-    node -e "const fs = require('fs'); const path = require('path'); const isWin = process.platform === 'win32'; const binName = isWin ? 'ytms-player.exe' : 'ytms-player'; const src = path.join('tauri-app', 'src-tauri', 'target', 'release', binName); const destDir = 'release'; const dest = path.join(destDir, binName); if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true }); fs.copyFileSync(src, dest); console.log('✓ Binario de producción copiado en ' + dest);"
+# Genera el paquete portable AppImage para Linux
+build-appimage:
+    cd tauri-app && npm run tauri build -- -b appimage
+
+# Genera el paquete instalador .deb para Debian/Ubuntu
+build-deb:
+    cd tauri-app && npm run tauri build -- -b deb
+
+# Genera el paquete instalador .rpm para Fedora/openSUSE
+build-rpm:
+    cd tauri-app && npm run tauri build -- -b rpm
+
+# Compila los instaladores oficiales (.msi/.exe en Windows o .deb/AppImage/.rpm en Linux) y los copia a /release/
+release:
+    cd tauri-app && npm run tauri build
+    node -e "const fs = require('fs'); const path = require('path'); const srcDir = path.join('tauri-app', 'src-tauri', 'target', 'release', 'bundle'); const destDir = 'release'; if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true }); function copyFiles(dir) { if (!fs.existsSync(dir)) return; for (const file of fs.readdirSync(dir)) { const full = path.join(dir, file); if (fs.statSync(full).isDirectory()) copyFiles(full); else if (/\.(msi|exe|deb|rpm|AppImage|tar\.gz)$/i.test(file)) { const dest = path.join(destDir, file); fs.copyFileSync(full, dest); console.log('✓ Copiado ' + file + ' -> release/'); } } } copyFiles(srcDir);"
