@@ -31,11 +31,38 @@ fn main() {
         // Permite que WebKitGTK y GStreamer ubiquen los códecs y sumideros de audio (appsink, autoaudiosink)
         // del sistema anfitrión cuando la aplicación se ejecuta empaquetada como AppImage
         if std::env::var("APPIMAGE").is_ok() || std::env::var("APPDIR").is_ok() {
-            if std::env::var("GST_PLUGIN_SYSTEM_PATH_1_0").is_err() {
-                std::env::set_var(
-                    "GST_PLUGIN_SYSTEM_PATH_1_0",
-                    "/usr/lib/gstreamer-1.0:/usr/lib64/gstreamer-1.0:/usr/lib/x86_64-linux-gnu/gstreamer-1.0",
-                );
+            let host_gst_paths = "/usr/lib/gstreamer-1.0:/usr/lib64/gstreamer-1.0:/usr/lib/x86_64-linux-gnu/gstreamer-1.0";
+
+            // AppRun de linuxdeploy predefine GST_PLUGIN_SYSTEM_PATH_1_0 apuntando al AppDir interno (vacío de plugins).
+            // Concatenamos las rutas del sistema anfitrión para que GStreamer encuentre los plugins del host.
+            let plugin_path = match std::env::var("GST_PLUGIN_SYSTEM_PATH_1_0") {
+                Ok(existing) if !existing.trim().is_empty() => format!("{}:{}", existing, host_gst_paths),
+                _ => host_gst_paths.to_string(),
+            };
+            std::env::set_var("GST_PLUGIN_SYSTEM_PATH_1_0", &plugin_path);
+            std::env::set_var("GST_PLUGIN_SYSTEM_PATH", &plugin_path);
+
+            let extra_plugin_path = match std::env::var("GST_PLUGIN_PATH_1_0") {
+                Ok(existing) if !existing.trim().is_empty() => format!("{}:{}", existing, host_gst_paths),
+                _ => host_gst_paths.to_string(),
+            };
+            std::env::set_var("GST_PLUGIN_PATH_1_0", &extra_plugin_path);
+            std::env::set_var("GST_PLUGIN_PATH", &extra_plugin_path);
+
+            // Ubicar gst-plugin-scanner en el host para permitir el descubrimiento dinámico de códecs
+            let scanner_candidates = [
+                "/usr/lib/gstreamer-1.0/gst-plugin-scanner",
+                "/usr/lib/x86_64-linux-gnu/gstreamer1.0/gstreamer-1.0/gst-plugin-scanner",
+                "/usr/lib/x86_64-linux-gnu/gstreamer-1.0/gst-plugin-scanner",
+                "/usr/libexec/gstreamer-1.0/gst-plugin-scanner",
+                "/usr/lib64/gstreamer-1.0/gst-plugin-scanner",
+            ];
+            for scanner in scanner_candidates {
+                if std::path::Path::new(scanner).exists() {
+                    std::env::set_var("GST_PLUGIN_SCANNER_1_0", scanner);
+                    std::env::set_var("GST_PLUGIN_SCANNER", scanner);
+                    break;
+                }
             }
         }
     }
