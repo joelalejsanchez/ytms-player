@@ -68,6 +68,13 @@ just docker-up
 docker compose up -d --build
 ```
 
+> [!TIP]
+> **Gestión de Cookies de YouTube (`cookies.txt`):**  
+> Para descargar contenido con restricción de edad o evitar bloqueos antibot de YouTube, exporta las cookies de tu navegador en formato Netscape (`cookies.txt`). No necesitas copiar archivos manualmente en el repositorio:
+> 1. Abre la aplicación de escritorio y ve a **Ajustes del Espacio de Trabajo** (icono de engranaje).
+> 2. En el panel de **Cookies**, haz clic en **Importar cookies.txt**.
+> 3. La aplicación almacena la copia maestra en `%APPDATA%\com.ytms-player.desktop\cookies.txt` y la sincroniza automáticamente con el espacio de trabajo activo (`workspace\cookies.txt`), donde el microservicio de Docker la consume directamente.
+
 > [!WARNING]
 > **Mantenimiento del contenedor de descargas:**  
 > YouTube actualiza frecuentemente sus firmas y mecanismos de protección antibot. Si las descargas fallan, reconstruye la imagen del contenedor sin caché para obtener la versión más reciente de `yt-dlp`:

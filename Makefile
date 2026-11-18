@@ -35,7 +35,6 @@ check: fmt-check lint test
 ## docker-up: Levanta el microservicio Go en Docker Compose
 docker-up:
 	mkdir -p workspace config
-	touch config/cookies.txt
 	docker compose up --build -d
 
 ## docker-down: Detiene el microservicio Go en Docker Compose
