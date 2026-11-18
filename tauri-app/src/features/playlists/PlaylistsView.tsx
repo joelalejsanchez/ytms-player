@@ -191,9 +191,25 @@ export const PlaylistsView = React.memo(() => {
                     <Play className="h-4 w-4 fill-current" />
                   </Button>
 
+                  {/* Portada dinámica de la Playlist */}
+                  <div className="relative mr-3 h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-muted flex items-center justify-center border border-border/60 shadow-xs">
+                    {pl.cover_path ? (
+                      <img
+                        src={toAssetUrl(pl.cover_path)}
+                        alt={pl.title}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLElement).style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <ListMusic className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </div>
+
                   <div className="min-w-0 flex-1 text-left select-none">
                     <div className="flex items-center gap-2">
-                      <ListMusic className="h-4 w-4 text-primary" />
                       <span
                         className={`truncate text-sm font-semibold ${
                           isSelected ? "text-primary" : "text-foreground"
@@ -252,14 +268,30 @@ export const PlaylistsView = React.memo(() => {
             </div>
           ) : (
             <>
-              <div className="mb-4 flex items-center justify-between border-b border-border pb-3">
-                <div>
-                  <h3 className="text-lg font-bold text-foreground">
-                    {activePlaylist.playlist.title}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    {activePlaylist.tracks.length} pistas asociadas
-                  </p>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-border/80 bg-muted shadow-md flex items-center justify-center">
+                    {activePlaylist.playlist.cover_path ? (
+                      <img
+                        src={toAssetUrl(activePlaylist.playlist.cover_path)}
+                        alt={activePlaylist.playlist.title}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <ListMusic className="h-8 w-8 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                      Playlist
+                    </span>
+                    <h3 className="text-lg font-bold text-foreground truncate">
+                      {activePlaylist.playlist.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {activePlaylist.tracks.length} {activePlaylist.tracks.length === 1 ? "pista" : "pistas"} asociadas
+                    </p>
+                  </div>
                 </div>
 
                 <Button
@@ -267,8 +299,9 @@ export const PlaylistsView = React.memo(() => {
                   size="sm"
                   onClick={handlePlayPlaylist}
                   disabled={activePlaylist.tracks.length === 0}
+                  className="gap-2 shrink-0"
                 >
-                  <Play className="h-4 w-4" />
+                  <Play className="h-4 w-4 fill-current" />
                   Reproducir Playlist
                 </Button>
               </div>

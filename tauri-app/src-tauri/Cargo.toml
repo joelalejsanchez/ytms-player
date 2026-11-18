@@ -1,6 +1,6 @@
 [package]
 name = "ytms-player"
-version = "1.5.1"
+version = "1.6.0"
 description = "ytms-player Desktop Application - High performance YouTube media manager and player"
 authors = ["Joel Alejandro Sanchez Valdez <joelalejsanchez@gmail.com>"]
 edition = "2021"

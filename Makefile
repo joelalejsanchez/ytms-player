@@ -1,17 +1,19 @@
-.PHONY: help fmt fmt-check lint test check docker-up docker-down
+.PHONY: help fmt fmt-check lint test check docker-up docker-down dev build build-bin release make-release build-appimage desktop-shortcut
 
 help: ## Muestra los comandos disponibles en la raíz del monorepo
 	@echo "Comandos disponibles en ytms-player Monorepo:"
-	@echo "  make fmt          - Formatea Go, Rust y Frontend (React/TS)"
-	@echo "  make fmt-check    - Verifica el formato en Go, Rust y Frontend"
-	@echo "  make lint         - Ejecuta linters en Go, Rust (Clippy) y Frontend (ESLint)"
-	@echo "  make test         - Ejecuta pruebas unitarias en Go, Rust y Frontend"
-	@echo "  make check        - Ejecuta fmt-check + lint + test en todo el monorepo"
-	@echo "  make docker-up    - Levanta el microservicio Go en Docker Compose"
-	@echo "  make docker-down  - Detiene el microservicio Go en Docker Compose"
-	@echo "  make build-bin    - Compila el ejecutable nativo de Linux (target/release/ytms-player)"
-	@echo "  make build-appimage - Genera el instalador portable AppImage para Linux"
-	@echo "  make desktop-shortcut - Instala el acceso directo .desktop e icono en el sistema"
+	@echo "  make fmt              - Formatea Go, Rust y Frontend (React/TS)"
+	@echo "  make fmt-check        - Verifica el formato en Go, Rust y Frontend"
+	@echo "  make lint             - Ejecuta linters en Go, Rust (Clippy) y Frontend (ESLint)"
+	@echo "  make test             - Ejecuta pruebas unitarias en Go, Rust y Frontend"
+	@echo "  make check            - Ejecuta fmt-check + lint + test en todo el monorepo"
+	@echo "  make docker-up        - Levanta el microservicio Go en Docker Compose"
+	@echo "  make docker-down      - Detiene el microservicio Go en Docker Compose"
+	@echo "  make dev              - Levanta la aplicación Tauri en modo desarrollo con Hot-Reload"
+	@echo "  make build            - Compila el ejecutable nativo en tauri-app (entorno de desarrollo)"
+	@echo "  make release          - Genera el ejecutable de producción en la raíz (/release/ytms-player)"
+	@echo "  make build-appimage   - Genera el instalador portable AppImage para Linux"
+	@echo "  make desktop-shortcut - Instala el acceso directo .desktop e icono a partir del binario en /release"
 
 fmt:
 	$(MAKE) -C go-microservice fmt
@@ -43,17 +45,34 @@ docker-up:
 docker-down:
 	docker compose down
 
+dev:
+	cd tauri-app && npm run tauri dev
+
+build: build-bin
+
 build-bin:
 	cd tauri-app && npm run tauri build -- --no-bundle
+
+release: build-bin
+	mkdir -p $(CURDIR)/release
+	cp $(CURDIR)/tauri-app/src-tauri/target/release/ytms-player $(CURDIR)/release/ytms-player
+	@echo "✓ Binario de producción generado en $(CURDIR)/release/ytms-player"
+
+make-release: release
 
 build-appimage:
 	cd tauri-app && npm run tauri build -- -b appimage
 
 desktop-shortcut:
+	@if [ ! -f $(CURDIR)/release/ytms-player ]; then \
+		echo "Error: No se encontró el binario de release en $(CURDIR)/release/ytms-player."; \
+		echo "Ejecute primero 'make release' para generar el ejecutable de producción."; \
+		exit 1; \
+	fi
 	mkdir -p $(HOME)/.local/share/applications $(HOME)/.local/share/icons/hicolor/512x512/apps
 	cp $(CURDIR)/tauri-app/src-tauri/icons/icon.png $(HOME)/.local/share/icons/hicolor/512x512/apps/youtube-desktop-player.png
-	@printf '[Desktop Entry]\nName=YouTube Desktop Player\nComment=Reproductor y gestor de audio local de YouTube\nExec=%s/tauri-app/src-tauri/target/release/ytms-player\nIcon=youtube-desktop-player\nTerminal=false\nType=Application\nCategories=AudioVideo;Audio;Player;\n' "$$(pwd)" > $(HOME)/.local/share/applications/youtube-desktop-player.desktop
+	@printf '[Desktop Entry]\nName=YouTube Desktop Player\nComment=Reproductor y gestor de audio local de YouTube\nExec=%s/release/ytms-player\nIcon=youtube-desktop-player\nTerminal=false\nType=Application\nCategories=AudioVideo;Audio;Player;\n' "$$(pwd)" > $(HOME)/.local/share/applications/youtube-desktop-player.desktop
 	@update-desktop-database $(HOME)/.local/share/applications 2>/dev/null || true
-	@echo "✓ Acceso directo creado exitosamente en ~/.local/share/applications/youtube-desktop-player.desktop"
+	@echo "✓ Acceso directo creado exitosamente en ~/.local/share/applications/youtube-desktop-player.desktop apuntando a $(CURDIR)/release/ytms-player"
 
 

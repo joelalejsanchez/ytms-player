@@ -1,6 +1,6 @@
 import { Bookmark, Check, ListMusic } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, toAssetUrl } from "@/lib/utils";
 import type { Playlist } from "@/types/models";
 
 export interface PlaylistBookmarkMenuProps {
@@ -150,6 +150,17 @@ export const PlaylistBookmarkMenu = React.memo(
                           )}
                         >
                           {isAssigned && <Check className="h-3 w-3 stroke-[3]" />}
+                        </div>
+                        <div className="relative h-6 w-6 shrink-0 overflow-hidden rounded bg-muted flex items-center justify-center border border-border/50">
+                          {pl.cover_path ? (
+                            <img
+                              src={toAssetUrl(pl.cover_path)}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <ListMusic className="h-3.5 w-3.5 text-muted-foreground" />
+                          )}
                         </div>
                         <span className="truncate">{pl.title}</span>
                       </div>
