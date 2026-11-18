@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS playlists (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     youtube_playlist_id TEXT UNIQUE NULL,
+    cover_path TEXT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -96,6 +97,9 @@ impl SqliteWorkspaceStore {
         conn.execute_batch(SCHEMA_SQL).map_err(|e| {
             DomainError::PersistenceError(format!("Failed to initialize SQLite schema: {e}"))
         })?;
+
+        // Migración retrocompatible para bases de datos existentes
+        let _ = conn.execute("ALTER TABLE playlists ADD COLUMN cover_path TEXT NULL", []);
 
         Ok(Self {
             workspace_root,
@@ -412,11 +416,62 @@ impl TrackRepository for SqliteWorkspaceStore {
             .transaction()
             .map_err(|e| DomainError::PersistenceError(format!("Transaction error: {e}")))?;
 
+        // Identificar playlists que tengan asignada la portada de esta canción
+        let affected_playlists: Vec<i64> = {
+            let mut stmt = tx
+                .prepare(
+                    r"
+                    SELECT p.id
+                    FROM playlists p
+                    JOIN tracks t ON t.youtube_id = ?1
+                    WHERE p.cover_path IS NOT NULL AND (
+                        p.cover_path = t.thumbnail_path OR
+                        p.cover_path LIKE '%' || t.youtube_id || '%'
+                    )
+                    ",
+                )
+                .map_err(|e| {
+                    DomainError::PersistenceError(format!("Prepare check affected playlists failed: {e}"))
+                })?;
+
+            let rows = stmt
+                .query_map(params![youtube_id], |r| r.get(0))
+                .map_err(|e| DomainError::PersistenceError(format!("Query failed: {e}")))?;
+            rows.flatten().collect()
+        };
+
         tx.execute(
             "DELETE FROM tracks WHERE youtube_id = ?1",
             params![youtube_id],
         )
         .map_err(|e| DomainError::PersistenceError(format!("Delete track failed: {e}")))?;
+
+        // Reasignar aleatoriamente otra portada para cada playlist afectada
+        for pl_id in affected_playlists {
+            let new_cover: Option<String> = tx
+                .query_row(
+                    r"
+                    SELECT t.thumbnail_path
+                    FROM tracks t
+                    INNER JOIN playlist_tracks pt ON pt.track_id = t.id
+                    WHERE pt.playlist_id = ?1 AND t.thumbnail_path IS NOT NULL AND t.thumbnail_path != ''
+                    ORDER BY RANDOM()
+                    LIMIT 1
+                    ",
+                    params![pl_id],
+                    |r| r.get(0),
+                )
+                .optional()
+                .unwrap_or(None);
+
+            tx.execute(
+                "UPDATE playlists SET cover_path = ?1 WHERE id = ?2",
+                params![new_cover, pl_id],
+            )
+            .map_err(|e| {
+                DomainError::PersistenceError(format!("Update playlist cover on delete failed: {e}"))
+            })?;
+        }
 
         tx.commit()
             .map_err(|e| DomainError::PersistenceError(format!("Commit failed: {e}")))
@@ -570,6 +625,16 @@ impl PlaylistRepository for SqliteWorkspaceStore {
             .query_row(
                 r"
                 SELECT p.id, p.title, p.youtube_playlist_id,
+                       COALESCE(
+                           p.cover_path,
+                           (
+                               SELECT t.thumbnail_path
+                               FROM tracks t
+                               INNER JOIN playlist_tracks pt2 ON pt2.track_id = t.id
+                               WHERE pt2.playlist_id = p.id AND t.thumbnail_path IS NOT NULL AND t.thumbnail_path != ''
+                               LIMIT 1
+                           )
+                       ) as cover_path,
                        COUNT(pt.track_id) as track_count, p.created_at
                 FROM playlists p
                 LEFT JOIN playlist_tracks pt ON pt.playlist_id = p.id
@@ -578,13 +643,14 @@ impl PlaylistRepository for SqliteWorkspaceStore {
                 ",
                 params![playlist_id],
                 |row| {
-                    let count: i64 = row.get(3)?;
+                    let count: i64 = row.get(4)?;
                     Ok(Playlist {
                         id: row.get(0)?,
                         title: row.get(1)?,
                         youtube_playlist_id: row.get(2)?,
+                        cover_path: row.get(3)?,
                         track_count: usize::try_from(count).unwrap_or(0),
-                        created_at: row.get(4)?,
+                        created_at: row.get(5)?,
                     })
                 },
             )
@@ -606,6 +672,16 @@ impl PlaylistRepository for SqliteWorkspaceStore {
             .prepare(
                 r"
                 SELECT p.id, p.title, p.youtube_playlist_id,
+                       COALESCE(
+                           p.cover_path,
+                           (
+                               SELECT t.thumbnail_path
+                               FROM tracks t
+                               INNER JOIN playlist_tracks pt2 ON pt2.track_id = t.id
+                               WHERE pt2.playlist_id = p.id AND t.thumbnail_path IS NOT NULL AND t.thumbnail_path != ''
+                               LIMIT 1
+                           )
+                       ) as cover_path,
                        COUNT(pt.track_id) as track_count, p.created_at
                 FROM playlists p
                 LEFT JOIN playlist_tracks pt ON pt.playlist_id = p.id
@@ -617,13 +693,14 @@ impl PlaylistRepository for SqliteWorkspaceStore {
 
         let rows = stmt
             .query_map([], |row| {
-                let count: i64 = row.get(3)?;
+                let count: i64 = row.get(4)?;
                 Ok(Playlist {
                     id: row.get(0)?,
                     title: row.get(1)?,
                     youtube_playlist_id: row.get(2)?,
+                    cover_path: row.get(3)?,
                     track_count: usize::try_from(count).unwrap_or(0),
-                    created_at: row.get(4)?,
+                    created_at: row.get(5)?,
                 })
             })
             .map_err(|e| DomainError::PersistenceError(format!("Query playlists failed: {e}")))?;
@@ -647,6 +724,16 @@ impl PlaylistRepository for SqliteWorkspaceStore {
             .query_row(
                 r"
                 SELECT p.id, p.title, p.youtube_playlist_id,
+                       COALESCE(
+                           p.cover_path,
+                           (
+                               SELECT t.thumbnail_path
+                               FROM tracks t
+                               INNER JOIN playlist_tracks pt2 ON pt2.track_id = t.id
+                               WHERE pt2.playlist_id = p.id AND t.thumbnail_path IS NOT NULL AND t.thumbnail_path != ''
+                               LIMIT 1
+                           )
+                       ) as cover_path,
                        COUNT(pt.track_id) as track_count, p.created_at
                 FROM playlists p
                 LEFT JOIN playlist_tracks pt ON pt.playlist_id = p.id
@@ -655,13 +742,14 @@ impl PlaylistRepository for SqliteWorkspaceStore {
                 ",
                 params![playlist_id],
                 |row| {
-                    let count: i64 = row.get(3)?;
+                    let count: i64 = row.get(4)?;
                     Ok(Playlist {
                         id: row.get(0)?,
                         title: row.get(1)?,
                         youtube_playlist_id: row.get(2)?,
+                        cover_path: row.get(3)?,
                         track_count: usize::try_from(count).unwrap_or(0),
-                        created_at: row.get(4)?,
+                        created_at: row.get(5)?,
                     })
                 },
             )
@@ -717,6 +805,38 @@ impl PlaylistRepository for SqliteWorkspaceStore {
             DomainError::PersistenceError(format!("Failed to add track to playlist: {e}"))
         })?;
 
+        // Si la playlist no tiene portada asignada, asignarle la portada de esta primera canción si dispone de ella
+        let current_cover: Option<String> = tx
+            .query_row(
+                "SELECT cover_path FROM playlists WHERE id = ?1",
+                params![playlist_id],
+                |row| row.get(0),
+            )
+            .optional()
+            .unwrap_or(None)
+            .flatten();
+
+        if current_cover.is_none() || current_cover.as_deref() == Some("") {
+            let track_thumb: Option<String> = tx
+                .query_row(
+                    "SELECT thumbnail_path FROM tracks WHERE id = ?1",
+                    params![track_id],
+                    |row| row.get(0),
+                )
+                .optional()
+                .unwrap_or(None)
+                .flatten();
+
+            if let Some(thumb) = track_thumb {
+                if !thumb.trim().is_empty() {
+                    let _ = tx.execute(
+                        "UPDATE playlists SET cover_path = ?1 WHERE id = ?2",
+                        params![thumb, playlist_id],
+                    );
+                }
+            }
+        }
+
         tx.commit()
             .map_err(|e| DomainError::PersistenceError(format!("Commit failed: {e}")))
     }
@@ -731,6 +851,27 @@ impl PlaylistRepository for SqliteWorkspaceStore {
             .transaction()
             .map_err(|e| DomainError::PersistenceError(format!("Transaction error: {e}")))?;
 
+        // 1. Obtener la miniatura y youtube_id de la pista a remover antes de desvincularla
+        let track_info: Option<(Option<String>, String)> = tx
+            .query_row(
+                "SELECT thumbnail_path, youtube_id FROM tracks WHERE id = ?1",
+                params![track_id],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .optional()
+            .map_err(|e| DomainError::PersistenceError(format!("Fetch track info failed: {e}")))?;
+
+        let current_cover: Option<String> = tx
+            .query_row(
+                "SELECT cover_path FROM playlists WHERE id = ?1",
+                params![playlist_id],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(|e| DomainError::PersistenceError(format!("Fetch current cover failed: {e}")))?
+            .flatten();
+
+        // 2. Desvincular de playlist_tracks
         tx.execute(
             "DELETE FROM playlist_tracks WHERE playlist_id = ?1 AND track_id = ?2",
             params![playlist_id, track_id],
@@ -738,6 +879,41 @@ impl PlaylistRepository for SqliteWorkspaceStore {
         .map_err(|e| {
             DomainError::PersistenceError(format!("Failed to remove track from playlist: {e}"))
         })?;
+
+        // 3. Comprobar si la carátula activa se basaba en la canción eliminada
+        if let (Some(cur_cov), Some((track_thumb, yt_id))) = (current_cover, track_info) {
+            let is_match = track_thumb.as_deref() == Some(&cur_cov)
+                || cur_cov.contains(&yt_id);
+
+            if is_match {
+                // Seleccionar dinámicamente y de forma aleatoria otra canción presente en la lista
+                let new_cover: Option<String> = tx
+                    .query_row(
+                        r"
+                        SELECT t.thumbnail_path
+                        FROM tracks t
+                        INNER JOIN playlist_tracks pt ON pt.track_id = t.id
+                        WHERE pt.playlist_id = ?1 AND t.thumbnail_path IS NOT NULL AND t.thumbnail_path != ''
+                        ORDER BY RANDOM()
+                        LIMIT 1
+                        ",
+                        params![playlist_id],
+                        |row| row.get(0),
+                    )
+                    .optional()
+                    .map_err(|e| {
+                        DomainError::PersistenceError(format!("Fetch fallback cover failed: {e}"))
+                    })?;
+
+                tx.execute(
+                    "UPDATE playlists SET cover_path = ?1 WHERE id = ?2",
+                    params![new_cover, playlist_id],
+                )
+                .map_err(|e| {
+                    DomainError::PersistenceError(format!("Update playlist cover failed: {e}"))
+                })?;
+            }
+        }
 
         tx.commit()
             .map_err(|e| DomainError::PersistenceError(format!("Commit failed: {e}")))
@@ -842,6 +1018,64 @@ impl PlaylistRepository for SqliteWorkspaceStore {
                         })?;
                 }
             }
+        }
+
+        // Asegurar que la playlist tenga una portada válida (usando la primera disponible o reasignando si fue removida)
+        let current_cover: Option<String> = tx
+            .query_row(
+                "SELECT cover_path FROM playlists WHERE id = ?1",
+                params![playlist_id],
+                |row| row.get(0),
+            )
+            .optional()
+            .unwrap_or(None)
+            .flatten();
+
+        let need_reassign = match &current_cover {
+            None => true,
+            Some(cov) => {
+                let still_linked: bool = tx
+                    .query_row(
+                        r"
+                        SELECT 1
+                        FROM playlist_tracks pt
+                        JOIN tracks t ON t.id = pt.track_id
+                        WHERE pt.playlist_id = ?1 AND (
+                            t.thumbnail_path = ?2 OR ?2 LIKE '%' || t.youtube_id || '%'
+                        )
+                        LIMIT 1
+                        ",
+                        params![playlist_id, cov],
+                        |_| Ok(true),
+                    )
+                    .optional()
+                    .unwrap_or(None)
+                    .unwrap_or(false);
+                !still_linked
+            }
+        };
+
+        if need_reassign {
+            let new_cover: Option<String> = tx
+                .query_row(
+                    r"
+                    SELECT t.thumbnail_path
+                    FROM tracks t
+                    INNER JOIN playlist_tracks pt ON pt.track_id = t.id
+                    WHERE pt.playlist_id = ?1 AND t.thumbnail_path IS NOT NULL AND t.thumbnail_path != ''
+                    ORDER BY t.created_at ASC, t.id ASC
+                    LIMIT 1
+                    ",
+                    params![playlist_id],
+                    |row| row.get(0),
+                )
+                .optional()
+                .unwrap_or(None);
+
+            let _ = tx.execute(
+                "UPDATE playlists SET cover_path = ?1 WHERE id = ?2",
+                params![new_cover, playlist_id],
+            );
         }
 
         tx.commit()

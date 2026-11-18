@@ -12,7 +12,32 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
-- [ ] **Gestión dinámica de portadas para Playlists:**
+- [ ] **Página de bienvenida y Dashboard principal (Home View):**
+  - Cuadrícula de playlists en tarjetas/cuadros con carátula y botón de reproducción rápida ("Quick Play") con un solo clic.
+  - Panel superior con estadísticas clave de la biblioteca (métricas sugeridas):
+    - *Volumen de la biblioteca:* Conteo total de canciones y duración acumulada (ej. `250 canciones • 14h 32m`).
+    - *Almacenamiento:* Espacio físico total ocupado en disco por los archivos descargados.
+    - *Favoritos:* Recuento de canciones con "Me gusta".
+    - *Actividad reciente:* Acceso rápido a las últimas playlists reproducidas o pistas recientemente añadidas.
+- [ ] **Acción rápida para redescarga de Playlists vinculadas:**
+  - Botón directo en la vista de playlist para aquellas que posean un `youtube_playlist_id`.
+  - Redirecciona automáticamente a la vista de Descargas precargando el ID o enlace de la lista para facilitar la re-descarga y recuperación de audios corruptos o faltantes.
+- [ ] **Barra inferior de reproducción adaptable (Responsive PlayerBar):**
+  - Implementación de layout adaptativo y breakpoints para ventanas compactas o modo de pantalla dividida.
+  - Reorganización de elementos: apilar la barra de progreso, compactar el control de volumen en menú desplegable o slider flotante y priorizar la visibilidad de controles esenciales (Play/Pause, anterior/siguiente y carátula).
+- [ ] **Reubicación de la vista de Diagnóstico y Errores (Bugs):**
+  - Remover la opción de logs/bugs del sidebar principal para simplificar y limpiar la navegación general.
+  - Integrar el visor de logs y diagnóstico exclusivamente dentro de la vista de Configuración.
+- [ ] **Microinteracción UX en el logo del Sidebar:**
+  - Al colocar el cursor (hover) sobre el logo de la aplicación en la cabecera del sidebar, sustituir dinámicamente el logo por el icono estándar de colapsar/expandir barra lateral (ej. `PanelLeftClose` / icono de sidebar común).
+  - Clarifica al usuario que el logo actúa como detonante interactivo para alternar el estado del sidebar.
+- [ ] **Corrección de layout y alineación de scroll en la vista de Playlists:**
+  - Solucionar la inconsistencia visual donde el scroll de la lista de playlists queda separado de los items mientras que en la card de pistas aparece pegado.
+  - Configurar `padding: 0` en el contenedor scrolleable padre y aplicar paddings específicos en los componentes hijos contenedores de tracks para que la barra de scroll quede pegada al borde de manera uniforme en ambos paneles.
+- [ ] **Estabilización de ancho y prevención de saltos visuales en selects de Tracks (`LibraryView`):**
+  - Los desplegables `CustomSelect` de formato y ordenamiento varían dinámicamente de anchura según la longitud del texto de la opción activa (ej. al alternar entre *"Todos los formatos"* vs *"MP3"*, o *"Fecha de descarga"* vs *"Título"*), provocando desplazamientos horizontales bruscos en los controles adyacentes (botón ASC/DESC).
+  - Asignar anchos mínimos consistentes o anchos fijos calibrados (`min-w-[130px]` / `min-w-[150px]` o `w-36` / `w-40`) a los contenedores/triggers de `CustomSelect` para garantizar estabilidad en la interfaz sin saltos de layout al cambiar filtros.
+- [x] **Gestión dinámica de portadas para Playlists:**
   - Asignación automática de la portada de la playlist utilizando la miniatura de la primera canción insertada.
   - Al remover o desvincular una pista, comprobar si la carátula activa de la playlist corresponde a dicha pista; en caso afirmativo, seleccionar dinámicamente y de forma aleatoria otra canción presente en la lista para actualizar la portada (o recurrir a la primera restante; si la lista queda vacía, restaurar carátula genérica por defecto).
 - [ ] **Ampliación de opciones en el menú contextual de 3 puntos (`ActionMenu`):**

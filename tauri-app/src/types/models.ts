@@ -41,6 +41,7 @@ export interface Playlist {
   id: number;
   title: string;
   youtube_playlist_id: string | null;
+  cover_path: string | null;
   track_count: number;
   created_at: string;
 }

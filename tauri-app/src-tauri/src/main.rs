@@ -308,4 +308,97 @@ mod tests {
 
         let _ = fs::remove_dir_all(&ws_dir);
     }
+
+    #[test]
+    fn test_dynamic_playlist_covers_lifecycle() {
+        let ws_dir = temp_workspace_dir("playlist-covers");
+        let store = SqliteWorkspaceStore::open_in_memory(&ws_dir).expect("open sqlite");
+
+        let t1 = store
+            .upsert_track(&NewTrack {
+                youtube_id: "yt_track_01".to_string(),
+                title: "Track 1".to_string(),
+                artist: "Artist 1".to_string(),
+                duration: 180,
+                published_at: None,
+                file_extension: "mp3".to_string(),
+                thumbnail_path: Some("/thumbnails/yt_track_01.jpg".to_string()),
+                synced: false,
+                liked: None,
+                is_missing: false,
+                file_size: 1000,
+            })
+            .expect("insert t1");
+
+        let t2 = store
+            .upsert_track(&NewTrack {
+                youtube_id: "yt_track_02".to_string(),
+                title: "Track 2".to_string(),
+                artist: "Artist 2".to_string(),
+                duration: 200,
+                published_at: None,
+                file_extension: "mp3".to_string(),
+                thumbnail_path: Some("/thumbnails/yt_track_02.jpg".to_string()),
+                synced: false,
+                liked: None,
+                is_missing: false,
+                file_size: 2000,
+            })
+            .expect("insert t2");
+
+        // 1. Crear playlist: inicialmente sin portada
+        let pl = playlist_usecases::create_playlist("Mi Playlist Dinámica", None, &store)
+            .expect("create playlist");
+        assert_eq!(pl.cover_path, None);
+
+        // 2. Insertar primera canción: la portada se asigna con la miniatura de la 1ra canción
+        playlist_usecases::add_track_to_playlist(pl.id, t1.id, &store).expect("add t1");
+        let pl_after_t1 = playlist_usecases::get_playlist_with_tracks(pl.id, &store)
+            .expect("get pl details")
+            .playlist;
+        assert_eq!(
+            pl_after_t1.cover_path,
+            Some("/thumbnails/yt_track_01.jpg".to_string())
+        );
+
+        // 3. Insertar segunda canción: la portada se preserva con la de la 1ra canción
+        playlist_usecases::add_track_to_playlist(pl.id, t2.id, &store).expect("add t2");
+        let pl_after_t2 = playlist_usecases::get_playlist_with_tracks(pl.id, &store)
+            .expect("get pl details")
+            .playlist;
+        assert_eq!(
+            pl_after_t2.cover_path,
+            Some("/thumbnails/yt_track_01.jpg".to_string())
+        );
+
+        // 4. Remover la segunda canción (no es la portada activa): la portada no cambia
+        playlist_usecases::remove_track_from_playlist(pl.id, t2.id, &store).expect("remove t2");
+        let pl_after_rem_t2 = playlist_usecases::get_playlist_with_tracks(pl.id, &store)
+            .expect("get pl details")
+            .playlist;
+        assert_eq!(
+            pl_after_rem_t2.cover_path,
+            Some("/thumbnails/yt_track_01.jpg".to_string())
+        );
+
+        // 5. Re-agregar t2 y luego remover t1 (que es la portada activa): debe reasignar a t2
+        playlist_usecases::add_track_to_playlist(pl.id, t2.id, &store).expect("re-add t2");
+        playlist_usecases::remove_track_from_playlist(pl.id, t1.id, &store).expect("remove t1");
+        let pl_after_rem_t1 = playlist_usecases::get_playlist_with_tracks(pl.id, &store)
+            .expect("get pl details")
+            .playlist;
+        assert_eq!(
+            pl_after_rem_t1.cover_path,
+            Some("/thumbnails/yt_track_02.jpg".to_string())
+        );
+
+        // 6. Remover la última canción: debe restaurar a None (carátula genérica)
+        playlist_usecases::remove_track_from_playlist(pl.id, t2.id, &store).expect("remove t2 again");
+        let pl_empty = playlist_usecases::get_playlist_with_tracks(pl.id, &store)
+            .expect("get pl details")
+            .playlist;
+        assert_eq!(pl_empty.cover_path, None);
+
+        let _ = fs::remove_dir_all(&ws_dir);
+    }
 }

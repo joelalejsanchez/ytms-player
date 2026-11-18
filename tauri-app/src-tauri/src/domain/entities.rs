@@ -41,6 +41,7 @@ pub struct Playlist {
     pub id: i64,
     pub title: String,
     pub youtube_playlist_id: Option<String>,
+    pub cover_path: Option<String>,
     pub track_count: usize,
     pub created_at: String,
 }

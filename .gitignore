@@ -47,3 +47,6 @@ tauri-app/.vite/
 tauri-app/src-tauri/target/
 tauri-app/src-tauri/WixTools/
 tauri-app/src-tauri/gen/
+
+# Release Artifacts
+/release/

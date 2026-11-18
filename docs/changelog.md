@@ -6,6 +6,27 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.6.0] - 2026-11-18
+
+### Añadido
+
+#### Gestión Dinámica de Portadas para Playlists
+- **Persistencia y migración de esquema en SQLite**: Incorporación retrocompatible del campo `cover_path TEXT NULL` en la tabla `playlists` con soporte nativo en el struct de dominio `Playlist`.
+- **Asignación automática de carátula**: Asignación automática de la miniatura de la primera canción insertada en la lista como portada representativa.
+- **Reasignación dinámica y aleatoria ante eliminación**: Al eliminar o desvincular una pista cuya miniatura correspondía a la portada activa, el repositorio SQLite selecciona aleatoriamente (`ORDER BY RANDOM() LIMIT 1`) otra pista perteneciente a la lista para actualizar la carátula, recurriendo a un estado vacío por defecto si la lista queda sin canciones.
+- **Integración visual en Frontend**:
+  - Renderizado de miniatura con bordes redondeados y sombra en las tarjetas del listado lateral de playlists.
+  - Portada destacada de 64×64 en el encabezado de detalle de la playlist activa con badge de tipo y fallback estético a icono `ListMusic`.
+  - Icono de previsualización en el menú contextual de marcadores y guardado en listas (`PlaylistBookmarkMenu`).
+
+#### Tooling de Desarrollo y Flujo de Release Aislado
+- **Comando `make dev`**: Acceso directo para levantar el entorno completo de desarrollo con Hot-Reload.
+- **Comando `make release`**: Compilación y aislamiento del ejecutable nativo de producción dentro de la carpeta raíz `/release/ytms-player`.
+- **Exclusión en `.gitignore`**: Protección del directorio `/release/` para evitar rastreo accidental en Git.
+- **Integración en `make desktop-shortcut`**: Enlace del lanzador del sistema `.desktop` apuntando exclusivamente al ejecutable de producción en `/release`.
+
+---
+
 ## [1.5.1] - 2026-11-16
 
 ### Añadido
