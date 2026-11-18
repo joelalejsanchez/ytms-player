@@ -21,6 +21,14 @@ use interfaces::commands::{
 use interfaces::state::AppState;
 
 fn main() {
+    #[cfg(target_os = "linux")]
+    {
+        // Previene el interbloqueo de WebKitGTK 2.42+ en compositores acelerados por hardware en Wayland/Mesa
+        if std::env::var("WEBKIT_DISABLE_DMABUF_RENDERER").is_err() {
+            std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+        }
+    }
+
     let (server, std_listener) =
         AudioStreamingServer::bind().expect("Failed to bind native audio streaming server");
     let audio_server_port = server.port();
