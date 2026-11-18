@@ -44,12 +44,21 @@ Este documento registra las características, mejoras y extensiones que **no est
   - **Información detallada de la pista (Track Info):** Modal o panel lateral para inspeccionar los metadatos completos del archivo (codec de audio, bitrate, frecuencia de muestreo, tamaño en disco, fecha de descarga, ID original y enlace directo de YouTube).
   - **Información y estadísticas de Playlist:** Modal con duración total acumulada (horas/minutos), recuento de temas, tamaño estimado en disco, ID de sincronización y enlace original a YouTube.
   - **Copiar enlace de YouTube al portapapeles:** Acción rápida en el menú contextual para compartir o abrir en el navegador.
+- [ ] **Pipeline CI/CD con GitHub Actions para compilación y releases automáticas:**
+  - Configurar workflow con matriz multiplataforma (`tauri-apps/tauri-action`) en runners `windows-latest` y `ubuntu-latest`.
+  - Compilación automática de instaladores nativos para usuarios no técnicos (`.msi` / `.exe` para Windows, `.deb` / AppImage / binario para Linux) activada por push de tags (`v*.*.*`) o ejecución manual (`workflow_dispatch`).
+  - Publicación automatizada de los instaladores directamente en la sección de **GitHub Releases** del repositorio.
+  - Publicación automatizada de la imagen Docker del microservicio Go en GitHub Packages / Container Registry (`ghcr.io`), permitiendo levantar el backend con un simple `pull` sin necesidad de compilar código Go localmente.
 - [ ] **Empaquetado y distribución nativa para Windows (`.msi` / `.exe`):**
   - Configurar pipeline de empaquetado Tauri con WebView2 Runtime y validación de paths en PowerShell.
 - [ ] **Normalización de volumen de audio (ReplayGain / EBU R128):**
   - Medición y ajuste de sonoridad automática en el reproductor para evitar saltos bruscos de volumen entre diferentes canciones.
 - [ ] **Exportación de biblioteca y playlists en formato `.m3u8`:**
   - Permitir exportar las listas creadas localmente para ser usadas en reproductores externos o dispositivos móviles.
+- [ ] **Soporte multiidioma e Internacionalización (i18n):**
+  - Implementar arquitectura de traducción (ej. `react-i18next` o módulo tipado de internacionalización) para soportar como mínimo español e inglés.
+  - Extracción de literales de UI hacia diccionarios estructurados JSON de localización (`es.json`, `en.json`).
+  - Selector dinámico de idioma en la sección de Configuración con detección automática del locale del sistema operativo y persistencia local.
 
 ---
 
