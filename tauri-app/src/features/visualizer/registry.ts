@@ -1,5 +1,11 @@
-import { AmbientAuraPreview, AmbientAuraVisualizer } from "./components/AmbientAuraVisualizer";
-import { CoverWavesPreview, CoverWavesVisualizer } from "./components/CoverWavesVisualizer";
+import {
+  AmbientAuraPreview,
+  AmbientAuraVisualizer,
+} from "./components/AmbientAuraVisualizer";
+import {
+  CoverWavesPreview,
+  CoverWavesVisualizer,
+} from "./components/CoverWavesVisualizer";
 import { SpectrumPreview, SpectrumVisualizer } from "./components/SpectrumVisualizer";
 import { VinylPreview, VinylVisualizer } from "./components/VinylVisualizer";
 import type { VisualizerModule } from "./types";

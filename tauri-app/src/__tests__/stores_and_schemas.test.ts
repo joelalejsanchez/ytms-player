@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { renderHook } from "@testing-library/react";
-import { formatBytes, formatDuration } from "@/lib/utils";
+import { formatBytes, formatDuration, formatHumanDuration } from "@/lib/utils";
 import {
   downloadFormSchema,
   playlistFormSchema,
@@ -228,6 +228,10 @@ describe("useDownloadStore & Utility Helpers", () => {
     expect(formatDuration(213)).toBe("03:33");
     expect(formatDuration(3665)).toBe("1:01:05");
     expect(formatBytes(1024 * 1024 * 3.5)).toBe("3.5 MB");
+    expect(formatHumanDuration(0)).toBe("0 min");
+    expect(formatHumanDuration(45 * 60)).toBe("45 min");
+    expect(formatHumanDuration(3600 * 2 + 60 * 15)).toBe("2h 15m");
+    expect(formatHumanDuration(86400 + 3600 * 3 + 60 * 5)).toBe("1d 3h 5m");
   });
 
   it("filters songs under 7 minutes (420 seconds) by default for playlist imports", () => {
@@ -422,7 +426,11 @@ describe("usePlayerStore - queue preservation and corrupted tracks", () => {
     store.toggleShuffle();
     const state = usePlayerStore.getState();
     expect(state.isShuffle).toBe(false);
-    expect(state.queue.map((t) => t.youtube_id)).toEqual(["track_A", "track_B", "track_C"]);
+    expect(state.queue.map((t) => t.youtube_id)).toEqual([
+      "track_A",
+      "track_B",
+      "track_C",
+    ]);
     expect(state.currentIndex).toBe(0);
   });
 
@@ -514,7 +522,8 @@ describe("Visualizer API and Registry", () => {
 
 describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
   it("records logs with timestamps and formats text export accurately", async () => {
-    const { useLogStore, logger, formatLogTimestamp } = await import("@/stores/useLogStore");
+    const { useLogStore, logger, formatLogTimestamp } =
+      await import("@/stores/useLogStore");
     const store = useLogStore.getState();
     store.clearLogs();
     expect(useLogStore.getState().logs).toHaveLength(0);
@@ -524,7 +533,11 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
     expect(ts).toBe("2026-11-16 12:00:00");
 
     // Registro mediante logger global
-    logger.error("Fallo de conexión", "El microservicio Go rechazó la petición", "streaming");
+    logger.error(
+      "Fallo de conexión",
+      "El microservicio Go rechazó la petición",
+      "streaming",
+    );
     logger.warn("Poco espacio en disco", "Quedan menos de 500 MB", "system");
     logger.info("Sincronización iniciada", "Verificando integridad", "library");
 
@@ -532,7 +545,9 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
     expect(currentLogs).toHaveLength(3);
     expect(currentLogs[0].level).toBe("error");
     expect(currentLogs[0].context).toBe("streaming");
-    expect(currentLogs[0].formattedTime).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+    expect(currentLogs[0].formattedTime).toMatch(
+      /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/,
+    );
 
     // Exportación de reporte
     const report = useLogStore.getState().exportLogsAsText();

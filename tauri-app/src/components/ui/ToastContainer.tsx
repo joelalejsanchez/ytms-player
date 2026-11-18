@@ -2,8 +2,8 @@ import { AlertCircle, AlertTriangle, CheckCircle, Info, X } from "lucide-react";
 import React, { useEffect } from "react";
 import { type ToastItem, useToastStore } from "@/stores/useToastStore";
 
-const ToastRow: React.FC<{ toast: ToastItem; onDismiss: (id: string) => void }> = React.memo(
-  ({ toast, onDismiss }) => {
+const ToastRow: React.FC<{ toast: ToastItem; onDismiss: (id: string) => void }> =
+  React.memo(({ toast, onDismiss }) => {
     useEffect(() => {
       const timer = setTimeout(() => {
         onDismiss(toast.id);
@@ -103,8 +103,7 @@ const ToastRow: React.FC<{ toast: ToastItem; onDismiss: (id: string) => void }> 
         </div>
       </div>
     );
-  },
-);
+  });
 
 ToastRow.displayName = "ToastRow";
 

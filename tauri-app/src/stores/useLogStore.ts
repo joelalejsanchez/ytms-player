@@ -104,7 +104,9 @@ export const useLogStore = create<LogState>((set, get) => ({
       persistLogs(nextLogs);
       return {
         logs: nextLogs,
-        unreadCount: state.isOpenModal ? 0 : state.unreadCount + (level === "error" ? 1 : 0),
+        unreadCount: state.isOpenModal
+          ? 0
+          : state.unreadCount + (level === "error" ? 1 : 0),
       };
     });
 
@@ -203,11 +205,17 @@ export const useLogStore = create<LogState>((set, get) => ({
  */
 export const logger = {
   error: (title: string, description?: string, context?: string, details?: unknown) =>
-    useLogStore.getState().addLog({ level: "error", title, description, context, details }),
+    useLogStore
+      .getState()
+      .addLog({ level: "error", title, description, context, details }),
   warn: (title: string, description?: string, context?: string, details?: unknown) =>
-    useLogStore.getState().addLog({ level: "warn", title, description, context, details }),
+    useLogStore
+      .getState()
+      .addLog({ level: "warn", title, description, context, details }),
   info: (title: string, description?: string, context?: string, details?: unknown) =>
-    useLogStore.getState().addLog({ level: "info", title, description, context, details }),
+    useLogStore
+      .getState()
+      .addLog({ level: "info", title, description, context, details }),
   open: () => useLogStore.getState().setOpenModal(true),
   close: () => useLogStore.getState().setOpenModal(false),
 };

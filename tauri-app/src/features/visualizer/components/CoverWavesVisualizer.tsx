@@ -31,9 +31,7 @@ export const CoverWavesVisualizer: React.FC<VisualizerProps> = React.memo(
         {/* Portada estática en cuadro enmarcado */}
         <div
           className={`relative z-10 overflow-hidden rounded-3xl border-2 border-border bg-card shadow-2xl transition-all duration-300 ${
-            isExpanded
-              ? "h-64 w-64 sm:h-72 sm:w-72"
-              : "h-52 w-52"
+            isExpanded ? "h-64 w-64 sm:h-72 sm:w-72" : "h-52 w-52"
           }`}
         >
           {thumbnailSrc ? (
@@ -61,10 +59,7 @@ export const CoverWavesVisualizer: React.FC<VisualizerProps> = React.memo(
             // Altura simétrica centrada tipo onda sonora de voz/música escalada al espacio de la UI
             const heightPercent = Math.max(8, Math.min(94, Math.round(val * 100)));
             return (
-              <div
-                key={idx}
-                className="flex items-center justify-center h-full flex-1"
-              >
+              <div key={idx} className="flex items-center justify-center h-full flex-1">
                 <div
                   className="w-full max-w-[6px] rounded-full bg-primary shadow-xs transition-all duration-75"
                   style={{
@@ -79,7 +74,9 @@ export const CoverWavesVisualizer: React.FC<VisualizerProps> = React.memo(
 
         {/* Indicador de estado */}
         <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground font-mono">
-          <AudioWaveform className={`h-4 w-4 text-primary ${isPlaying ? "animate-pulse" : ""}`} />
+          <AudioWaveform
+            className={`h-4 w-4 text-primary ${isPlaying ? "animate-pulse" : ""}`}
+          />
           <span className="text-[11px] uppercase tracking-wider">
             {isPlaying ? "Ondas de sonido reactivas" : "En pausa"}
           </span>

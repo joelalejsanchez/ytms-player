@@ -289,7 +289,9 @@ export const PlaylistsView = React.memo(() => {
                       {activePlaylist.playlist.title}
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      {activePlaylist.tracks.length} {activePlaylist.tracks.length === 1 ? "pista" : "pistas"} asociadas
+                      {activePlaylist.tracks.length}{" "}
+                      {activePlaylist.tracks.length === 1 ? "pista" : "pistas"}{" "}
+                      asociadas
                     </p>
                   </div>
                 </div>

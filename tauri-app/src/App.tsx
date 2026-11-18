@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Primitives";
 import { ToastContainer } from "@/components/ui/ToastContainer";
 import { DownloadsView } from "@/features/downloads/DownloadsView";
 import { ErrorLogsModal } from "@/features/diagnostics/ErrorLogsModal";
+import { HomeView } from "@/features/home/HomeView";
 import { LibraryView } from "@/features/library/LibraryView";
 import { PlaylistsView } from "@/features/playlists/PlaylistsView";
 import { MissingFilesView } from "@/features/recovery/MissingFilesView";
@@ -18,7 +19,7 @@ import { toast } from "@/stores/useToastStore";
 import type { NavigationTab } from "@/types/models";
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<NavigationTab>("library");
+  const [activeTab, setActiveTab] = useState<NavigationTab>("home");
 
   // Conectar stream SSE persistente (/api/progress/stream)
   useSseProgress();
@@ -95,6 +96,7 @@ export const App: React.FC = () => {
           )}
 
           <div className="flex-1 overflow-hidden">
+            {activeTab === "home" && <HomeView onNavigate={handleSelectTab} />}
             {activeTab === "library" && <LibraryView />}
             {activeTab === "playlists" && <PlaylistsView />}
             {activeTab === "downloads" && <DownloadsView />}

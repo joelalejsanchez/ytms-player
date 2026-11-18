@@ -85,7 +85,9 @@ export const AmbientAuraVisualizer: React.FC<VisualizerProps> = React.memo(
 
         {/* Indicador de estado */}
         <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground font-mono">
-          <Sparkles className={`h-4 w-4 text-primary ${isPlaying ? "animate-pulse" : ""}`} />
+          <Sparkles
+            className={`h-4 w-4 text-primary ${isPlaying ? "animate-pulse" : ""}`}
+          />
           <span className="text-[11px] uppercase tracking-wider">
             {isPlaying ? "Onda Resonante Activa" : "En reposo"}
           </span>

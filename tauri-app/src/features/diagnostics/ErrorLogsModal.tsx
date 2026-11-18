@@ -122,7 +122,8 @@ export const ErrorLogsModal: React.FC = React.memo(() => {
                 {warnCount > 0 && <Badge tone="warning">{warnCount} avisos</Badge>}
               </div>
               <p className="text-xs text-muted-foreground truncate">
-                Historial cronológico con fecha y hora para auditar incidentes de la sesión
+                Historial cronológico con fecha y hora para auditar incidentes de la
+                sesión
               </p>
             </div>
           </div>
@@ -353,7 +354,8 @@ export const ErrorLogsModal: React.FC = React.memo(() => {
         {/* Pie del modal con estado */}
         <footer className="flex items-center justify-between border-t border-border px-6 py-3 bg-muted/20 text-[11px] text-muted-foreground">
           <span>
-            Mostrando {filteredLogs.length} de {logs.length} eventos registrados en memoria
+            Mostrando {filteredLogs.length} de {logs.length} eventos registrados en
+            memoria
           </span>
           <Button
             type="button"

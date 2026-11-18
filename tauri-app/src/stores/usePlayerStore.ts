@@ -195,7 +195,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       nextIndex = existingIndex >= 0 ? existingIndex : updatedQueue.length - 1;
     }
 
-    savePersistedPreferences({ currentTrack: track, currentTime: isSameTrack ? get().currentTime : 0 });
+    savePersistedPreferences({
+      currentTrack: track,
+      currentTime: isSameTrack ? get().currentTime : 0,
+    });
 
     set({
       currentTrack: track,
@@ -356,7 +359,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   removeFromQueue: (youtubeId) => {
     set((state) => {
       const nextQueue = state.queue.filter((item) => item.youtube_id !== youtubeId);
-      const nextOrig = state.originalQueue.filter((item) => item.youtube_id !== youtubeId);
+      const nextOrig = state.originalQueue.filter(
+        (item) => item.youtube_id !== youtubeId,
+      );
       const nextIndex = state.currentTrack
         ? nextQueue.findIndex(
             (item) => item.youtube_id === state.currentTrack?.youtube_id,

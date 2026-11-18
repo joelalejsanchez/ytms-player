@@ -610,7 +610,8 @@ export const WorkspaceSettingsView = React.memo(() => {
               Visualizador de Reproducción
             </h4>
             <p className="text-[11px] text-muted-foreground">
-              Elige el estilo visual al ampliar la reproducción a pantalla completa. Posa el cursor sobre una opción para ver la animación en vivo.
+              Elige el estilo visual al ampliar la reproducción a pantalla completa.
+              Posa el cursor sobre una opción para ver la animación en vivo.
             </p>
           </div>
 
@@ -934,7 +935,9 @@ export const WorkspaceSettingsView = React.memo(() => {
                 disabled={isCheckingOAuth}
                 onClick={() => void handleCheckOAuth()}
               >
-                <RefreshCw className={cn("h-4 w-4", isCheckingOAuth && "animate-spin")} />
+                <RefreshCw
+                  className={cn("h-4 w-4", isCheckingOAuth && "animate-spin")}
+                />
                 {isCheckingOAuth ? "Comprobando..." : "Comprobar estado"}
               </Button>
             </div>
@@ -948,7 +951,8 @@ export const WorkspaceSettingsView = React.memo(() => {
                   Archivo de cookies
                 </h4>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Permite descargar canciones con restricción de edad o contenido exclusivo
+                  Permite descargar canciones con restricción de edad o contenido
+                  exclusivo
                 </p>
               </div>
               <Badge tone={appSettings?.cookies_file_path ? "success" : "default"}>
@@ -1004,7 +1008,9 @@ export const WorkspaceSettingsView = React.memo(() => {
                     ) : (
                       <Cookie className="h-4 w-4" />
                     )}
-                    <span>{isImportingCookies ? "Guardando..." : "Guardar cookies"}</span>
+                    <span>
+                      {isImportingCookies ? "Guardando..." : "Guardar cookies"}
+                    </span>
                   </Button>
 
                   <Button
@@ -1210,7 +1216,8 @@ export const WorkspaceSettingsView = React.memo(() => {
                 Diagnóstico y Registro de Errores (Error Logs)
               </h3>
               <p className="text-xs text-muted-foreground truncate">
-                Historial cronológico con fecha y hora de todos los fallos y avisos de la sesión
+                Historial cronológico con fecha y hora de todos los fallos y avisos de
+                la sesión
               </p>
             </div>
           </div>
@@ -1218,7 +1225,8 @@ export const WorkspaceSettingsView = React.memo(() => {
           <div className="flex items-center gap-2 shrink-0">
             {errorLogs.filter((l) => l.level === "error").length > 0 ? (
               <Badge tone="danger">
-                {errorLogs.filter((l) => l.level === "error").length} errores registrados
+                {errorLogs.filter((l) => l.level === "error").length} errores
+                registrados
               </Badge>
             ) : (
               <Badge tone="success">0 errores en sesión</Badge>
@@ -1251,7 +1259,11 @@ export const WorkspaceSettingsView = React.memo(() => {
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between text-xs text-muted-foreground gap-2">
             <span className="truncate">
-              Archivo físico: <code className="text-foreground bg-muted px-1.5 py-0.5 rounded text-[11px] font-mono">/logs/app.log</code> (Límite optimizado: 1 MB con rotación automática)
+              Archivo físico:{" "}
+              <code className="text-foreground bg-muted px-1.5 py-0.5 rounded text-[11px] font-mono">
+                /logs/app.log
+              </code>{" "}
+              (Límite optimizado: 1 MB con rotación automática)
             </span>
             {errorLogs.length > 0 && (
               <Button
@@ -1275,52 +1287,56 @@ export const WorkspaceSettingsView = React.memo(() => {
                   No hay incidentes ni errores registrados en esta sesión.
                 </p>
                 <p className="text-muted-foreground text-[11px] mt-0.5">
-                  Si ocurre algún error en segundo plano o se muestra un aviso toast, se registrará aquí con su fecha, hora exacta y contexto.
+                  Si ocurre algún error en segundo plano o se muestra un aviso toast, se
+                  registrará aquí con su fecha, hora exacta y contexto.
                 </p>
               </div>
             </div>
           ) : (
             <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-              {errorLogs.slice(-3).reverse().map((entry) => (
-                <div
-                  key={entry.id}
-                  onClick={() => setOpenLogModal(true)}
-                  className="flex cursor-pointer items-start justify-between gap-3 p-3 rounded-lg border border-border bg-muted/20 hover:border-primary/50 transition font-mono text-xs select-none"
-                >
-                  <div className="min-w-0 flex-1 space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-bold text-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
-                        [{entry.formattedTime}]
-                      </span>
-                      <span
-                        className={cn(
-                          "text-[10px] uppercase font-bold px-1.5 py-0.5 rounded",
-                          entry.level === "error"
-                            ? "bg-destructive/20 text-destructive"
-                            : entry.level === "warn"
-                              ? "bg-amber-500/20 text-amber-500"
-                              : "bg-sky-500/20 text-sky-500",
-                        )}
-                      >
-                        {entry.level}
-                      </span>
-                      {entry.context && (
-                        <span className="text-[10px] text-muted-foreground">
-                          [{entry.context}]
+              {errorLogs
+                .slice(-3)
+                .reverse()
+                .map((entry) => (
+                  <div
+                    key={entry.id}
+                    onClick={() => setOpenLogModal(true)}
+                    className="flex cursor-pointer items-start justify-between gap-3 p-3 rounded-lg border border-border bg-muted/20 hover:border-primary/50 transition font-mono text-xs select-none"
+                  >
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold text-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
+                          [{entry.formattedTime}]
                         </span>
+                        <span
+                          className={cn(
+                            "text-[10px] uppercase font-bold px-1.5 py-0.5 rounded",
+                            entry.level === "error"
+                              ? "bg-destructive/20 text-destructive"
+                              : entry.level === "warn"
+                                ? "bg-amber-500/20 text-amber-500"
+                                : "bg-sky-500/20 text-sky-500",
+                          )}
+                        >
+                          {entry.level}
+                        </span>
+                        {entry.context && (
+                          <span className="text-[10px] text-muted-foreground">
+                            [{entry.context}]
+                          </span>
+                        )}
+                      </div>
+                      <p className="font-semibold text-foreground truncate mt-1">
+                        {entry.title}
+                      </p>
+                      {entry.description && (
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {entry.description}
+                        </p>
                       )}
                     </div>
-                    <p className="font-semibold text-foreground truncate mt-1">
-                      {entry.title}
-                    </p>
-                    {entry.description && (
-                      <p className="text-[11px] text-muted-foreground truncate">
-                        {entry.description}
-                      </p>
-                    )}
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           )}
         </div>

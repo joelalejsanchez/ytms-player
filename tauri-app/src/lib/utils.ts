@@ -24,6 +24,24 @@ export function formatDuration(totalSeconds: number): string {
   return `${mm}:${ss}`;
 }
 
+export function formatHumanDuration(totalSeconds: number): string {
+  if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) {
+    return "0 min";
+  }
+  const rounded = Math.floor(totalSeconds);
+  const days = Math.floor(rounded / 86400);
+  const hours = Math.floor((rounded % 86400) / 3600);
+  const minutes = Math.floor((rounded % 3600) / 60);
+
+  if (days > 0) {
+    return `${days}d ${hours}h ${minutes}m`;
+  }
+  if (hours > 0) {
+    return `${hours}h ${minutes > 0 ? `${minutes}m` : ""}`.trim();
+  }
+  return `${minutes} min`;
+}
+
 export function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) {
     return "0 B";

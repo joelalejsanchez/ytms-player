@@ -89,7 +89,9 @@ export const SpectrumVisualizer: React.FC<VisualizerProps> = React.memo(
 
         {/* Indicador de estado */}
         <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground font-mono">
-          <Activity className={`h-4 w-4 text-primary ${isPlaying ? "animate-pulse" : ""}`} />
+          <Activity
+            className={`h-4 w-4 text-primary ${isPlaying ? "animate-pulse" : ""}`}
+          />
           <span className="text-[11px] uppercase tracking-wider">
             {isPlaying ? "Espectro de frecuencia reactivo (36 bandas)" : "En pausa"}
           </span>

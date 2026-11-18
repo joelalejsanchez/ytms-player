@@ -2,6 +2,7 @@ import {
   AlertTriangle,
   Bug,
   Download,
+  Home,
   Library,
   ListMusic,
   Moon,
@@ -159,6 +160,11 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
     badge?: number;
     badgeTone?: "default" | "warning" | "info";
   }> = [
+    {
+      id: "home",
+      label: "Inicio",
+      icon: Home,
+    },
     {
       id: "library",
       label: "Biblioteca",

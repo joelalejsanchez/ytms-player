@@ -25,7 +25,10 @@ export function useAudioDynamics(
 
     let ctx: AudioContext | null = null;
     try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext;
       if (AudioCtx) {
         // En navegadores modernos solo conectamos si no se ha conectado antes
         // Nota: para evitar interferir con cross-origin en WebKit, mantenemos el contexto desacoplado
@@ -67,7 +70,10 @@ export function useAudioDynamics(
             // Desacoplado del slider de volumen del usuario para que las barras aprovechen
             // el espacio vertical disponible en la interfaz (hasta un 96% de altura)
             const normalized = raw / 255;
-            const target = Math.min(0.96, Math.max(0.06, Math.pow(normalized, 0.72) * 1.15));
+            const target = Math.min(
+              0.96,
+              Math.max(0.06, Math.pow(normalized, 0.72) * 1.15),
+            );
 
             // Respuesta rápida de subida, caída suave
             if (target > currentValues[i]) {

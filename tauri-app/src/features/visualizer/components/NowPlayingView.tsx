@@ -115,7 +115,9 @@ export const NowPlayingView: React.FC = () => {
   const volumePercent = Math.min(100, Math.max(0, volumeValue * 100));
 
   // Estado unificado de Like y Sincronización con YouTube (idéntico a la vista general TrackRow)
-  const syncStatus = currentTrack ? syncStatusByTrack[currentTrack.youtube_id] : undefined;
+  const syncStatus = currentTrack
+    ? syncStatusByTrack[currentTrack.youtube_id]
+    : undefined;
   const isSyncingLike = syncStatus?.status === "loading";
   const isSynced = Boolean(currentTrack?.synced || syncStatus?.status === "synced");
 
@@ -143,7 +145,9 @@ export const NowPlayingView: React.FC = () => {
 
   // Extraer color dominante de la carátula para iluminación ambiental en el fondo del visualizador
   const thumbnailSrc = useMemo(() => {
-    return currentTrack?.thumbnail_path ? toAssetUrl(currentTrack.thumbnail_path) : null;
+    return currentTrack?.thumbnail_path
+      ? toAssetUrl(currentTrack.thumbnail_path)
+      : null;
   }, [currentTrack?.thumbnail_path]);
   const dominantColor = useCoverDominantColor(thumbnailSrc);
 
@@ -225,7 +229,8 @@ export const NowPlayingView: React.FC = () => {
               No hay música en reproducción
             </h3>
             <p className="text-xs text-muted-foreground max-w-sm">
-              Selecciona una canción de tu biblioteca para activar la visualización interactiva.
+              Selecciona una canción de tu biblioteca para activar la visualización
+              interactiva.
             </p>
           </div>
         )}
@@ -253,7 +258,9 @@ export const NowPlayingView: React.FC = () => {
                 variant="ghost"
                 size="icon"
                 disabled={isSyncingLike}
-                onClick={() => void toggleLike(currentTrack.youtube_id, !currentTrack.liked)}
+                onClick={() =>
+                  void toggleLike(currentTrack.youtube_id, !currentTrack.liked)
+                }
                 title={likeButtonTitle}
                 className={`shrink-0 h-10 w-10 transition-colors ${
                   !currentTrack.liked && isSynced ? "hover:bg-emerald-500/10" : ""
@@ -327,7 +334,9 @@ export const NowPlayingView: React.FC = () => {
               />
             </div>
 
-            <span className="w-12 tabular-nums font-mono">{formatDuration(duration)}</span>
+            <span className="w-12 tabular-nums font-mono">
+              {formatDuration(duration)}
+            </span>
           </div>
 
           {/* Fila de Controles de Reproducción y Volumen */}
@@ -342,7 +351,9 @@ export const NowPlayingView: React.FC = () => {
                 size="icon"
                 onClick={cycleRepeatMode}
                 title={`Repetición: ${repeatMode}`}
-                className={repeatMode !== "off" ? "text-primary" : "text-muted-foreground"}
+                className={
+                  repeatMode !== "off" ? "text-primary" : "text-muted-foreground"
+                }
               >
                 {repeatMode === "one" ? (
                   <Repeat1 className="h-5 w-5" />
@@ -370,7 +381,11 @@ export const NowPlayingView: React.FC = () => {
                 aria-label={isPlaying ? "Pausar" : "Reproducir"}
                 className="h-14 w-14 rounded-full shadow-lg transition-transform hover:scale-105 active:scale-95"
               >
-                {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-0.5" />}
+                {isPlaying ? (
+                  <Pause className="h-6 w-6" />
+                ) : (
+                  <Play className="h-6 w-6 ml-0.5" />
+                )}
               </Button>
 
               <Button

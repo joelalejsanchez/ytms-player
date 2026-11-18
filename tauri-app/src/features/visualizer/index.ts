@@ -6,5 +6,11 @@ export * from "./hooks/useCoverDominantColor";
 export { NowPlayingView } from "./components/NowPlayingView";
 export { VinylVisualizer, VinylPreview } from "./components/VinylVisualizer";
 export { SpectrumVisualizer, SpectrumPreview } from "./components/SpectrumVisualizer";
-export { AmbientAuraVisualizer, AmbientAuraPreview } from "./components/AmbientAuraVisualizer";
-export { CoverWavesVisualizer, CoverWavesPreview } from "./components/CoverWavesVisualizer";
+export {
+  AmbientAuraVisualizer,
+  AmbientAuraPreview,
+} from "./components/AmbientAuraVisualizer";
+export {
+  CoverWavesVisualizer,
+  CoverWavesPreview,
+} from "./components/CoverWavesVisualizer";

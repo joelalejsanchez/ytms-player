@@ -180,7 +180,10 @@ export const PersistentPlayer = React.memo(() => {
           // Streaming nativo HTTP 206 Partial Content (Byte-Range) desde el backend en Rust
           playableSrc = await tauriApi.getAudioStreamUrl(currentTrack.audio_path);
         } catch (streamErr) {
-          console.warn("getAudioStreamUrl warning, falling back to dataUrl/toAssetUrl:", streamErr);
+          console.warn(
+            "getAudioStreamUrl warning, falling back to dataUrl/toAssetUrl:",
+            streamErr,
+          );
           try {
             const dataUrl = await tauriApi.readAudioDataUrl(currentTrack.audio_path);
             if (dataUrl) playableSrc = dataUrlToBlobUrl(dataUrl);
@@ -375,36 +378,35 @@ export const PersistentPlayer = React.memo(() => {
     consecutiveFailuresRef.current = 0;
   }, [setIsLoadingTrack]);
 
-  const handleAudioError = useCallback((e: React.SyntheticEvent<HTMLAudioElement, Event>) => {
-    const audioEl = e.currentTarget;
-    const track = usePlayerStore.getState().currentTrack;
-    const errCode = audioEl.error?.code ?? "UNKNOWN";
-    const errMsg = audioEl.error?.message || "Error al decodificar audio";
-    console.error(
-      "Audio playback error event:",
-      errCode,
-      errMsg,
-    );
-    setIsLoadingTrack(false);
+  const handleAudioError = useCallback(
+    (e: React.SyntheticEvent<HTMLAudioElement, Event>) => {
+      const audioEl = e.currentTarget;
+      const track = usePlayerStore.getState().currentTrack;
+      const errCode = audioEl.error?.code ?? "UNKNOWN";
+      const errMsg = audioEl.error?.message || "Error al decodificar audio";
+      console.error("Audio playback error event:", errCode, errMsg);
+      setIsLoadingTrack(false);
 
-    if (track) {
-      usePlayerStore.getState().markTrackCorrupted(track.youtube_id);
-      consecutiveFailuresRef.current += 1;
+      if (track) {
+        usePlayerStore.getState().markTrackCorrupted(track.youtube_id);
+        consecutiveFailuresRef.current += 1;
 
-      toast.error(
-        `Error al reproducir "${track.title}"`,
-        `Archivo posiblemente dañado (Code ${errCode}: ${errMsg}). Saltando a la siguiente...`,
-        4000,
-      );
+        toast.error(
+          `Error al reproducir "${track.title}"`,
+          `Archivo posiblemente dañado (Code ${errCode}: ${errMsg}). Saltando a la siguiente...`,
+          4000,
+        );
 
-      if (consecutiveFailuresRef.current < 4) {
-        playNext();
-      } else {
-        consecutiveFailuresRef.current = 0;
-        setPlaying(false);
+        if (consecutiveFailuresRef.current < 4) {
+          playNext();
+        } else {
+          consecutiveFailuresRef.current = 0;
+          setPlaying(false);
+        }
       }
-    }
-  }, [setIsLoadingTrack, playNext, setPlaying]);
+    },
+    [setIsLoadingTrack, playNext, setPlaying],
+  );
 
   const handleEnded = useCallback(() => {
     const repeat = usePlayerStore.getState().repeatMode;
@@ -531,7 +533,9 @@ export const PersistentPlayer = React.memo(() => {
         {/* Track actual */}
         <div
           onClick={currentTrack ? toggleNowPlayingExpanded : undefined}
-          title={currentTrack ? "Ampliar vista de visualización (Now Playing)" : undefined}
+          title={
+            currentTrack ? "Ampliar vista de visualización (Now Playing)" : undefined
+          }
           className={`flex min-w-[240px] max-w-[300px] items-center gap-3 transition-opacity ${
             currentTrack ? "cursor-pointer group hover:opacity-85" : ""
           }`}

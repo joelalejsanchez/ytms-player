@@ -4,7 +4,7 @@ export type DownloadStatus =
   "queued" | "downloading" | "processing" | "completed" | "skipped" | "failed";
 
 export type NavigationTab =
-  "library" | "playlists" | "downloads" | "recovery" | "workspace";
+  "home" | "library" | "playlists" | "downloads" | "recovery" | "workspace";
 
 export interface Track {
   id: number;

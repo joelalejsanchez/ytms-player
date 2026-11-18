@@ -345,7 +345,9 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
       if (persistedTrack) {
         usePlayerStore.getState().updateTrackMetadata(persistedTrack);
       } else {
-        usePlayerStore.getState().updateTrackMetadata({ youtube_id: youtubeId, liked, synced: false });
+        usePlayerStore
+          .getState()
+          .updateTrackMetadata({ youtube_id: youtubeId, liked, synced: false });
       }
 
       set((state) => ({

@@ -12,7 +12,7 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
-- [ ] **Página de bienvenida y Dashboard principal (Home View):**
+- [x] **Página de bienvenida y Dashboard principal (Home View):**
   - Cuadrícula de playlists en tarjetas/cuadros con carátula y botón de reproducción rápida ("Quick Play") con un solo clic.
   - Panel superior con estadísticas clave de la biblioteca (métricas sugeridas):
     - *Volumen de la biblioteca:* Conteo total de canciones y duración acumulada (ej. `250 canciones • 14h 32m`).

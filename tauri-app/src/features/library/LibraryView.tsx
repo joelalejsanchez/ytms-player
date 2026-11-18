@@ -220,7 +220,7 @@ export const LibraryView = React.memo(() => {
     const currentTrack = usePlayerStore.getState().currentTrack;
     const isCurrentInFilter = Boolean(
       currentTrack &&
-        playableFiltered.some((t) => t.youtube_id === currentTrack.youtube_id),
+      playableFiltered.some((t) => t.youtube_id === currentTrack.youtube_id),
     );
 
     if (isCurrentInFilter) {
