@@ -1,4 +1,4 @@
-# justfile para ytms-player Monorepo
+# justfile para ytms-player Monorepo (Windows)
 # https://github.com/casey/just
 
 # Muestra los comandos disponibles en el monorepo
@@ -51,19 +51,22 @@ build: build-bin
 build-bin:
     cd tauri-app && npm run tauri build -- --no-bundle
 
-# Genera el paquete portable AppImage para Linux
-build-appimage:
-    cd tauri-app && npm run tauri build -- -b appimage
-
-# Genera el paquete instalador .deb para Debian/Ubuntu
-build-deb:
-    cd tauri-app && npm run tauri build -- -b deb
-
-# Genera el paquete instalador .rpm para Fedora/openSUSE
-build-rpm:
-    cd tauri-app && npm run tauri build -- -b rpm
-
-# Compila los instaladores oficiales (.msi/.exe en Windows o .deb/AppImage/.rpm en Linux) y los copia a /release/
-release:
+# Compila los instaladores oficiales (.msi y .exe) y los copia a /release/
+build-release:
     cd tauri-app && npm run tauri build
-    node -e "const fs = require('fs'); const path = require('path'); const srcDir = path.join('tauri-app', 'src-tauri', 'target', 'release', 'bundle'); const destDir = 'release'; if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true }); function copyFiles(dir) { if (!fs.existsSync(dir)) return; for (const file of fs.readdirSync(dir)) { const full = path.join(dir, file); if (fs.statSync(full).isDirectory()) copyFiles(full); else if (/\.(msi|exe|deb|rpm|AppImage|tar\.gz)$/i.test(file)) { const dest = path.join(destDir, file); fs.copyFileSync(full, dest); console.log('✓ Copiado ' + file + ' -> release/'); } } } copyFiles(srcDir);"
+    node -e "const fs = require('fs'); const path = require('path'); const srcDir = path.join('tauri-app', 'src-tauri', 'target', 'release', 'bundle'); const destDir = 'release'; if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true }); function copyFiles(dir) { if (!fs.existsSync(dir)) return; for (const file of fs.readdirSync(dir)) { const full = path.join(dir, file); if (fs.statSync(full).isDirectory()) copyFiles(full); else if (/\.(msi|exe)$/i.test(file)) { const dest = path.join(destDir, file); fs.copyFileSync(full, dest); console.log('✓ Copiado ' + file + ' -> release/'); } } } copyFiles(srcDir);"
+
+# Alias de build-release para generar los paquetes de distribución
+release: build-release
+
+# ==============================================================================
+# Comandos especiales individuales de empaquetado (Windows)
+# ==============================================================================
+
+# Genera el instalador oficial MSI para Windows
+build-msi:
+    cd tauri-app && npm run tauri build -- -b msi
+
+# Genera el instalador ejecutable NSIS (.exe) para Windows
+build-exe:
+    cd tauri-app && npm run tauri build -- -b nsis

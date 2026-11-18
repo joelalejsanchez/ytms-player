@@ -1,8 +1,8 @@
-.PHONY: help fmt fmt-check lint test check docker-up docker-down dev build build-bin build-appimage build-deb build-rpm release
+.PHONY: help fmt fmt-check lint test check docker-up docker-down dev build build-bin release build-release build-appimage build-deb build-rpm
 
 ## help: Muestra los comandos disponibles en la raíz del monorepo
 help:
-	@echo "Comandos disponibles en ytms-player Monorepo:"
+	@echo "Comandos disponibles en ytms-player Monorepo (Linux):"
 	@grep -h -E '^## ' $(MAKEFILE_LIST) | sed -e 's/^## //' | awk -F': ' '{printf "  make %-17s - %s\n", $$1, $$2}'
 
 ## fmt: Formatea Go, Rust y Frontend (React/TS)
@@ -53,6 +53,21 @@ build: build-bin
 build-bin:
 	cd tauri-app && npm run tauri build -- --no-bundle
 
+## release: Compila los paquetes de distribución para Linux (.deb/.rpm/AppImage) y los copia a /release/
+release:
+	cd tauri-app && npm run tauri build
+	mkdir -p $(CURDIR)/release
+	@find $(CURDIR)/tauri-app/src-tauri/target/release/bundle -type f \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.tar.gz" \) -exec cp -f {} $(CURDIR)/release/ \; 2>/dev/null || true
+	@echo "✓ Paquetes de release copiados en $(CURDIR)/release/"
+	@ls -la $(CURDIR)/release/
+
+## build-release: Alias de release para generar los paquetes de distribución
+build-release: release
+
+# ==============================================================================
+# Comandos especiales individuales de empaquetado (Linux)
+# ==============================================================================
+
 ## build-appimage: Genera el paquete portable AppImage para Linux
 build-appimage:
 	cd tauri-app && npm run tauri build -- -b appimage
@@ -64,11 +79,3 @@ build-deb:
 ## build-rpm: Genera el paquete instalador .rpm para Fedora/openSUSE
 build-rpm:
 	cd tauri-app && npm run tauri build -- -b rpm
-
-## release: Compila los paquetes de distribución y los copia a /release/
-release:
-	cd tauri-app && npm run tauri build
-	mkdir -p $(CURDIR)/release
-	@find $(CURDIR)/tauri-app/src-tauri/target/release/bundle -type f \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.tar.gz" -o -name "*.msi" -o -name "*.exe" \) -exec cp -f {} $(CURDIR)/release/ \; 2>/dev/null || true
-	@echo "✓ Paquetes de release copiados en $(CURDIR)/release/"
-	@ls -la $(CURDIR)/release/
