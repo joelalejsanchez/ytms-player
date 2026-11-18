@@ -1,0 +1,30 @@
+# justfile para go-microservice
+
+default:
+    @just --list
+
+fmt:
+    gofmt -s -w .
+
+fmt-check:
+    gofmt -s -l .
+
+vet:
+    go vet ./...
+
+lint: vet
+    golangci-lint run ./...
+
+test:
+    go test -v -cover ./...
+
+test-race:
+    go test -v -race ./...
+
+build:
+    go build -trimpath -ldflags="-s -w" -o bin/ytms-player-go ./src
+
+run:
+    go run ./src
+
+check: fmt-check lint test

@@ -64,15 +64,6 @@ build-appimage:
 	cd tauri-app && npm run tauri build -- -b appimage
 
 desktop-shortcut:
-	@if [ ! -f $(CURDIR)/release/ytms-player ]; then \
-		echo "Error: No se encontró el binario de release en $(CURDIR)/release/ytms-player."; \
-		echo "Ejecute primero 'make release' para generar el ejecutable de producción."; \
-		exit 1; \
-	fi
-	mkdir -p $(HOME)/.local/share/applications $(HOME)/.local/share/icons/hicolor/512x512/apps
-	cp $(CURDIR)/tauri-app/src-tauri/icons/icon.png $(HOME)/.local/share/icons/hicolor/512x512/apps/youtube-desktop-player.png
-	@printf '[Desktop Entry]\nName=YouTube Desktop Player\nComment=Reproductor y gestor de audio local de YouTube\nExec=%s/release/ytms-player\nIcon=youtube-desktop-player\nTerminal=false\nType=Application\nCategories=AudioVideo;Audio;Player;\n' "$$(pwd)" > $(HOME)/.local/share/applications/youtube-desktop-player.desktop
-	@update-desktop-database $(HOME)/.local/share/applications 2>/dev/null || true
-	@echo "✓ Acceso directo creado exitosamente en ~/.local/share/applications/youtube-desktop-player.desktop apuntando a $(CURDIR)/release/ytms-player"
+	@./scripts/install-desktop-shortcut.sh
 
 

@@ -1,0 +1,21 @@
+# justfile para tauri-app/src-tauri
+
+default:
+    @just --list
+
+fmt:
+    cargo fmt --all
+
+fmt-check:
+    cargo fmt --all -- --check
+
+lint:
+    cargo clippy --all-targets -- -D warnings
+
+test:
+    cargo test
+
+build:
+    cargo build --release
+
+check: fmt-check lint test
