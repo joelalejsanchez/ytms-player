@@ -1,6 +1,7 @@
 package adapters
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -83,6 +84,8 @@ func (r *WorkspacePathResolver) ResolveWorkspaceDirs(
 		_ = os.WriteFile(controlFile, []byte(`{"version":"1.0.0","app":"ytms-player"}`+"\n"), 0o644)
 	}
 
+	log.Printf("[path-resolver] workspace resolved: ws=%q tracks=%q thumbs=%q", resolvedWorkspace, resolvedTracks, resolvedThumbs)
+
 	return resolvedWorkspace, resolvedTracks, resolvedThumbs, nil
 }
 
@@ -93,6 +96,7 @@ func (r *WorkspacePathResolver) toContainerPath(p string) string {
 			rel := slashPath[len(r.hostPrefix):]
 			return filepath.Clean(r.containerPrefix + "/" + strings.TrimLeft(rel, "/"))
 		}
+		log.Printf("[path-resolver] WARNING: Host path %q does not match HOST_WORKSPACE_PREFIX %q. Files may be stored inside container layer instead of host volume.", slashPath, r.hostPrefix)
 	}
 	return filepath.Clean(slashPath)
 }

@@ -6,6 +6,22 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.7.2] - 2026-11-18
+
+### Añadido
+
+#### Microservicio Go y Docker
+- **Logging estructurado en Docker**: Trazas detalladas con timestamps en `stdout` (`[http]`, `[worker]`, `[download]`, `[path-resolver]`) para monitorear peticiones, descargas, etapas de FFmpeg y errores en tiempo real mediante `docker compose logs -f`.
+- **Alineación de volúmenes en `docker-compose.yml`**: Configuración predeterminada del volumen del anfitrión hacia la carpeta estándar de música (`${HOME:-${USERPROFILE}}/Music`) para permitir acceso a cualquier subcarpeta de música sin generar carpetas huérfanas (`ytms-player`) en el disco anfitrión.
+- **Guía de desarrollo en Windows**: Documentación detallada en `docs/setup-windows.md` sobre configuración de `YTMS_PLAYER_WORKSPACE_HOST` y visualización de logs de contenedor.
+
+### Corregido
+
+- **Condición de carrera en descargas asíncronas (`useDownloadStore`)**: Corrección del error donde la resolución asíncrona de `startDownloadTask` sobrescribía con estado `"queued"` las tareas que ya habían finalizado o avanzado por eventos SSE en tiempo real (`downloading`, `processing`, `completed`).
+- **Validación de prefijo en `WorkspacePathResolver`**: Advertencias explícitas en logs si la ruta de workspace recibida no coincide con `HOST_WORKSPACE_PREFIX`, evitando escrituras silenciosas en el almacenamiento efímero del contenedor.
+
+---
+
 ## [1.7.1] - 2026-11-18
 
 ### Añadido

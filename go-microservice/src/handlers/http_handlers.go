@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -75,12 +76,16 @@ func (h *APIHandler) HandleDownload(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20) // Límite de 1 MB por seguridad
 	var req domain.DownloadRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("[http] invalid download JSON payload: %v", err)
 		writeJSONError(w, http.StatusBadRequest, "invalid_json", "invalid request payload")
 		return
 	}
 
+	log.Printf("[http] POST /api/download url=%q format=%s async=%v ws=%q", req.URL, req.AudioFormat, req.Async, req.WorkspacePath)
+
 	resp, err := h.downloadUC.Execute(r.Context(), req)
 	if err != nil {
+		log.Printf("[http] download error for %q: %v", req.URL, err)
 		switch {
 		case errors.Is(err, domain.ErrInvalidYouTubeURL),
 			errors.Is(err, domain.ErrInvalidYouTubeID),
@@ -94,6 +99,8 @@ func (h *APIHandler) HandleDownload(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	log.Printf("[http] download dispatched task=%s status=%s targetID=%s", resp.TaskID, resp.Status, resp.TargetID)
 
 	statusCode := http.StatusOK
 	if req.Async {

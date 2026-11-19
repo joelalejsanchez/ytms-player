@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -101,6 +102,7 @@ func NewDownloadUseCase(
 func (uc *DownloadUseCase) workerLoop() {
 	defer uc.wg.Done()
 	for job := range uc.jobQueue {
+		log.Printf("[worker] starting download job task=%s url=%q", job.taskID, job.req.URL)
 		_, _ = uc.executeDownload(job.ctx, job.taskID, job.req)
 	}
 }
@@ -335,6 +337,7 @@ func (uc *DownloadUseCase) processSingleItem(
 	// Control de duplicados (SDD 6.1 paso 4 y SDD 9 principio 6: Idempotencia)
 	if !req.ForceOverwrite {
 		if exists, size := uc.pathResolver.FileExists(destAudio); exists && size > 0 {
+			log.Printf("[download] [%s] [%s] track already exists (%d bytes), skipping download", taskID, ytID, size)
 			meta := domain.TrackMetadata{
 				YouTubeID:     ytID,
 				Title:         nonEmpty(item.Title, ytID),
@@ -407,6 +410,8 @@ func (uc *DownloadUseCase) processSingleItem(
 		Metadata:  &initialMeta,
 	})
 
+	log.Printf("[download] [%s] [%s] downloading raw audio via yt-dlp...", taskID, ytID)
+
 	downloaded, err := uc.downloader.DownloadTrack(ctx, ytID, req.AudioFormat, tmpDir, taskID, func(ev domain.ProgressEvent) {
 		ev.TaskID = taskID
 		ev.YouTubeID = ytID
@@ -416,6 +421,7 @@ func (uc *DownloadUseCase) processSingleItem(
 		uc.publishEvent(ev)
 	})
 	if err != nil {
+		log.Printf("[download] [%s] [%s] yt-dlp download failed: %v", taskID, ytID, err)
 		uc.publishEvent(domain.ProgressEvent{
 			TaskID:    taskID,
 			YouTubeID: ytID,
@@ -443,6 +449,8 @@ func (uc *DownloadUseCase) processSingleItem(
 		PlaylistTitle: nonEmpty(downloaded.PlaylistTitle, item.PlaylistTitle),
 	}
 
+	log.Printf("[download] [%s] [%s] processing & tagging with FFmpeg -> %s", taskID, ytID, destAudio)
+
 	uc.publishEvent(domain.ProgressEvent{
 		TaskID:    taskID,
 		YouTubeID: ytID,
@@ -460,6 +468,7 @@ func (uc *DownloadUseCase) processSingleItem(
 		meta,
 	)
 	if err != nil {
+		log.Printf("[download] [%s] [%s] FFmpeg processing failed: %v", taskID, ytID, err)
 		uc.publishEvent(domain.ProgressEvent{
 			TaskID:    taskID,
 			YouTubeID: ytID,
@@ -474,6 +483,8 @@ func (uc *DownloadUseCase) processSingleItem(
 	}
 
 	meta.FileSize = fileSize
+
+	log.Printf("[download] [%s] [%s] COMPLETED: size=%d bytes dest=%s", taskID, ytID, fileSize, destAudio)
 
 	uc.publishEvent(domain.ProgressEvent{
 		TaskID:    taskID,

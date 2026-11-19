@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { formatBytes, formatDuration, formatHumanDuration } from "@/lib/utils";
 import {
@@ -8,6 +8,7 @@ import {
   workspaceConfigSchema,
   youtubeUrlSchema,
 } from "@/schemas/validation";
+import { tauriApi } from "@/services/tauriIpc";
 import { buildTaskKey, useDownloadStore } from "@/stores/useDownloadStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { useThemeStore } from "@/stores/useThemeStore";
@@ -222,6 +223,39 @@ describe("useDownloadStore & Utility Helpers", () => {
     expect(matching[0]?.metadata?.title).toBe("Test Song");
 
     useDownloadStore.getState().clearCompletedTasks();
+  });
+
+  it("preserves advanced status when startDownloadTask resolves after SSE events", async () => {
+    const store = useDownloadStore.getState();
+    vi.spyOn(tauriApi, "startDownload").mockResolvedValueOnce({
+      task_id: "task-race-1",
+      status: "queued",
+      content_type: "video",
+      youtube_id: "race_track_1",
+      items: [],
+    });
+
+    // 1. Simular que SSE emite "processing" antes o durante la resolución
+    store.upsertProgressEvent({
+      task_id: "task-race-1",
+      youtube_id: "race_track_1",
+      status: "processing",
+      progress: 95,
+    });
+
+    // 2. Ejecutar startDownloadTask (que devuelve status: "queued")
+    await store.startDownloadTask({
+      url: "https://www.youtube.com/watch?v=race_track_1",
+      audio_format: "mp3",
+    });
+
+    // 3. Verificar que no se degradó de "processing" a "queued"
+    const key = buildTaskKey("task-race-1", "race_track_1");
+    const task = useDownloadStore.getState().tasks[key];
+    expect(task?.status).toBe("processing");
+    expect(task?.progress).toBe(95);
+
+    useDownloadStore.getState().clearAllTasks();
   });
 
   it("formats duration and byte sizes accurately", () => {

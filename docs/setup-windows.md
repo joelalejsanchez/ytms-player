@@ -68,6 +68,23 @@ just docker-up
 docker compose up -d --build
 ```
 
+> [!NOTE]
+> **Mapeo del Espacio de Trabajo (Workspace):**  
+> Por defecto, `docker-compose.yml` mapea la carpeta de música del usuario (`%USERPROFILE%\Music` en Windows, `~/Music` en Linux) hacia `/app/workspace` en el contenedor. Esto permite que cualquier subcarpeta creada dentro de Música funcione de forma transparente como espacio de trabajo.
+> Si utilizas una carpeta en otra unidad de disco (por ejemplo `D:\MiMusica`), define la variable antes de iniciar:
+> ```powershell
+> $env:YTMS_PLAYER_WORKSPACE_HOST = "D:\MiMusica"
+> docker compose up -d
+> ```
+> O configúrala en un archivo `.env` en la raíz del repositorio.
+
+> [!TIP]
+> **Monitoreo de Logs en Tiempo Real:**  
+> Puedes inspeccionar el progreso de descargas, resolución de rutas y conversión de FFmpeg en cualquier momento mediante:
+> ```powershell
+> docker compose logs -f ytms-player-backend
+> ```
+
 > [!TIP]
 > **Gestión de Cookies de YouTube (`cookies.txt`):**  
 > Para descargar contenido con restricción de edad o evitar bloqueos antibot de YouTube, exporta las cookies de tu navegador en formato Netscape (`cookies.txt`). No necesitas copiar archivos manualmente en el repositorio:

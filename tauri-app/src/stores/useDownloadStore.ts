@@ -137,14 +137,26 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
           const nextTasks = { ...state.tasks };
           for (const item of response.items) {
             const key = buildTaskKey(response.task_id, item.youtube_id);
+            const prev = nextTasks[key];
+            const isAdvanced =
+              prev?.status === "downloading" ||
+              prev?.status === "processing" ||
+              prev?.status === "completed" ||
+              prev?.status === "skipped" ||
+              prev?.status === "failed";
+            const finalStatus = isAdvanced ? prev.status : item.status;
+            const finalProgress =
+              finalStatus === "completed" || finalStatus === "skipped"
+                ? 100
+                : prev?.progress ?? (item.status === "completed" || item.status === "skipped" ? 100 : 0);
+
             nextTasks[key] = {
               task_id: response.task_id,
               youtube_id: item.youtube_id,
-              status: item.status,
-              progress:
-                item.status === "completed" || item.status === "skipped" ? 100 : 0,
-              error: item.error,
-              metadata: item.metadata,
+              status: finalStatus,
+              progress: finalProgress,
+              error: item.error || prev?.error,
+              metadata: item.metadata || prev?.metadata,
             };
           }
           return { tasks: nextTasks, isSubmitting: false };
@@ -155,6 +167,8 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
           const nextTasks = { ...state.tasks };
           let existingMetadata: DownloadProgressEvent["metadata"] = undefined;
           let existingProgress = 0;
+          let existingStatus: DownloadProgressEvent["status"] | undefined = undefined;
+          let existingError: string | undefined = undefined;
 
           for (const k of Object.keys(nextTasks)) {
             if (nextTasks[k]?.youtube_id === response.youtube_id) {
@@ -167,18 +181,42 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
               ) {
                 existingProgress = nextTasks[k]!.progress;
               }
+              if (nextTasks[k]?.status) {
+                existingStatus = nextTasks[k]!.status;
+              }
+              if (nextTasks[k]?.error) {
+                existingError = nextTasks[k]!.error;
+              }
               if (k !== key) {
                 delete nextTasks[k];
               }
             }
           }
 
+          // Prevenir degradación del estado si el flujo SSE ya avanzó en tiempo real
+          const isAdvancedStatus =
+            existingStatus === "downloading" ||
+            existingStatus === "processing" ||
+            existingStatus === "completed" ||
+            existingStatus === "skipped" ||
+            existingStatus === "failed";
+
+          const finalStatus = isAdvancedStatus
+            ? existingStatus
+            : response.status;
+
+          const finalProgress =
+            finalStatus === "completed" || finalStatus === "skipped"
+              ? 100
+              : existingProgress;
+
           nextTasks[key] = {
             task_id: response.task_id,
             youtube_id: response.youtube_id,
-            status: response.status,
-            progress: response.status === "completed" ? 100 : existingProgress,
+            status: finalStatus,
+            progress: finalProgress,
             metadata: existingMetadata,
+            error: existingError,
           };
 
           return {
