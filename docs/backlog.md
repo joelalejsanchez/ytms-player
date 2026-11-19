@@ -16,12 +16,6 @@ Este documento registra las características, mejoras y extensiones que **no est
   - Actualmente existe una animación de transición con curva Bézier que genera un salto visual elástico perceptible o desfasado antes de estabilizarse.
   - Se debe suprimir la animación de transición (`transition-none` o duración cero en la posición del thumb) manteniendo íntegra la lógica y comportamiento de audio actual.
 
-- [ ] **Rediseño de navegación en Playlists (Vista de lista completa -> Vista de detalle):**
-  - Sustituir la distribución actual de dos paneles divididos simultáneos por una vista secuencial limpia:
-    1. **Pantalla principal:** Muestra la lista completa de playlists en cuadrícula/lista a ancho completo.
-    2. **Pantalla de detalle:** Al hacer clic sobre una playlist, se abre la vista detallada con su carátula, estadísticas y todas sus canciones.
-    3. **Botón de retorno:** Botón superior para volver fácilmente a la vista general de todas las playlists.
-
 - [ ] **Discriminación de origen de pista (`origin`) y exclusión de archivos locales en sincronización de Likes (`LibraryView` / Core Rust / Go):**
   - **Diagnóstico del problema:** Al pulsar "Sincronizar Me gusta", la app consulta en lote a la YouTube Data API v3 (`POST /api/sync-likes`) enviando todos los identificadores de la base de datos (`track_repo.get_all_tracks()`). Si el usuario ha importado o adoptado archivos de audio locales cuyos identificadores no corresponden al formato estricto de YouTube (11 caracteres alfanuméricos) o no provienen de dicha plataforma, la validación en Go (`ValidateYouTubeID`) rechaza la petición completa con error 400 (`validation_failed`), abortando la sincronización de likes para todo el catálogo restante.
   - **Identificador de origen (`origin`):** Incorporar la columna `origin TEXT NOT NULL DEFAULT 'youtube'` en la tabla `tracks` de SQLite (valores admisibles: `'youtube'` y `'local'`), garantizando migración segura (`ALTER TABLE`) y sincronización en los modelos de datos en Rust (`Track`, `NewTrack`) y TypeScript.
@@ -77,9 +71,6 @@ Este documento registra las características, mejoras y extensiones que **no est
 - [ ] **Microinteracción UX en el logo del Sidebar:**
   - Al colocar el cursor (hover) sobre el logo de la aplicación en la cabecera del sidebar, sustituir dinámicamente el logo por el icono estándar de colapsar/expandir barra lateral (ej. `PanelLeftClose` / icono de sidebar común).
   - Clarifica al usuario que el logo actúa como detonante interactivo para alternar el estado del sidebar.
-- [ ] **Corrección de layout y alineación de scroll en la vista de Playlists:**
-  - Solucionar la inconsistencia visual donde el scroll de la lista de playlists queda separado de los items mientras que en la card de pistas aparece pegado.
-  - Configurar `padding: 0` en el contenedor scrolleable padre y aplicar paddings específicos en los componentes hijos contenedores de tracks para que la barra de scroll quede pegada al borde de manera uniforme en ambos paneles.
 - [ ] **Estabilización de ancho y prevención de saltos visuales en selects de Tracks (`LibraryView`):**
   - Los desplegables `CustomSelect` de formato y ordenamiento varían dinámicamente de anchura según la longitud del texto de la opción activa (ej. al alternar entre _"Todos los formatos"_ vs _"MP3"_, o _"Fecha de descarga"_ vs _"Título"_), provocando desplazamientos horizontales bruscos en los controles adyacentes (botón ASC/DESC).
   - Asignar anchos mínimos consistentes o anchos fijos calibrados (`min-w-[130px]` / `min-w-[150px]` o `w-36` / `w-40`) a los contenedores/triggers de `CustomSelect` para garantizar estabilidad en la interfaz sin saltos de layout al cambiar filtros.

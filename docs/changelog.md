@@ -6,6 +6,25 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.8.0] - 2026-11-18
+
+### Añadido
+
+#### Rediseño de Navegación Secuencial en Playlists (`PlaylistsView`)
+- **Navegación secuencial de dos niveles**: Sustitución del esquema dividido de dos paneles simultáneos por un flujo limpio y enfocado compuesto por Pantalla Principal (Tus Playlists) y Pantalla de Detalle individual.
+- **Pantalla principal a ancho completo**:
+  - Cuadrícula responsiva (`grid`) y vista en lista (`list`) conmutables mediante selector visual de modo de vista.
+  - Tarjetas de playlist con carátula dinámica o respaldo visual, conteo de canciones, duración acumulada, badge de YouTube si está vinculada, botón de reproducción rápida con 1 clic y menú de opciones contextuales (`ActionMenu`).
+  - Campo de búsqueda interactiva en tiempo real para filtrar playlists por título o identificador de YouTube.
+  - Formulario desplegable accesible para la creación inmediata de nuevas playlists con redirección directa a su vista de detalle.
+- **Pantalla de detalle de playlist**:
+  - Barra superior de retorno con botón prominente *"Volver a Playlists"* y migas de pan (*breadcrumbs*) clicables para regresar a la vista general.
+  - Hero banner con carátula a gran escala, título completo, etiqueta de tipo y métricas acumuladas (número de canciones, duración total en formato legible y espacio total en disco).
+  - Listado de canciones a ancho completo con numeración de pista, miniatura con hover play, resaltado dinámico de pista en reproducción, duración formateada y menú contextual para copiar enlace o desvincular de la lista.
+  - Buscador interno de canciones para listas de reproducción extensas.
+
+---
+
 ## [1.7.5] - 2026-11-18
 
 ### Corregido

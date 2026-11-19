@@ -68,9 +68,15 @@ export const App: React.FC = () => {
     }
   }, [error, clearError]);
 
-  const handleSelectTab = useCallback((tab: NavigationTab) => {
-    setActiveTab(tab);
-  }, []);
+  const handleSelectTab = useCallback(
+    (tab: NavigationTab) => {
+      if (tab === "playlists" && activeTab === "playlists") {
+        void useLibraryStore.getState().selectPlaylist(null);
+      }
+      setActiveTab(tab);
+    },
+    [activeTab],
+  );
 
   return (
     <div className="flex h-screen w-screen flex-col bg-background text-foreground transition-colors duration-200">

@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import React from "react";
-import { render, renderHook } from "@testing-library/react";
+import { fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { formatBytes, formatDuration, formatHumanDuration } from "@/lib/utils";
+import { PlaylistsView } from "@/features/playlists/PlaylistsView";
+import { useLibraryStore } from "@/stores/useLibraryStore";
 import {
   downloadFormSchema,
   playlistFormSchema,
@@ -629,5 +631,101 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
     expect(captured[1].context).toBe("toast");
 
     useLogStore.getState().clearLogs();
+  });
+
+  describe("Playlists Sequential Navigation (PlaylistsView)", () => {
+    const samplePlaylist = {
+      id: 101,
+      title: "Synthwave Vibes",
+      youtube_playlist_id: "PL1234567890",
+      cover_path: "/workspace/thumbnails/cover.jpg",
+      track_count: 1,
+      created_at: "2026-11-18T10:00:00Z",
+    };
+
+    const samplePlaylist2 = {
+      id: 102,
+      title: "Lo-Fi Study",
+      youtube_playlist_id: null,
+      cover_path: null,
+      track_count: 0,
+      created_at: "2026-11-18T11:00:00Z",
+    };
+
+    beforeEach(() => {
+      useLibraryStore.setState({
+        playlists: [samplePlaylist, samplePlaylist2],
+        activePlaylist: null,
+        tracks: [sampleTrack],
+        playlistTrackMap: { [sampleTrack.id]: [101] },
+      });
+    });
+
+    it("renders main view with full-width playlist grid and metadata when activePlaylist is null", () => {
+      render(React.createElement(PlaylistsView));
+
+      expect(screen.getByText("Tus Playlists")).toBeInTheDocument();
+      expect(screen.getByText("Synthwave Vibes")).toBeInTheDocument();
+      expect(screen.getByText("Lo-Fi Study")).toBeInTheDocument();
+      expect(screen.getByText("PL1234567890")).toBeInTheDocument();
+      expect(screen.getByTitle("Vista en cuadrícula")).toBeInTheDocument();
+      expect(screen.getByTitle("Vista en lista")).toBeInTheDocument();
+    });
+
+    it("filters playlists via search query in main view", () => {
+      render(React.createElement(PlaylistsView));
+
+      const searchInput = screen.getByPlaceholderText("Buscar playlist...");
+      fireEvent.change(searchInput, { target: { value: "Synth" } });
+
+      expect(screen.getByText("Synthwave Vibes")).toBeInTheDocument();
+      expect(screen.queryByText("Lo-Fi Study")).not.toBeInTheDocument();
+    });
+
+    it("switches view mode between grid and list", () => {
+      render(React.createElement(PlaylistsView));
+
+      const listBtn = screen.getByTitle("Vista en lista");
+      fireEvent.click(listBtn);
+
+      expect(screen.getByText("Synthwave Vibes")).toBeInTheDocument();
+      expect(screen.getByText("Lo-Fi Study")).toBeInTheDocument();
+    });
+
+    it("renders sequential detail view with return button and breadcrumbs when a playlist is active", () => {
+      useLibraryStore.setState({
+        activePlaylist: {
+          playlist: samplePlaylist,
+          tracks: [sampleTrack],
+        },
+      });
+
+      render(React.createElement(PlaylistsView));
+
+      expect(screen.getByText("Volver a Playlists")).toBeInTheDocument();
+      expect(screen.getByText("Playlists")).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { level: 1, name: "Synthwave Vibes" }),
+      ).toBeInTheDocument();
+      expect(screen.getByText("Never Gonna Give You Up")).toBeInTheDocument();
+      expect(screen.getByText("Rick Astley")).toBeInTheDocument();
+      expect(screen.getByText("Reproducir Playlist")).toBeInTheDocument();
+    });
+
+    it("returns to main playlists list view when clicking 'Volver a Playlists'", () => {
+      useLibraryStore.setState({
+        activePlaylist: {
+          playlist: samplePlaylist,
+          tracks: [sampleTrack],
+        },
+      });
+
+      render(React.createElement(PlaylistsView));
+
+      const backButton = screen.getByText("Volver a Playlists");
+      fireEvent.click(backButton);
+
+      expect(useLibraryStore.getState().activePlaylist).toBeNull();
+    });
   });
 });
