@@ -173,7 +173,10 @@ impl MicroserviceClientPort for GoMicroserviceClient {
         })
     }
 
-    fn preview_url(&self, raw_url: &str) -> DomainResult<crate::domain::entities::PlaylistPreviewDto> {
+    fn preview_url(
+        &self,
+        raw_url: &str,
+    ) -> DomainResult<crate::domain::entities::PlaylistPreviewDto> {
         let url = format!("{}/api/download/preview", self.base_url);
         let client = self.http_client.clone();
         let target = raw_url.to_string();
@@ -211,11 +214,9 @@ impl MicroserviceClientPort for GoMicroserviceClient {
         let client = self.http_client.clone();
 
         Self::block_on(async move {
-            let resp = client
-                .post(&url)
-                .send()
-                .await
-                .map_err(|e| DomainError::MicroserviceError(format!("POST /api/oauth/logout failed: {e}")))?;
+            let resp = client.post(&url).send().await.map_err(|e| {
+                DomainError::MicroserviceError(format!("POST /api/oauth/logout failed: {e}"))
+            })?;
 
             if !resp.status().is_success() {
                 return Err(DomainError::MicroserviceError(format!(
@@ -236,12 +237,9 @@ impl MicroserviceClientPort for GoMicroserviceClient {
         });
 
         Self::block_on(async move {
-            let resp = client
-                .post(&url)
-                .json(&payload)
-                .send()
-                .await
-                .map_err(|e| DomainError::MicroserviceError(format!("POST /api/rate-video failed: {e}")))?;
+            let resp = client.post(&url).json(&payload).send().await.map_err(|e| {
+                DomainError::MicroserviceError(format!("POST /api/rate-video failed: {e}"))
+            })?;
 
             if !resp.status().is_success() {
                 let status = resp.status();

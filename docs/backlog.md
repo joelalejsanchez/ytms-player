@@ -6,7 +6,7 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 1. Prioridad Alta (Performance y Core Engine)
 
-*(Actualmente no hay tareas de prioridad alta pendientes; el motor de streaming nativo HTTP 206 Partial Content fue integrado en la versión 1.3.0).*
+_(Actualmente no hay tareas de prioridad alta pendientes; el motor de streaming nativo HTTP 206 Partial Content fue integrado en la versión 1.3.0)._
 
 ---
 
@@ -28,17 +28,12 @@ Este documento registra las características, mejoras y extensiones que **no est
   - Solucionar la inconsistencia visual donde el scroll de la lista de playlists queda separado de los items mientras que en la card de pistas aparece pegado.
   - Configurar `padding: 0` en el contenedor scrolleable padre y aplicar paddings específicos en los componentes hijos contenedores de tracks para que la barra de scroll quede pegada al borde de manera uniforme en ambos paneles.
 - [ ] **Estabilización de ancho y prevención de saltos visuales en selects de Tracks (`LibraryView`):**
-  - Los desplegables `CustomSelect` de formato y ordenamiento varían dinámicamente de anchura según la longitud del texto de la opción activa (ej. al alternar entre *"Todos los formatos"* vs *"MP3"*, o *"Fecha de descarga"* vs *"Título"*), provocando desplazamientos horizontales bruscos en los controles adyacentes (botón ASC/DESC).
+  - Los desplegables `CustomSelect` de formato y ordenamiento varían dinámicamente de anchura según la longitud del texto de la opción activa (ej. al alternar entre _"Todos los formatos"_ vs _"MP3"_, o _"Fecha de descarga"_ vs _"Título"_), provocando desplazamientos horizontales bruscos en los controles adyacentes (botón ASC/DESC).
   - Asignar anchos mínimos consistentes o anchos fijos calibrados (`min-w-[130px]` / `min-w-[150px]` o `w-36` / `w-40`) a los contenedores/triggers de `CustomSelect` para garantizar estabilidad en la interfaz sin saltos de layout al cambiar filtros.
 - [ ] **Ampliación de opciones en el menú contextual de 3 puntos (`ActionMenu`):**
   - **Información detallada de la pista (Track Info):** Modal o panel lateral para inspeccionar los metadatos completos del archivo (codec de audio, bitrate, frecuencia de muestreo, tamaño en disco, fecha de descarga, ID original y enlace directo de YouTube).
   - **Información y estadísticas de Playlist:** Modal con duración total acumulada (horas/minutos), recuento de temas, tamaño estimado en disco, ID de sincronización y enlace original a YouTube.
   - **Copiar enlace de YouTube al portapapeles:** Acción rápida en el menú contextual para compartir o abrir en el navegador.
-- [ ] **Pipeline CI/CD con GitHub Actions para compilación y releases automáticas:**
-  - Configurar workflow con matriz multiplataforma (`tauri-apps/tauri-action`) en runners `windows-latest` y `ubuntu-latest`.
-  - Compilación automática de instaladores nativos para usuarios no técnicos (`.msi` / `.exe` para Windows, `.deb` / AppImage / binario para Linux) activada por push de tags (`v*.*.*`) o ejecución manual (`workflow_dispatch`).
-  - Publicación automatizada de los instaladores directamente en la sección de **GitHub Releases** del repositorio.
-  - Publicación automatizada de la imagen Docker del microservicio Go en GitHub Packages / Container Registry (`ghcr.io`), permitiendo levantar el backend con un simple `pull` sin necesidad de compilar código Go localmente.
 - [ ] **Empaquetado y distribución nativa para Windows (`.msi` / `.exe`):**
   - Configurar pipeline de empaquetado Tauri con WebView2 Runtime y validación de paths en PowerShell.
 - [ ] **Normalización de volumen de audio (ReplayGain / EBU R128):**

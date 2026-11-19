@@ -141,7 +141,8 @@ pub fn persist_single_downloaded_item(
                     .as_deref()
                     .filter(|s| !s.trim().is_empty())
                     .unwrap_or(yt_playlist_id.as_str());
-                let playlist = playlist_repo.create_playlist(title, Some(yt_playlist_id.as_str()))?;
+                let playlist =
+                    playlist_repo.create_playlist(title, Some(yt_playlist_id.as_str()))?;
                 playlist_repo.add_track_to_playlist(playlist.id, saved_track.id)?;
             }
         }
@@ -172,7 +173,11 @@ fn persist_downloaded_items(
                 .as_deref()
                 .filter(|t| !t.trim().is_empty())
                 .unwrap_or(pl_id.as_str());
-            Some(playlist_repo.create_playlist(title, Some(pl_id.as_str()))?.id)
+            Some(
+                playlist_repo
+                    .create_playlist(title, Some(pl_id.as_str()))?
+                    .id,
+            )
         }
     } else {
         None

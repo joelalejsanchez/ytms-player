@@ -214,9 +214,9 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
         {!isCollapsed && (
           <div className="min-w-0 overflow-hidden">
             <h1 className="text-sm font-bold tracking-tight text-foreground truncate">
-              YouTube Desktop Player
+              Your Tracks Music Server
             </h1>
-            <p className="text-[11px] text-muted-foreground truncate">Audio Desktop</p>
+            <p className="text-[11px] text-muted-foreground truncate">YTMS Desktop</p>
           </div>
         )}
       </div>

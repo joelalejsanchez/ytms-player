@@ -255,7 +255,9 @@ impl AppSettingsStore {
                 DomainError::FilesystemError(format!("Failed to read master cookies.txt: {e}"))
             })?;
             fs::write(&dest_path, &content).map_err(|e| {
-                DomainError::FilesystemError(format!("Failed to sync cookies.txt to workspace: {e}"))
+                DomainError::FilesystemError(format!(
+                    "Failed to sync cookies.txt to workspace: {e}"
+                ))
             })?;
             #[cfg(unix)]
             {

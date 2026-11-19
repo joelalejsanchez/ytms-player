@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend (React & TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: tauri-app/package-lock.json
+
+      - name: Install dependencies
+        run: cd tauri-app && npm ci
+
+      - name: Check formatting (Prettier)
+        run: cd tauri-app && npm run format:check
+
+      - name: Run ESLint
+        run: cd tauri-app && npm run lint
+
+      - name: TypeScript typecheck
+        run: cd tauri-app && npx tsc --noEmit
+
+      - name: Run unit tests (Vitest)
+        run: cd tauri-app && npm run test
+
+  go-microservice:
+    name: Microservice (Go)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go-microservice/go.mod
+          cache-dependency-path: go-microservice/go.sum
+
+      - name: Check code formatting (gofmt)
+        run: make -C go-microservice fmt-check
+
+      - name: Run go vet
+        run: make -C go-microservice vet
+
+      - name: Run unit & integration tests
+        run: make -C go-microservice test
+
+  tauri-backend:
+    name: Desktop App (Rust & Tauri)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libssl-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tauri-app/src-tauri -> target
+
+      - name: Check Rust formatting (rustfmt)
+        run: cargo fmt --manifest-path tauri-app/src-tauri/Cargo.toml -- --check
+
+      - name: Run Clippy linter
+        run: cargo clippy --manifest-path tauri-app/src-tauri/Cargo.toml -- -D warnings
+
+      - name: Run Rust unit tests
+        run: cargo test --manifest-path tauri-app/src-tauri/Cargo.toml

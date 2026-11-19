@@ -44,7 +44,7 @@ export const SpectrumVisualizer: React.FC<VisualizerProps> = React.memo(
               {track?.title || "Sin pista activa"}
             </h4>
             <p className="text-xs text-muted-foreground truncate max-w-xs">
-              {track?.artist || "YouTube Desktop Player"}
+              {track?.artist || "Your Tracks Music Server"}
             </p>
           </div>
         </div>

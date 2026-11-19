@@ -52,6 +52,7 @@ func (uc *DownloadUseCase) PreviewURL(ctx context.Context, rawURL string) (*doma
 		Items:         previewItems,
 	}, nil
 }
+
 type DownloadUseCase struct {
 	downloader   domain.DownloaderPort
 	processor    domain.AudioProcessorPort

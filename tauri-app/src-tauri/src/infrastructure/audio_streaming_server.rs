@@ -33,7 +33,9 @@ impl AudioStreamingServer {
             }
         };
 
-        let addr = listener.local_addr().unwrap_or_else(|_| SocketAddr::from(([127, 0, 0, 1], 0)));
+        let addr = listener
+            .local_addr()
+            .unwrap_or_else(|_| SocketAddr::from(([127, 0, 0, 1], 0)));
         println!("[audio_stream_server] Servidor nativo de streaming iniciado en http://{addr}");
 
         loop {
@@ -110,7 +112,9 @@ pub fn get_audio_mime(path: &Path) -> Option<&'static str> {
     }
 }
 
-async fn handle_client(socket: &mut TcpStream) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn handle_client(
+    socket: &mut TcpStream,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut buf = [0u8; 4096];
     let n = socket.read(&mut buf).await?;
     if n == 0 {
@@ -144,7 +148,13 @@ async fn handle_client(socket: &mut TcpStream) -> Result<(), Box<dyn std::error:
     }
 
     if method != "GET" && method != "HEAD" {
-        send_error_response(socket, 405, "Method Not Allowed", "Only GET, HEAD, OPTIONS allowed").await?;
+        send_error_response(
+            socket,
+            405,
+            "Method Not Allowed",
+            "Only GET, HEAD, OPTIONS allowed",
+        )
+        .await?;
         return Ok(());
     }
 
@@ -164,7 +174,8 @@ async fn handle_client(socket: &mut TcpStream) -> Result<(), Box<dyn std::error:
     let file_path = match parsed_url.query_pairs().find(|(k, _)| k == "path") {
         Some((_, v)) => v.to_string(),
         None => {
-            send_error_response(socket, 400, "Bad Request", "Missing 'path' query parameter").await?;
+            send_error_response(socket, 400, "Bad Request", "Missing 'path' query parameter")
+                .await?;
             return Ok(());
         }
     };
@@ -178,7 +189,13 @@ async fn handle_client(socket: &mut TcpStream) -> Result<(), Box<dyn std::error:
     let mime = match get_audio_mime(path) {
         Some(m) => m,
         None => {
-            send_error_response(socket, 403, "Forbidden", "Only audio formats (.mp3, .m4a, .opus, .ogg, .wav, .flac) are allowed").await?;
+            send_error_response(
+                socket,
+                403,
+                "Forbidden",
+                "Only audio formats (.mp3, .m4a, .opus, .ogg, .wav, .flac) are allowed",
+            )
+            .await?;
             return Ok(());
         }
     };
@@ -186,7 +203,13 @@ async fn handle_client(socket: &mut TcpStream) -> Result<(), Box<dyn std::error:
     let metadata = match tokio::fs::metadata(path).await {
         Ok(m) => m,
         Err(_) => {
-            send_error_response(socket, 500, "Internal Server Error", "Could not read file metadata").await?;
+            send_error_response(
+                socket,
+                500,
+                "Internal Server Error",
+                "Could not read file metadata",
+            )
+            .await?;
             return Ok(());
         }
     };

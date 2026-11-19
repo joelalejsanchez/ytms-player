@@ -41,9 +41,10 @@ pub fn select_workspace(path: String, state: State<'_, AppState>) -> DomainResul
         store,
     });
 
-    let current_url = state
-        .microservice_client()
-        .map_or_else(|_| "http://127.0.0.1:8080".to_string(), |c| c.base_url().to_string());
+    let current_url = state.microservice_client().map_or_else(
+        |_| "http://127.0.0.1:8080".to_string(),
+        |c| c.base_url().to_string(),
+    );
     let _ = state
         .settings_store
         .record_workspace_opened(&root_path, &current_url);
@@ -89,7 +90,9 @@ pub async fn verify_integrity(state: State<'_, AppState>) -> DomainResult<Integr
         workspace_usecases::verify_workspace_integrity(&root_path, &manager, store.as_ref())
     })
     .await
-    .map_err(|e| DomainError::MicroserviceError(format!("Integrity verification task failed: {e}")))?
+    .map_err(|e| {
+        DomainError::MicroserviceError(format!("Integrity verification task failed: {e}"))
+    })?
 }
 
 /// Lista todos los tracks del Workspace activo.
@@ -376,7 +379,9 @@ pub async fn sync_likes(
 
 /// Consulta `GET /api/health` del microservicio Go (SDD 6.4).
 #[tauri::command]
-pub async fn check_microservice_health(state: State<'_, AppState>) -> DomainResult<HealthStatusDto> {
+pub async fn check_microservice_health(
+    state: State<'_, AppState>,
+) -> DomainResult<HealthStatusDto> {
     let client = state.microservice_client()?;
     tokio::task::spawn_blocking(move || client.check_health())
         .await
@@ -514,7 +519,9 @@ pub fn import_cookies_file(
 
     // Sincronizar automáticamente hacia el workspace activo si existe
     if let Ok(ctx) = state.active_workspace() {
-        let _ = state.settings_store.sync_cookies_to_workspace(&ctx.root_path);
+        let _ = state
+            .settings_store
+            .sync_cookies_to_workspace(&ctx.root_path);
     }
 
     Ok(settings)
@@ -543,10 +550,13 @@ pub fn set_preferred_audio_format(
     format: String,
     state: State<'_, AppState>,
 ) -> DomainResult<AppSettings> {
-    let current_url = state
-        .microservice_client()
-        .map_or_else(|_| "http://127.0.0.1:8080".to_string(), |c| c.base_url().to_string());
-    state.settings_store.update_preferred_format(&format, &current_url)
+    let current_url = state.microservice_client().map_or_else(
+        |_| "http://127.0.0.1:8080".to_string(),
+        |c| c.base_url().to_string(),
+    );
+    state
+        .settings_store
+        .update_preferred_format(&format, &current_url)
 }
 
 /// Adopta en la biblioteca SQLite un archivo de audio huérfano que ya existe físicamente en `/tracks`.
@@ -584,7 +594,9 @@ pub async fn adopt_orphan_file(
         let mut final_liked: Option<bool> = None;
 
         if let Some(client) = client {
-            if let Ok(preview) = client.preview_url(&format!("https://www.youtube.com/watch?v={youtube_id}")) {
+            if let Ok(preview) =
+                client.preview_url(&format!("https://www.youtube.com/watch?v={youtube_id}"))
+            {
                 if let Some(item) = preview.items.into_iter().next() {
                     if !item.title.trim().is_empty() {
                         final_title = item.title;
@@ -597,7 +609,7 @@ pub async fn adopt_orphan_file(
                     }
                 }
             }
-            if let Ok(sync_res) = client.sync_likes(&[youtube_id.clone()], None) {
+            if let Ok(sync_res) = client.sync_likes(std::slice::from_ref(&youtube_id), None) {
                 if let Some(liked_item) = sync_res.results.into_iter().next() {
                     if liked_item.synced {
                         final_liked = Some(liked_item.liked);
@@ -620,12 +632,7 @@ pub async fn adopt_orphan_file(
             file_size: size,
         };
 
-        track_usecases::register_or_update_track(
-            &root_path,
-            new_track,
-            &manager,
-            store.as_ref(),
-        )
+        track_usecases::register_or_update_track(&root_path, new_track, &manager, store.as_ref())
     })
     .await
     .map_err(|e| DomainError::MicroserviceError(format!("Adopt orphan task failed: {e}")))?
@@ -644,7 +651,8 @@ pub async fn refresh_track_metadata(
     let root_path = ctx.root_path.clone();
 
     tokio::task::spawn_blocking(move || {
-        let preview = client.preview_url(&format!("https://www.youtube.com/watch?v={youtube_id}"))?;
+        let preview =
+            client.preview_url(&format!("https://www.youtube.com/watch?v={youtube_id}"))?;
         let item = preview.items.into_iter().next().ok_or_else(|| {
             DomainError::ValidationError(format!("No metadata found for {youtube_id} on YouTube"))
         })?;
@@ -655,9 +663,21 @@ pub async fn refresh_track_metadata(
 
         let updated = NewTrack {
             youtube_id: existing.youtube_id,
-            title: if !item.title.trim().is_empty() { item.title } else { existing.title },
-            artist: if !item.artist.trim().is_empty() { item.artist } else { existing.artist },
-            duration: if item.duration > 0 { item.duration } else { existing.duration },
+            title: if !item.title.trim().is_empty() {
+                item.title
+            } else {
+                existing.title
+            },
+            artist: if !item.artist.trim().is_empty() {
+                item.artist
+            } else {
+                existing.artist
+            },
+            duration: if item.duration > 0 {
+                item.duration
+            } else {
+                existing.duration
+            },
             published_at: existing.published_at,
             file_extension: existing.file_extension,
             thumbnail_path: existing.thumbnail_path,
@@ -667,12 +687,7 @@ pub async fn refresh_track_metadata(
             file_size: existing.file_size,
         };
 
-        track_usecases::register_or_update_track(
-            &root_path,
-            updated,
-            &manager,
-            store.as_ref(),
-        )
+        track_usecases::register_or_update_track(&root_path, updated, &manager, store.as_ref())
     })
     .await
     .map_err(|e| DomainError::MicroserviceError(format!("Refresh metadata task failed: {e}")))?
@@ -783,7 +798,9 @@ pub fn append_log_entry(entry: LogEntryPayload, state: State<'_, AppState>) -> D
         }
     }
 
-    state.workspace_manager.append_log_entry(&ctx.root_path, &line)
+    state
+        .workspace_manager
+        .append_log_entry(&ctx.root_path, &line)
 }
 
 /// Limpia el archivo de logs `<workspace>/logs/app.log` y sus rotaciones.

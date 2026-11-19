@@ -431,7 +431,9 @@ impl TrackRepository for SqliteWorkspaceStore {
                     ",
                 )
                 .map_err(|e| {
-                    DomainError::PersistenceError(format!("Prepare check affected playlists failed: {e}"))
+                    DomainError::PersistenceError(format!(
+                        "Prepare check affected playlists failed: {e}"
+                    ))
                 })?;
 
             let rows = stmt
@@ -469,7 +471,9 @@ impl TrackRepository for SqliteWorkspaceStore {
                 params![new_cover, pl_id],
             )
             .map_err(|e| {
-                DomainError::PersistenceError(format!("Update playlist cover on delete failed: {e}"))
+                DomainError::PersistenceError(format!(
+                    "Update playlist cover on delete failed: {e}"
+                ))
             })?;
         }
 
@@ -522,7 +526,10 @@ impl TrackRepository for SqliteWorkspaceStore {
             .map_err(|e| DomainError::PersistenceError(format!("Commit failed: {e}")))
     }
 
-    fn get_download_history(&self, limit: usize) -> DomainResult<Vec<crate::domain::entities::DownloadHistoryEntry>> {
+    fn get_download_history(
+        &self,
+        limit: usize,
+    ) -> DomainResult<Vec<crate::domain::entities::DownloadHistoryEntry>> {
         let conn = self
             .conn
             .lock()
@@ -569,7 +576,9 @@ impl TrackRepository for SqliteWorkspaceStore {
             .map_err(|e| DomainError::PersistenceError(format!("Mutex poisoned: {e}")))?;
 
         conn.execute("DELETE FROM download_history", [])
-            .map_err(|e| DomainError::PersistenceError(format!("Clear download history failed: {e}")))?;
+            .map_err(|e| {
+                DomainError::PersistenceError(format!("Clear download history failed: {e}"))
+            })?;
 
         Ok(())
     }
@@ -882,8 +891,7 @@ impl PlaylistRepository for SqliteWorkspaceStore {
 
         // 3. Comprobar si la carátula activa se basaba en la canción eliminada
         if let (Some(cur_cov), Some((track_thumb, yt_id))) = (current_cover, track_info) {
-            let is_match = track_thumb.as_deref() == Some(&cur_cov)
-                || cur_cov.contains(&yt_id);
+            let is_match = track_thumb.as_deref() == Some(&cur_cov) || cur_cov.contains(&yt_id);
 
             if is_match {
                 // Seleccionar dinámicamente y de forma aleatoria otra canción presente en la lista
@@ -960,12 +968,16 @@ impl PlaylistRepository for SqliteWorkspaceStore {
                     SELECT ?1, id FROM tracks WHERE youtube_id = ?2
                     ",
                 )
-                .map_err(|e| DomainError::PersistenceError(format!("Prepare insert failed: {e}")))?;
+                .map_err(|e| {
+                    DomainError::PersistenceError(format!("Prepare insert failed: {e}"))
+                })?;
 
             for ytid in current_youtube_ids {
                 let affected = insert_stmt
                     .execute(params![playlist_id, ytid])
-                    .map_err(|e| DomainError::PersistenceError(format!("Execute insert failed: {e}")))?;
+                    .map_err(|e| {
+                        DomainError::PersistenceError(format!("Execute insert failed: {e}"))
+                    })?;
                 linked_count += affected;
             }
         }
@@ -980,7 +992,9 @@ impl PlaylistRepository for SqliteWorkspaceStore {
                     WHERE pt.playlist_id = ?1
                     ",
                 )
-                .map_err(|e| DomainError::PersistenceError(format!("Prepare select failed: {e}")))?;
+                .map_err(|e| {
+                    DomainError::PersistenceError(format!("Prepare select failed: {e}"))
+                })?;
 
             let id_set: std::collections::HashSet<&str> =
                 current_youtube_ids.iter().map(|s| s.as_str()).collect();
@@ -995,8 +1009,7 @@ impl PlaylistRepository for SqliteWorkspaceStore {
                 .map_err(|e| DomainError::PersistenceError(format!("Query failed: {e}")))?;
 
             for item in rows {
-                let (tid, ytid) =
-                    item.map_err(|e| DomainError::PersistenceError(e.to_string()))?;
+                let (tid, ytid) = item.map_err(|e| DomainError::PersistenceError(e.to_string()))?;
                 if !id_set.contains(ytid.as_str()) {
                     to_unlink.push(tid);
                 }
@@ -1004,18 +1017,14 @@ impl PlaylistRepository for SqliteWorkspaceStore {
 
             if !to_unlink.is_empty() {
                 let mut del_stmt = tx
-                    .prepare(
-                        "DELETE FROM playlist_tracks WHERE playlist_id = ?1 AND track_id = ?2",
-                    )
+                    .prepare("DELETE FROM playlist_tracks WHERE playlist_id = ?1 AND track_id = ?2")
                     .map_err(|e| {
                         DomainError::PersistenceError(format!("Prepare delete failed: {e}"))
                     })?;
                 for tid in to_unlink {
-                    del_stmt
-                        .execute(params![playlist_id, tid])
-                        .map_err(|e| {
-                            DomainError::PersistenceError(format!("Delete link failed: {e}"))
-                        })?;
+                    del_stmt.execute(params![playlist_id, tid]).map_err(|e| {
+                        DomainError::PersistenceError(format!("Delete link failed: {e}"))
+                    })?;
                 }
             }
         }
@@ -1104,7 +1113,8 @@ impl PlaylistRepository for SqliteWorkspaceStore {
 
         let mut map: HashMap<i64, Vec<i64>> = HashMap::new();
         for item in rows {
-            let (track_id, playlist_id) = item.map_err(|e| DomainError::PersistenceError(format!("Row parse error: {e}")))?;
+            let (track_id, playlist_id) =
+                item.map_err(|e| DomainError::PersistenceError(format!("Row parse error: {e}")))?;
             map.entry(track_id).or_default().push(playlist_id);
         }
 

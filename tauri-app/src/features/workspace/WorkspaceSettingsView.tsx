@@ -370,7 +370,7 @@ export const WorkspaceSettingsView = React.memo(() => {
     try {
       await openOAuthLogin();
       setStatusMessage(
-        "Se abrió la pantalla de consentimiento de Google en tu navegador. Autoriza el acceso y vuelve a YouTube Desktop Player.",
+        "Se abrió la pantalla de consentimiento de Google en tu navegador. Autoriza el acceso y vuelve a Your Tracks Music Server.",
       );
     } catch (err) {
       setGeneralError(

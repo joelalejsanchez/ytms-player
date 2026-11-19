@@ -249,7 +249,7 @@ export const NowPlayingView: React.FC = () => {
                 {currentTrack?.title || "Sin pista activa"}
               </h2>
               <p className="text-sm font-medium text-muted-foreground truncate">
-                {currentTrack?.artist || "YouTube Desktop Player"}
+                {currentTrack?.artist || "Your Tracks Music Server"}
               </p>
             </div>
 

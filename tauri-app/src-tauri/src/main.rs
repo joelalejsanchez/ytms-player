@@ -11,7 +11,7 @@ use interfaces::commands::{
     clear_download_history, clear_log_file, confirm_sse_download, create_playlist,
     delete_orphan_file, delete_playlist, delete_track, get_app_settings, get_audio_stream_url,
     get_download_history, get_missing_tracks, get_oauth_status, get_playlist_details,
-    get_playlists, get_playlist_track_map, get_tracks, get_workspace_info, import_cookies_file,
+    get_playlist_track_map, get_playlists, get_tracks, get_workspace_info, import_cookies_file,
     logout_oauth, open_logs_folder, open_oauth_login, preview_playlist_url, rate_video,
     read_audio_data_url, recover_track, refresh_track_metadata, register_track,
     remove_saved_workspace, remove_track_from_playlist, select_workspace, set_microservice_url,
@@ -36,14 +36,18 @@ fn main() {
             // AppRun de linuxdeploy predefine GST_PLUGIN_SYSTEM_PATH_1_0 apuntando al AppDir interno (vacío de plugins).
             // Concatenamos las rutas del sistema anfitrión para que GStreamer encuentre los plugins del host.
             let plugin_path = match std::env::var("GST_PLUGIN_SYSTEM_PATH_1_0") {
-                Ok(existing) if !existing.trim().is_empty() => format!("{}:{}", existing, host_gst_paths),
+                Ok(existing) if !existing.trim().is_empty() => {
+                    format!("{}:{}", existing, host_gst_paths)
+                }
                 _ => host_gst_paths.to_string(),
             };
             std::env::set_var("GST_PLUGIN_SYSTEM_PATH_1_0", &plugin_path);
             std::env::set_var("GST_PLUGIN_SYSTEM_PATH", &plugin_path);
 
             let extra_plugin_path = match std::env::var("GST_PLUGIN_PATH_1_0") {
-                Ok(existing) if !existing.trim().is_empty() => format!("{}:{}", existing, host_gst_paths),
+                Ok(existing) if !existing.trim().is_empty() => {
+                    format!("{}:{}", existing, host_gst_paths)
+                }
                 _ => host_gst_paths.to_string(),
             };
             std::env::set_var("GST_PLUGIN_PATH_1_0", &extra_plugin_path);
@@ -74,8 +78,8 @@ fn main() {
     let default_go_url =
         std::env::var("YTMS_PLAYER_GO_URL").unwrap_or_else(|_| "http://127.0.0.1:8080".to_string());
 
-    let app_state =
-        AppState::new(&default_go_url, audio_server_port).expect("Failed to initialize ytms-player application state");
+    let app_state = AppState::new(&default_go_url, audio_server_port)
+        .expect("Failed to initialize ytms-player application state");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -185,7 +189,10 @@ mod tests {
 
         // 1. Escribir entrada de log
         manager
-            .append_log_entry(&ws_dir, "[2026-11-16 12:00:00] [ERROR] [toast] Sample error")
+            .append_log_entry(
+                &ws_dir,
+                "[2026-11-16 12:00:00] [ERROR] [toast] Sample error",
+            )
             .expect("append log");
         assert!(log_file.is_file());
 
@@ -335,13 +342,9 @@ mod tests {
 
         // Vincular track2 y desvincular track1 si no está en la lista remota
         let current_yt_ids = vec!["def456uvw12".to_string()];
-        let synced_count = playlist_usecases::sync_playlist_tracks(
-            playlist.id,
-            &current_yt_ids,
-            true,
-            &store,
-        )
-        .expect("sync playlist tracks");
+        let synced_count =
+            playlist_usecases::sync_playlist_tracks(playlist.id, &current_yt_ids, true, &store)
+                .expect("sync playlist tracks");
         assert_eq!(synced_count, 1);
 
         let updated_details = playlist_usecases::get_playlist_with_tracks(playlist.id, &store)
@@ -350,7 +353,10 @@ mod tests {
         assert_eq!(updated_details.tracks[0].youtube_id, "def456uvw12");
 
         // El track1 debe seguir existiendo en la biblioteca local aunque se haya desvinculado de la playlist
-        assert!(store.get_track_by_youtube_id("abc123xyz89").expect("fetch").is_some());
+        assert!(store
+            .get_track_by_youtube_id("abc123xyz89")
+            .expect("fetch")
+            .is_some());
 
         let _ = fs::remove_dir_all(&ws_dir);
     }
@@ -439,7 +445,8 @@ mod tests {
         );
 
         // 6. Remover la última canción: debe restaurar a None (carátula genérica)
-        playlist_usecases::remove_track_from_playlist(pl.id, t2.id, &store).expect("remove t2 again");
+        playlist_usecases::remove_track_from_playlist(pl.id, t2.id, &store)
+            .expect("remove t2 again");
         let pl_empty = playlist_usecases::get_playlist_with_tracks(pl.id, &store)
             .expect("get pl details")
             .playlist;

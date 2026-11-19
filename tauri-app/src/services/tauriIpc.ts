@@ -40,7 +40,7 @@ export const tauriApi = {
     const selected = await open({
       directory: true,
       multiple: false,
-      title: "Seleccionar carpeta para YouTube Desktop Player",
+      title: "Seleccionar carpeta para Your Tracks Music Server",
     });
     return typeof selected === "string" ? selected : null;
   },
