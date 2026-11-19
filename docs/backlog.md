@@ -22,6 +22,13 @@ Este documento registra las características, mejoras y extensiones que **no est
     2. **Pantalla de detalle:** Al hacer clic sobre una playlist, se abre la vista detallada con su carátula, estadísticas y todas sus canciones.
     3. **Botón de retorno:** Botón superior para volver fácilmente a la vista general de todas las playlists.
 
+- [ ] **Discriminación de origen de pista (`origin`) y exclusión de archivos locales en sincronización de Likes (`LibraryView` / Core Rust / Go):**
+  - **Diagnóstico del problema:** Al pulsar "Sincronizar Me gusta", la app consulta en lote a la YouTube Data API v3 (`POST /api/sync-likes`) enviando todos los identificadores de la base de datos (`track_repo.get_all_tracks()`). Si el usuario ha importado o adoptado archivos de audio locales cuyos identificadores no corresponden al formato estricto de YouTube (11 caracteres alfanuméricos) o no provienen de dicha plataforma, la validación en Go (`ValidateYouTubeID`) rechaza la petición completa con error 400 (`validation_failed`), abortando la sincronización de likes para todo el catálogo restante.
+  - **Identificador de origen (`origin`):** Incorporar la columna `origin TEXT NOT NULL DEFAULT 'youtube'` en la tabla `tracks` de SQLite (valores admisibles: `'youtube'` y `'local'`), garantizando migración segura (`ALTER TABLE`) y sincronización en los modelos de datos en Rust (`Track`, `NewTrack`) y TypeScript.
+  - **Filtrado previo en Tauri / Rust (`sync_likes_with_youtube`):** Al sincronizar likes, filtrar y enviar al microservicio únicamente aquellas pistas cuyo `origin == "youtube"`, omitiendo automáticamente pistas locales y optimizando el consumo de cuota de la API de YouTube.
+  - **Resiliencia en Microservicio Go (`SyncLikesUseCase`):** Hacer tolerante la validación por lotes para que un identificador inválido o con error de calificación individual no provoque el rechazo en bloque del resto de canciones válidas del lote.
+  - **Feedback y consistencia UX:** Ajustar `TrackRow` y vistas de reproducción para que las pistas locales gestionen su estado de favorito puramente en SQLite sin intentar sincronizar contra la API de YouTube ni emitir errores.
+
 ---
 
 ## 2. Prioridad Media (Roadmap v1.x)
