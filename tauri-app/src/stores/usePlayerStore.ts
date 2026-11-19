@@ -5,6 +5,7 @@ export type RepeatMode = "off" | "all" | "one";
 
 export interface PlayerState {
   currentTrack: Track | null;
+  activePlaylistId: number | null;
   isPlaying: boolean;
   isLoadingTrack: boolean;
   volume: number;
@@ -20,8 +21,9 @@ export interface PlayerState {
   corruptedTrackIds: string[];
   isNowPlayingExpanded: boolean;
 
-  playTrack: (track: Track, newQueue?: Track[]) => void;
-  setQueuePreservingCurrent: (newQueue: Track[]) => void;
+  setActivePlaylistId: (playlistId: number | null) => void;
+  playTrack: (track: Track, newQueue?: Track[], playlistId?: number | null) => void;
+  setQueuePreservingCurrent: (newQueue: Track[], playlistId?: number | null) => void;
   markTrackCorrupted: (youtubeId: string) => void;
   clearCorruptedTrack: (youtubeId: string) => void;
   setNowPlayingExpanded: (expanded: boolean) => void;
@@ -54,6 +56,7 @@ interface PersistedPlayerPreferences {
   isShuffle: boolean;
   currentTrack: Track | null;
   currentTime: number;
+  activePlaylistId: number | null;
 }
 
 function loadPersistedPreferences(): Partial<PersistedPlayerPreferences> {
@@ -93,6 +96,7 @@ const savedPrefs = loadPersistedPreferences();
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
   currentTrack: savedPrefs.currentTrack ?? null,
+  activePlaylistId: savedPrefs.activePlaylistId ?? null,
   isPlaying: false,
   isLoadingTrack: false,
   volume: typeof savedPrefs.volume === "number" ? savedPrefs.volume : 0.85,
@@ -107,6 +111,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   isShuffle: Boolean(savedPrefs.isShuffle),
   corruptedTrackIds: [],
   isNowPlayingExpanded: false,
+
+  setActivePlaylistId: (playlistId) => {
+    savePersistedPreferences({ activePlaylistId: playlistId });
+    set({ activePlaylistId: playlistId });
+  },
 
   setNowPlayingExpanded: (expanded) => set({ isNowPlayingExpanded: expanded }),
   toggleNowPlayingExpanded: () =>
@@ -124,12 +133,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       corruptedTrackIds: state.corruptedTrackIds.filter((id) => id !== youtubeId),
     })),
 
-  setQueuePreservingCurrent: (newQueue) => {
+  setQueuePreservingCurrent: (newQueue, playlistId) => {
     const { currentTrack, isShuffle } = get();
+    const nextPlaylistId =
+      playlistId !== undefined ? playlistId : get().activePlaylistId;
+    savePersistedPreferences({ activePlaylistId: nextPlaylistId });
     const playable = newQueue.filter((t) => !t.is_missing);
     if (!currentTrack) {
       if (playable.length > 0) {
-        get().playTrack(playable[0], playable);
+        get().playTrack(playable[0], playable, nextPlaylistId);
       }
       return;
     }
@@ -137,7 +149,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const exists = playable.some((t) => t.youtube_id === currentTrack.youtube_id);
     if (!exists) {
       if (playable.length > 0) {
-        get().playTrack(playable[0], playable);
+        get().playTrack(playable[0], playable, nextPlaylistId);
       }
       return;
     }
@@ -153,6 +165,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         queue: [currentTrack, ...rest],
         originalQueue: playable,
         currentIndex: 0,
+        activePlaylistId: nextPlaylistId,
       });
     } else {
       const idx = playable.findIndex((t) => t.youtube_id === currentTrack.youtube_id);
@@ -160,11 +173,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         queue: playable,
         originalQueue: playable,
         currentIndex: idx >= 0 ? idx : 0,
+        activePlaylistId: nextPlaylistId,
       });
     }
   },
 
-  playTrack: (track, newQueue) => {
+  playTrack: (track, newQueue, playlistId) => {
     if (track.is_missing) {
       return;
     }
@@ -195,13 +209,22 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       nextIndex = existingIndex >= 0 ? existingIndex : updatedQueue.length - 1;
     }
 
+    const nextPlaylistId =
+      playlistId !== undefined
+        ? playlistId
+        : hasNewQueue
+          ? null
+          : get().activePlaylistId;
+
     savePersistedPreferences({
       currentTrack: track,
       currentTime: isSameTrack ? get().currentTime : 0,
+      activePlaylistId: nextPlaylistId,
     });
 
     set({
       currentTrack: track,
+      activePlaylistId: nextPlaylistId,
       isPlaying: true,
       isLoadingTrack: !isSameTrack,
       currentTime: isSameTrack ? get().currentTime : 0,
@@ -375,16 +398,23 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     });
   },
 
-  clearQueue: () =>
+  clearQueue: () => {
+    savePersistedPreferences({
+      currentTrack: null,
+      currentTime: 0,
+      activePlaylistId: null,
+    });
     set({
       queue: [],
       originalQueue: [],
       currentIndex: -1,
       currentTrack: null,
+      activePlaylistId: null,
       isPlaying: false,
       currentTime: 0,
       duration: 0,
-    }),
+    });
+  },
 
   cycleRepeatMode: () => {
     const modes: RepeatMode[] = ["off", "all", "one"];

@@ -6,11 +6,6 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 1. Prioridad Alta (Bugs y Core UX)
 
-- [ ] **Corrección de estado activo y Quick Play en cards de Playlists (`HomeView`):**
-  - **Falsa activación simultánea de botones Play:** Actualmente `isCurrentPlaylist` se evalúa mediante `playlistTracks.some(t => t.youtube_id === currentTrack.youtube_id)`. Si una pista está presente en múltiples playlists, el botón de Play/Pause activo (`opacity-100`) aparece visualmente en todas las cards que contienen dicha pista. Al hacer clic en esas otras cards no se conmuta la reproducción hacia la playlist seleccionada sino que se pausa la pista actual.
-  - **Solución requerida para tracking de playlist:** Vincular el estado de reproducción al identificador de la playlist activa (`activePlaylistId` en `usePlayerStore` o contexto de la cola) en vez de basarse únicamente en la presencia de la canción.
-  - **Visibilidad y acción en listas sin pistas:** Cuando una playlist no posee canciones (`hasTracks === false`), el botón de Quick Play desaparece y el clic sobre la card redirige a la pantalla de Playlists. Proveer un botón visible (o estado deshabilitado con feedback visual) para evitar saltos inesperados de pantalla y mejorar la consistencia de interacción.
-
 - [ ] **Transición instantánea en indicadores circulares de reproducción y volumen (`PersistentPlayer` y `NowPlayingView`):**
   - Al hacer clic o arrastrar en la barra de progreso (seek bar) o en el control de volumen, el indicador circular debe posicionarse instantáneamente bajo el cursor del ratón.
   - Actualmente existe una animación de transición con curva Bézier que genera un salto visual elástico perceptible o desfasado antes de estabilizarse.

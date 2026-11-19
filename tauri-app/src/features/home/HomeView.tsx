@@ -23,6 +23,7 @@ import {
 } from "@/lib/utils";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
+import { toast } from "@/stores/useToastStore";
 import type { NavigationTab, Track } from "@/types/models";
 
 interface HomeViewProps {
@@ -39,6 +40,7 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
   const toggleLike = useLibraryStore((s) => s.toggleLike);
 
   const currentTrack = usePlayerStore((s) => s.currentTrack);
+  const activePlaylistId = usePlayerStore((s) => s.activePlaylistId);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const playTrack = usePlayerStore((s) => s.playTrack);
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
@@ -54,15 +56,6 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
     if (hour >= 12 && hour < 20) return "Buenas tardes";
     return "Buenas noches";
   }, []);
-
-  // Mapa de tracks por ID para búsquedas rápidas O(1)
-  const trackMap = useMemo(() => {
-    const map = new Map<number, Track>();
-    for (const t of tracks) {
-      map.set(t.id, t);
-    }
-    return map;
-  }, [tracks]);
 
   // Métricas globales
   const stats = useMemo(() => {
@@ -87,21 +80,18 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
   // Playlists con duración y tracks calculados
   const enrichedPlaylists = useMemo(() => {
     return playlists.map((p) => {
-      const trackIds = playlistTrackMap[p.id] ?? [];
       const playlistTracks: Track[] = [];
       let durationSecs = 0;
 
-      for (const id of trackIds) {
-        const t = trackMap.get(id);
-        if (t && !t.is_missing) {
+      for (const t of tracks) {
+        const assigned = playlistTrackMap[t.id] || [];
+        if (assigned.includes(p.id) && !t.is_missing) {
           playlistTracks.push(t);
           durationSecs += t.duration || 0;
         }
       }
 
-      const isCurrentPlaylist =
-        currentTrack !== null &&
-        playlistTracks.some((t) => t.youtube_id === currentTrack.youtube_id);
+      const isCurrentPlaylist = activePlaylistId === p.id;
 
       return {
         ...p,
@@ -110,7 +100,7 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
         isCurrentlyPlaying: isCurrentPlaylist && isPlaying,
       };
     });
-  }, [playlists, playlistTrackMap, trackMap, currentTrack, isPlaying]);
+  }, [playlists, tracks, playlistTrackMap, activePlaylistId, isPlaying]);
 
   // Pistas recientes agregadas (últimas 8)
   const recentTracks = useMemo(() => {
@@ -126,14 +116,28 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
     e: React.MouseEvent,
     playlistTracks: Track[],
     isCurrentlyPlaying: boolean,
+    playlistId: number,
   ) => {
     e.stopPropagation();
-    if (playlistTracks.length === 0) return;
+    if (playlistTracks.length === 0) {
+      toast.info(
+        "Playlist sin canciones",
+        "Esta playlist no tiene canciones para reproducir.",
+      );
+      return;
+    }
 
     if (isCurrentlyPlaying) {
       togglePlayPause();
+    } else if (activePlaylistId === playlistId) {
+      // Misma playlist activa pero pausada: reanudar
+      togglePlayPause();
     } else {
-      playTrack(playlistTracks[0], playlistTracks);
+      // Conmutar reproducción hacia la playlist seleccionada
+      const firstPlayable = playlistTracks.find((t) => !t.is_missing);
+      if (firstPlayable) {
+        playTrack(firstPlayable, playlistTracks, playlistId);
+      }
     }
   };
 
@@ -149,7 +153,7 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
     if (currentTrack?.youtube_id === track.youtube_id) {
       togglePlayPause();
     } else {
-      playTrack(track, tracks);
+      playTrack(track, tracks, null);
     }
   };
 
@@ -328,7 +332,7 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
                     )}
 
                     {/* Botón flotante de Quick Play */}
-                    {hasTracks && (
+                    {hasTracks ? (
                       <button
                         type="button"
                         onClick={(e) =>
@@ -336,6 +340,7 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
                             e,
                             playlist.tracks,
                             playlist.isCurrentlyPlaying,
+                            playlist.id,
                           )
                         }
                         title={
@@ -355,6 +360,21 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
                         ) : (
                           <Play className="ml-0.5 h-5 w-5 fill-current" />
                         )}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toast.info(
+                            "Playlist sin canciones",
+                            "Esta playlist no tiene canciones para reproducir.",
+                          );
+                        }}
+                        title="Esta playlist no tiene canciones"
+                        className="absolute right-2 bottom-2 flex h-10 w-10 items-center justify-center rounded-full bg-muted/80 text-muted-foreground/50 border border-border/80 shadow-xs opacity-0 group-hover:opacity-100 cursor-not-allowed transition-all duration-200"
+                      >
+                        <Play className="ml-0.5 h-5 w-5 fill-current opacity-40" />
                       </button>
                     )}
                   </div>

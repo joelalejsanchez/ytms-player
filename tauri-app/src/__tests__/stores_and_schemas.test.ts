@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import React from "react";
 import { fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { formatBytes, formatDuration, formatHumanDuration } from "@/lib/utils";
+import { HomeView } from "@/features/home/HomeView";
 import { PlaylistsView } from "@/features/playlists/PlaylistsView";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import {
@@ -165,6 +166,15 @@ describe("usePlayerStore", () => {
     expect(state.queue[0].youtube_id).toBe("track_2");
     expect(state.queue.length).toBe(4);
     expect(state.isShuffle).toBe(true);
+  });
+
+  it("tracks activePlaylistId when playing a playlist queue and resets when playing individual queue", () => {
+    usePlayerStore.getState().playTrack(sampleTrack, [sampleTrack], 42);
+    expect(usePlayerStore.getState().activePlaylistId).toBe(42);
+
+    // Reproducir cola sin playlistId debe reiniciar activePlaylistId a null
+    usePlayerStore.getState().playTrack(sampleTrack, [sampleTrack]);
+    expect(usePlayerStore.getState().activePlaylistId).toBeNull();
   });
 });
 
@@ -726,6 +736,86 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       fireEvent.click(backButton);
 
       expect(useLibraryStore.getState().activePlaylist).toBeNull();
+    });
+  });
+
+  describe("HomeView Playlists Quick Play & Active State", () => {
+    const pl1 = {
+      id: 1,
+      title: "Rock Classics",
+      youtube_playlist_id: null,
+      cover_path: null,
+      track_count: 1,
+      created_at: "2026-11-18T10:00:00Z",
+    };
+    const pl2 = {
+      id: 2,
+      title: "Best of 80s",
+      youtube_playlist_id: null,
+      cover_path: null,
+      track_count: 1,
+      created_at: "2026-11-18T10:00:00Z",
+    };
+    const plEmpty = {
+      id: 3,
+      title: "Empty Playlist",
+      youtube_playlist_id: null,
+      cover_path: null,
+      track_count: 0,
+      created_at: "2026-11-18T10:00:00Z",
+    };
+
+    beforeEach(() => {
+      useLibraryStore.setState({
+        playlists: [pl1, pl2, plEmpty],
+        tracks: [sampleTrack],
+        playlistTrackMap: { [sampleTrack.id]: [1, 2] },
+      });
+      usePlayerStore.getState().clearQueue();
+    });
+
+    it("does not falsely activate multiple playlist cards sharing the same track", () => {
+      // Reproducir playlist 1
+      usePlayerStore.getState().playTrack(sampleTrack, [sampleTrack], 1);
+
+      const onNavigate = vi.fn();
+      render(React.createElement(HomeView, { onNavigate }));
+
+      // Solo pl1 debe tener título 'Pausar playlist'
+      const pl1Btn = screen.getByTitle("Pausar playlist");
+      expect(pl1Btn).toBeInTheDocument();
+
+      // pl2 NO debe tener 'Pausar playlist' sino 'Reproducir "Best of 80s"'
+      const pl2Btn = screen.getByTitle('Reproducir "Best of 80s"');
+      expect(pl2Btn).toBeInTheDocument();
+    });
+
+    it("switches playback to selected playlist instead of pausing when clicking another playlist sharing the track", () => {
+      // Iniciar reproduciendo playlist 1
+      usePlayerStore.getState().playTrack(sampleTrack, [sampleTrack], 1);
+
+      const onNavigate = vi.fn();
+      render(React.createElement(HomeView, { onNavigate }));
+
+      // Clic en Quick Play de playlist 2
+      const pl2Btn = screen.getByTitle('Reproducir "Best of 80s"');
+      fireEvent.click(pl2Btn);
+
+      // Debe conmutar activePlaylistId a 2 en lugar de pausar
+      expect(usePlayerStore.getState().activePlaylistId).toBe(2);
+      expect(usePlayerStore.getState().isPlaying).toBe(true);
+    });
+
+    it("renders disabled Quick Play button with feedback for empty playlists without screen jump", () => {
+      const onNavigate = vi.fn();
+      render(React.createElement(HomeView, { onNavigate }));
+
+      const emptyBtn = screen.getByTitle("Esta playlist no tiene canciones");
+      expect(emptyBtn).toBeInTheDocument();
+
+      fireEvent.click(emptyBtn);
+      // No debe redirigir a playlists
+      expect(onNavigate).not.toHaveBeenCalled();
     });
   });
 });

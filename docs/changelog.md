@@ -6,6 +6,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.8.1] - 2026-11-19
+
+### Corregido
+
+#### Estado Activo y Quick Play en Playlists (`HomeView` y `PlaylistsView`)
+- **Eliminación de falsa activación simultánea de botones Play**: Asociación del estado de reproducción activa directamente a `activePlaylistId` en `usePlayerStore`, resolviendo el problema donde múltiples tarjetas de playlists que compartían una misma pista mostraban simultáneamente el botón activo de Pausa (`opacity-100 ring-2`).
+- **Conmutación certera de reproducción entre playlists**: Al hacer clic en el botón de Quick Play de otra tarjeta de playlist que contiene la pista en reproducción, el reproductor conmuta la reproducción hacia la playlist elegida e inicializa su cola en lugar de pausar la pista actual.
+- **Botón Quick Play deshabilitado con feedback para playlists vacías**: En tarjetas sin pistas (`hasTracks === false`), el botón de Quick Play se mantiene visible en estado deshabilitado con cursor bloqueado y emite una notificación toast informativa (`toast.info`), eliminando saltos o redirecciones de pantalla accidentales.
+- **Cálculo de pistas y duración en `HomeView`**: Corrección en la indexación de `playlistTrackMap` para asociar con precisión las pistas pertenecientes a cada playlist y calcular sus duraciones acumuladas exactas.
+
+---
+
 ## [1.8.0] - 2026-11-18
 
 ### Añadido

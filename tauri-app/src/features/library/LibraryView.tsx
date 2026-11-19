@@ -155,9 +155,11 @@ export const LibraryView = React.memo(() => {
   // Callbacks estables para hijos memoizados (SDD 7.2 useCallback)
   const handlePlay = useCallback(
     (track: Track) => {
-      playTrack(track, filteredTracks);
+      const targetPlaylistId =
+        selectedPlaylistId !== "all" ? Number(selectedPlaylistId) : null;
+      playTrack(track, filteredTracks, targetPlaylistId);
     },
-    [playTrack, filteredTracks],
+    [playTrack, filteredTracks, selectedPlaylistId],
   );
 
   const handleEnqueue = useCallback(
@@ -223,19 +225,24 @@ export const LibraryView = React.memo(() => {
       playableFiltered.some((t) => t.youtube_id === currentTrack.youtube_id),
     );
 
+    const targetPlaylistId =
+      selectedPlaylistId !== "all" ? Number(selectedPlaylistId) : null;
+
     if (isCurrentInFilter) {
       // La canción actual está en el filtro: no interrumpir la reproducción actual,
       // solo actualizar la cola de reproducción según estándar Spotify
-      usePlayerStore.getState().setQueuePreservingCurrent(playableFiltered);
+      usePlayerStore
+        .getState()
+        .setQueuePreservingCurrent(playableFiltered, targetPlaylistId);
       if (!usePlayerStore.getState().isPlaying) {
         usePlayerStore.getState().setPlaying(true);
       }
     } else {
       // La canción actual no existe en el filtro: reproducir la primera del filtro
       const firstPlayable = playableFiltered[0];
-      playTrack(firstPlayable, playableFiltered);
+      playTrack(firstPlayable, playableFiltered, targetPlaylistId);
     }
-  }, [filteredTracks, playTrack]);
+  }, [filteredTracks, playTrack, selectedPlaylistId]);
 
   // Lista virtualizada para alto rendimiento con grandes bibliotecas (docs/skills/optimization.md)
   const rowVirtualizer = useVirtualizer({

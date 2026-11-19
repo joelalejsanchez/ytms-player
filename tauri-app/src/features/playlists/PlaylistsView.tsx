@@ -8,6 +8,7 @@ import {
   ListMusic,
   Loader2,
   Music,
+  Pause,
   Play,
   Plus,
   Search,
@@ -38,13 +39,21 @@ import type { Playlist, Track } from "@/types/models";
 interface PlaylistCardProps {
   playlist: Playlist;
   duration: number;
+  isCurrentlyPlaying: boolean;
   onSelect: (id: number) => void;
   onPlay: (id: number) => void;
   onDeleteRequest: (playlist: Playlist) => void;
 }
 
 const PlaylistCard = React.memo(
-  ({ playlist, duration, onSelect, onPlay, onDeleteRequest }: PlaylistCardProps) => {
+  ({
+    playlist,
+    duration,
+    isCurrentlyPlaying,
+    onSelect,
+    onPlay,
+    onDeleteRequest,
+  }: PlaylistCardProps) => {
     const coverUrl = toAssetUrl(playlist.cover_path);
 
     return (
@@ -71,17 +80,45 @@ const PlaylistCard = React.memo(
           )}
 
           {/* Botón flotante de Quick Play */}
-          {playlist.track_count > 0 && (
+          {playlist.track_count > 0 ? (
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onPlay(playlist.id);
               }}
-              title={`Reproducir "${playlist.title}"`}
-              className="absolute right-2 bottom-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-200 hover:scale-110 active:scale-95 opacity-0 group-hover:opacity-100"
+              title={
+                isCurrentlyPlaying
+                  ? "Pausar playlist"
+                  : `Reproducir "${playlist.title}"`
+              }
+              className={cn(
+                "absolute right-2 bottom-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-200 hover:scale-110 active:scale-95",
+                isCurrentlyPlaying
+                  ? "opacity-100 ring-2 ring-primary-foreground"
+                  : "opacity-0 group-hover:opacity-100",
+              )}
             >
-              <Play className="ml-0.5 h-5 w-5 fill-current" />
+              {isCurrentlyPlaying ? (
+                <Pause className="h-5 w-5 fill-current" />
+              ) : (
+                <Play className="ml-0.5 h-5 w-5 fill-current" />
+              )}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                toast.info(
+                  "Playlist sin canciones",
+                  "Esta playlist no tiene canciones para reproducir.",
+                );
+              }}
+              title="Esta playlist no tiene canciones"
+              className="absolute right-2 bottom-2 flex h-10 w-10 items-center justify-center rounded-full bg-muted/80 text-muted-foreground/50 border border-border/80 shadow-xs opacity-0 group-hover:opacity-100 cursor-not-allowed transition-all duration-200"
+            >
+              <Play className="ml-0.5 h-5 w-5 fill-current opacity-40" />
             </button>
           )}
         </div>
@@ -141,13 +178,21 @@ PlaylistCard.displayName = "PlaylistCard";
 interface PlaylistRowProps {
   playlist: Playlist;
   duration: number;
+  isCurrentlyPlaying: boolean;
   onSelect: (id: number) => void;
   onPlay: (id: number) => void;
   onDeleteRequest: (playlist: Playlist) => void;
 }
 
 const PlaylistRow = React.memo(
-  ({ playlist, duration, onSelect, onPlay, onDeleteRequest }: PlaylistRowProps) => {
+  ({
+    playlist,
+    duration,
+    isCurrentlyPlaying,
+    onSelect,
+    onPlay,
+    onDeleteRequest,
+  }: PlaylistRowProps) => {
     const coverUrl = toAssetUrl(playlist.cover_path);
 
     return (
@@ -165,10 +210,25 @@ const PlaylistRow = React.memo(
               onPlay(playlist.id);
             }}
             disabled={playlist.track_count === 0}
-            title={`Reproducir "${playlist.title}"`}
-            className="shrink-0 text-foreground hover:text-primary hover:bg-muted"
+            title={
+              playlist.track_count === 0
+                ? "Esta playlist no tiene canciones"
+                : isCurrentlyPlaying
+                  ? "Pausar playlist"
+                  : `Reproducir "${playlist.title}"`
+            }
+            className={cn(
+              "shrink-0 hover:bg-muted",
+              isCurrentlyPlaying
+                ? "text-primary"
+                : "text-foreground hover:text-primary",
+            )}
           >
-            <Play className="h-4 w-4 fill-current" />
+            {isCurrentlyPlaying ? (
+              <Pause className="h-4 w-4 fill-current" />
+            ) : (
+              <Play className="h-4 w-4 fill-current" />
+            )}
           </Button>
 
           {/* Miniatura / Carátula */}
@@ -392,7 +452,10 @@ export const PlaylistsView = React.memo(() => {
   const deletePlaylist = useLibraryStore((s) => s.deletePlaylist);
 
   const currentTrack = usePlayerStore((s) => s.currentTrack);
+  const activePlaylistId = usePlayerStore((s) => s.activePlaylistId);
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
   const playTrack = usePlayerStore((s) => s.playTrack);
+  const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
 
   // Mapa de duraciones acumuladas por playlist
   const playlistDurations = useMemo(() => {
@@ -542,25 +605,33 @@ export const PlaylistsView = React.memo(() => {
     if (!activePlaylist || activePlaylist.tracks.length === 0) {
       return;
     }
+    if (activePlaylistId === activePlaylist.playlist.id) {
+      togglePlayPause();
+      return;
+    }
     const firstPlayable = activePlaylist.tracks.find((t) => !t.is_missing);
     if (firstPlayable) {
-      playTrack(firstPlayable, activePlaylist.tracks);
+      playTrack(firstPlayable, activePlaylist.tracks, activePlaylist.playlist.id);
     }
-  }, [activePlaylist, playTrack]);
+  }, [activePlaylist, activePlaylistId, playTrack, togglePlayPause]);
 
   // Reproducción rápida por ID desde la vista de lista/cuadrícula
   const handlePlayPlaylistById = useCallback(
     async (playlistId: number) => {
+      if (activePlaylistId === playlistId) {
+        togglePlayPause();
+        return;
+      }
       await selectPlaylist(playlistId);
       const currentActive = useLibraryStore.getState().activePlaylist;
       const tracksToPlay =
         currentActive?.playlist.id === playlistId ? currentActive.tracks : [];
       const firstPlayable = tracksToPlay.find((t) => !t.is_missing);
       if (firstPlayable) {
-        playTrack(firstPlayable, tracksToPlay);
+        playTrack(firstPlayable, tracksToPlay, playlistId);
       }
     },
-    [playTrack, selectPlaylist],
+    [activePlaylistId, playTrack, selectPlaylist, togglePlayPause],
   );
 
   // Navegación de retorno hacia la vista general de todas las playlists
@@ -677,8 +748,17 @@ export const PlaylistsView = React.memo(() => {
                   disabled={activePlaylist.tracks.length === 0}
                   className="gap-2 shadow-sm font-semibold"
                 >
-                  <Play className="h-4 w-4 fill-current" />
-                  Reproducir Playlist
+                  {activePlaylistId === activePlaylist.playlist.id && isPlaying ? (
+                    <>
+                      <Pause className="h-4 w-4 fill-current" />
+                      Pausar Playlist
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4 fill-current" />
+                      Reproducir Playlist
+                    </>
+                  )}
                 </Button>
 
                 <ActionMenu
@@ -757,7 +837,9 @@ export const PlaylistsView = React.memo(() => {
                     index={index}
                     track={track}
                     isCurrent={track.youtube_id === currentTrack?.youtube_id}
-                    onPlay={(t) => playTrack(t, activePlaylist.tracks)}
+                    onPlay={(t) =>
+                      playTrack(t, activePlaylist.tracks, activePlaylist.playlist.id)
+                    }
                     onRemove={requestRemoveTrack}
                   />
                 ))}
@@ -955,6 +1037,7 @@ export const PlaylistsView = React.memo(() => {
                 key={pl.id}
                 playlist={pl}
                 duration={playlistDurations[pl.id] || 0}
+                isCurrentlyPlaying={activePlaylistId === pl.id && isPlaying}
                 onSelect={(id) => void selectPlaylist(id)}
                 onPlay={(id) => void handlePlayPlaylistById(id)}
                 onDeleteRequest={requestDeletePlaylist}
@@ -968,6 +1051,7 @@ export const PlaylistsView = React.memo(() => {
                 key={pl.id}
                 playlist={pl}
                 duration={playlistDurations[pl.id] || 0}
+                isCurrentlyPlaying={activePlaylistId === pl.id && isPlaying}
                 onSelect={(id) => void selectPlaylist(id)}
                 onPlay={(id) => void handlePlayPlaylistById(id)}
                 onDeleteRequest={requestDeletePlaylist}
