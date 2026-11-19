@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { renderHook } from "@testing-library/react";
+import React from "react";
+import { render, renderHook } from "@testing-library/react";
 import { formatBytes, formatDuration, formatHumanDuration } from "@/lib/utils";
 import {
   downloadFormSchema,
@@ -13,6 +14,7 @@ import { buildTaskKey, useDownloadStore } from "@/stores/useDownloadStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { useThemeStore } from "@/stores/useThemeStore";
 import { toast, useToastStore } from "@/stores/useToastStore";
+import { ToastContainer } from "@/components/ui/ToastContainer";
 import {
   getAllVisualizers,
   getVisualizer,
@@ -376,6 +378,16 @@ describe("useToastStore and toast API", () => {
 
     useToastStore.getState().clear();
     expect(useToastStore.getState().toasts).toHaveLength(0);
+  });
+
+  it("renders ToastContainer with solid bg-card background and accessible role", () => {
+    toast.info("Descarga completa", "Pista guardada correctamente");
+    const { getByRole, getByText } = render(React.createElement(ToastContainer));
+    const alert = getByRole("alert");
+    expect(alert).toBeInTheDocument();
+    expect(alert.className).toContain("bg-card");
+    expect(getByText("Descarga completa")).toBeInTheDocument();
+    expect(getByText("Pista guardada correctamente")).toBeInTheDocument();
   });
 });
 

@@ -17,10 +17,10 @@ const ToastRow: React.FC<{ toast: ToastItem; onDismiss: (id: string) => void }> 
     const gradientId = `toast-clock-grad-${toast.id}`;
 
     const variantStyles = {
-      info: "border-border/80 bg-card/95 text-card-foreground",
-      success: "border-emerald-600/40 bg-card/95 text-card-foreground",
-      warning: "border-amber-500/50 bg-card/95 text-card-foreground",
-      error: "border-destructive/60 bg-card/95 text-card-foreground",
+      info: "border-border bg-card text-card-foreground",
+      success: "border-emerald-600/40 bg-card text-card-foreground",
+      warning: "border-amber-500/50 bg-card text-card-foreground",
+      error: "border-destructive/60 bg-card text-card-foreground",
     }[toast.variant];
 
     const variantIcon = {

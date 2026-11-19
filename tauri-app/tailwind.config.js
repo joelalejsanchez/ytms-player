@@ -1,3 +1,7 @@
+function withOpacity(variableName) {
+  return `color-mix(in srgb, var(${variableName}) calc(<alpha-value> * 100%), transparent)`;
+}
+
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ["class"],
@@ -5,53 +9,53 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        background: withOpacity("--background"),
+        foreground: withOpacity("--foreground"),
         card: {
-          DEFAULT: "var(--card)",
-          foreground: "var(--card-foreground)",
+          DEFAULT: withOpacity("--card"),
+          foreground: withOpacity("--card-foreground"),
         },
         popover: {
-          DEFAULT: "var(--popover)",
-          foreground: "var(--popover-foreground)",
+          DEFAULT: withOpacity("--popover"),
+          foreground: withOpacity("--popover-foreground"),
         },
         primary: {
-          DEFAULT: "var(--primary)",
-          foreground: "var(--primary-foreground)",
+          DEFAULT: withOpacity("--primary"),
+          foreground: withOpacity("--primary-foreground"),
         },
         secondary: {
-          DEFAULT: "var(--secondary)",
-          foreground: "var(--secondary-foreground)",
+          DEFAULT: withOpacity("--secondary"),
+          foreground: withOpacity("--secondary-foreground"),
         },
         muted: {
-          DEFAULT: "var(--muted)",
-          foreground: "var(--muted-foreground)",
+          DEFAULT: withOpacity("--muted"),
+          foreground: withOpacity("--muted-foreground"),
         },
         accent: {
-          DEFAULT: "var(--accent)",
-          foreground: "var(--accent-foreground)",
+          DEFAULT: withOpacity("--accent"),
+          foreground: withOpacity("--accent-foreground"),
         },
         destructive: {
-          DEFAULT: "var(--destructive)",
-          foreground: "var(--destructive-foreground)",
+          DEFAULT: withOpacity("--destructive"),
+          foreground: withOpacity("--destructive-foreground"),
         },
-        border: "var(--border)",
-        input: "var(--input)",
-        ring: "var(--ring)",
-        surface: "var(--card)",
-        panel: "var(--card)",
+        border: withOpacity("--border"),
+        input: withOpacity("--input"),
+        ring: withOpacity("--ring"),
+        surface: withOpacity("--card"),
+        panel: withOpacity("--card"),
         slate: {
-          50: "var(--slate-50)",
-          100: "var(--slate-100)",
-          200: "var(--slate-200)",
-          300: "var(--slate-300)",
-          400: "var(--slate-400)",
-          500: "var(--slate-500)",
-          600: "var(--slate-600)",
-          700: "var(--slate-700)",
-          800: "var(--slate-800)",
-          900: "var(--slate-900)",
-          950: "var(--slate-950)",
+          50: withOpacity("--slate-50"),
+          100: withOpacity("--slate-100"),
+          200: withOpacity("--slate-200"),
+          300: withOpacity("--slate-300"),
+          400: withOpacity("--slate-400"),
+          500: withOpacity("--slate-500"),
+          600: withOpacity("--slate-600"),
+          700: withOpacity("--slate-700"),
+          800: withOpacity("--slate-800"),
+          900: withOpacity("--slate-900"),
+          950: withOpacity("--slate-950"),
         },
       },
     },
