@@ -6,6 +6,16 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.8.2] - 2026-11-19
+
+### Corregido
+
+#### Transición Instantánea en Indicadores Circulares de Reproducción y Volumen (`PersistentPlayer` y `NowPlayingView`)
+- **Eliminación del salto elástico en Seek Bar y Volumen**: Sustitución de las transiciones interpoladas (`transition-all duration-150`) por posicionamiento instantáneo (`transition-none`) en los indicadores circulares (*thumbs*) y barras de relleno de la barra de progreso de reproducción y el control de volumen.
+- **Sincronización exacta bajo el cursor**: Al hacer clic o arrastrar el cursor sobre las barras de seek y volumen en `PersistentPlayer` y `NowPlayingView` (vista en reproducción a pantalla completa), el indicador se ubica de forma inmediata bajo el puntero sin retardos ni desfases visuales, manteniendo intacta la lógica de audio y volumen.
+
+---
+
 ## [1.8.1] - 2026-11-19
 
 ### Corregido

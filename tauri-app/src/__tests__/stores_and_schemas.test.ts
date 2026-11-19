@@ -2,8 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import React from "react";
 import { fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { formatBytes, formatDuration, formatHumanDuration } from "@/lib/utils";
+import { PersistentPlayer } from "@/components/PersistentPlayer";
 import { HomeView } from "@/features/home/HomeView";
 import { PlaylistsView } from "@/features/playlists/PlaylistsView";
+import { NowPlayingView } from "@/features/visualizer/components/NowPlayingView";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import {
   downloadFormSchema,
@@ -816,6 +818,50 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       fireEvent.click(emptyBtn);
       // No debe redirigir a playlists
       expect(onNavigate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Instant Seek & Volume Thumbs (PersistentPlayer & NowPlayingView)", () => {
+    beforeEach(() => {
+      usePlayerStore.getState().clearQueue();
+    });
+
+    it("renders PersistentPlayer seek bar and volume indicator thumbs with transition-none for instant positioning", () => {
+      usePlayerStore.getState().playTrack(sampleTrack, [sampleTrack]);
+      const { container } = render(React.createElement(PersistentPlayer));
+
+      const thumbs = Array.from(container.querySelectorAll("div")).filter(
+        (el) =>
+          el.classList.contains("-translate-x-1/2") &&
+          el.classList.contains("rounded-full") &&
+          el.classList.contains("shadow-md") &&
+          el.classList.contains("pointer-events-none"),
+      );
+      expect(thumbs.length).toBeGreaterThanOrEqual(2);
+      for (const thumb of thumbs) {
+        expect(thumb.className).toContain("transition-none");
+        expect(thumb.className).not.toContain("transition-all");
+      }
+    });
+
+    it("renders NowPlayingView seek bar and volume thumbs with transition-none", () => {
+      usePlayerStore.getState().playTrack(sampleTrack, [sampleTrack]);
+      usePlayerStore.setState({ isNowPlayingExpanded: true });
+      const { container } = render(React.createElement(NowPlayingView));
+
+      // Buscar thumbs de seek y volume en la barra inferior de controles
+      const thumbs = Array.from(container.querySelectorAll("div")).filter(
+        (el) =>
+          el.classList.contains("-translate-x-1/2") &&
+          el.classList.contains("rounded-full") &&
+          el.classList.contains("shadow-md") &&
+          el.classList.contains("pointer-events-none"),
+      );
+      expect(thumbs.length).toBeGreaterThanOrEqual(2);
+      for (const thumb of thumbs) {
+        expect(thumb.className).toContain("transition-none");
+        expect(thumb.className).not.toContain("transition-all");
+      }
     });
   });
 });

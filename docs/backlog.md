@@ -6,11 +6,6 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 1. Prioridad Alta (Bugs y Core UX)
 
-- [ ] **Transición instantánea en indicadores circulares de reproducción y volumen (`PersistentPlayer` y `NowPlayingView`):**
-  - Al hacer clic o arrastrar en la barra de progreso (seek bar) o en el control de volumen, el indicador circular debe posicionarse instantáneamente bajo el cursor del ratón.
-  - Actualmente existe una animación de transición con curva Bézier que genera un salto visual elástico perceptible o desfasado antes de estabilizarse.
-  - Se debe suprimir la animación de transición (`transition-none` o duración cero en la posición del thumb) manteniendo íntegra la lógica y comportamiento de audio actual.
-
 - [ ] **Discriminación de origen de pista (`origin`) y exclusión de archivos locales en sincronización de Likes (`LibraryView` / Core Rust / Go):**
   - **Diagnóstico del problema:** Al pulsar "Sincronizar Me gusta", la app consulta en lote a la YouTube Data API v3 (`POST /api/sync-likes`) enviando todos los identificadores de la base de datos (`track_repo.get_all_tracks()`). Si el usuario ha importado o adoptado archivos de audio locales cuyos identificadores no corresponden al formato estricto de YouTube (11 caracteres alfanuméricos) o no provienen de dicha plataforma, la validación en Go (`ValidateYouTubeID`) rechaza la petición completa con error 400 (`validation_failed`), abortando la sincronización de likes para todo el catálogo restante.
   - **Identificador de origen (`origin`):** Incorporar la columna `origin TEXT NOT NULL DEFAULT 'youtube'` en la tabla `tracks` de SQLite (valores admisibles: `'youtube'` y `'local'`), garantizando migración segura (`ALTER TABLE`) y sincronización en los modelos de datos en Rust (`Track`, `NewTrack`) y TypeScript.

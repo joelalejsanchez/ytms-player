@@ -480,7 +480,7 @@ export const WorkspaceSettingsView = React.memo(() => {
               </p>
             </div>
           </div>
-          <Badge tone="info">v1.8.1</Badge>
+          <Badge tone="info">v1.8.2</Badge>
         </div>
 
         {/* Subsección A: Colores (Cards organizadas en vertical, ancho constante, con RadioButton) */}

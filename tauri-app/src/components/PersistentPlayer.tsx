@@ -596,7 +596,7 @@ export const PersistentPlayer = React.memo(() => {
 
               {/* Indicador / Thumb pequeño que crece cuando el ratón se acerca (bloqueado durante carga) */}
               <div
-                className={`pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full shadow-md transition-all duration-150 ${
+                className={`pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full shadow-md transition-none ${
                   isLoadingTrack
                     ? "bg-muted-foreground opacity-40"
                     : "bg-foreground group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-primary"
@@ -711,7 +711,7 @@ export const PersistentPlayer = React.memo(() => {
 
             {/* Indicador / Thumb pequeño que crece al acercar el ratón */}
             <div
-              className="pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full bg-foreground shadow-md transition-all duration-150 group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-primary"
+              className="pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full bg-foreground shadow-md transition-none group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-primary"
               style={{ left: `${volumePercent}%` }}
             />
 
