@@ -1,6 +1,6 @@
 # Your Tracks Music Server (ytms-player)
 
-[![Release](https://img.shields.io/badge/version-1.7.2-red.svg)](docs/changelog.md)
+[![Release](https://img.shields.io/badge/version-1.7.3-red.svg)](docs/changelog.md)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-orange.svg)](https://v2.tauri.app/)
 [![Go](https://img.shields.io/badge/Go-1.22+-00ADD8.svg)](https://go.dev/)

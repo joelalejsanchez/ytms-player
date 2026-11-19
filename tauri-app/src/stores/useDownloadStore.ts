@@ -148,7 +148,8 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
             const finalProgress =
               finalStatus === "completed" || finalStatus === "skipped"
                 ? 100
-                : prev?.progress ?? (item.status === "completed" || item.status === "skipped" ? 100 : 0);
+                : (prev?.progress ??
+                  (item.status === "completed" || item.status === "skipped" ? 100 : 0));
 
             nextTasks[key] = {
               task_id: response.task_id,
@@ -201,9 +202,7 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
             existingStatus === "skipped" ||
             existingStatus === "failed";
 
-          const finalStatus = isAdvancedStatus
-            ? existingStatus
-            : response.status;
+          const finalStatus = isAdvancedStatus ? existingStatus : response.status;
 
           const finalProgress =
             finalStatus === "completed" || finalStatus === "skipped"

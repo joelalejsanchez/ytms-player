@@ -6,6 +6,14 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.7.3] - 2026-11-18
+
+### Corregido
+
+- **Formato y consistencia de código**: Normalización de estilo y formateo con Prettier en `useDownloadStore.ts`, con verificación estricta de linters (ESLint, Clippy, gofmt) aprobada en todo el monorepo.
+
+---
+
 ## [1.7.2] - 2026-11-18
 
 ### Añadido
