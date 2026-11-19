@@ -6,6 +6,25 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.7.1] - 2026-11-18
+
+### Añadido
+
+#### Adopción y Reproducción Libre de Audios Locales
+- **Flexibilización de validación de pistas**: Eliminación de la restricción rígida de 11 caracteres en los identificadores de pista (`validate_youtube_id`), permitiendo indexar cualquier archivo de audio local (`.mp3`, `.m4a`, `.opus`, etc.) copiado manualmente a la carpeta `tracks/` del espacio de trabajo.
+- **Resolución local inteligente**: Adopción directa de archivos locales en la base de datos SQLite sin invocar peticiones remotas de previsualización al microservicio cuando el identificador no corresponde a un video externo.
+
+#### Documentación y Licencia
+- **Reorientación del README**: Enfoque principal de la aplicación como reproductor y organizador de audio local independiente de alto rendimiento, estableciendo el microservicio en Docker como un complemento secundario opcional para importar enlaces.
+- **Licencia GNU GPL v3**: Actualización de los metadatos del proyecto (`Cargo.toml`, `package.json`, `README.md`) para reflejar la licencia oficial GNU General Public License v3 (`GPL-3.0-or-later`).
+
+### Corregido
+
+- **Bloqueo al adoptar archivos locales**: Solución al fallo que emitía errores de toast inesperados al copiar canciones con nombres locales comunes (ej. `hachimi.mp3`).
+- **Optimización de flujos de GitHub Actions**: Eliminación de dependencias innecesarias de sistema en `ci.yml` para acelerar los pipelines y adición de permisos de escritura (`permissions: contents: write`) con dependencia estricta (`needs: [ci]`) en `release.yml`.
+
+---
+
 ## [1.7.0] - 2026-11-18
 
 ### Añadido
