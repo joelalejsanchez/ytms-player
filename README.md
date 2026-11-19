@@ -6,86 +6,60 @@
 [![Go](https://img.shields.io/badge/Go-1.22+-00ADD8.svg)](https://go.dev/)
 [![Rust](https://img.shields.io/badge/Rust-1.77+-black.svg)](https://www.rust-lang.org/)
 
-Aplicación de escritorio nativa de alto rendimiento construida con **Tauri v2 (React/TypeScript + Rust/SQLite)** y un microservicio backend local en **Docker (Go + yt-dlp + FFmpeg)**. Diseñada para gestionar, descargar, organizar y reproducir contenido de YouTube de forma local y privada con arquitectura limpia desacoplada.
+Reproductor y organizador de audio local de alto rendimiento y bajo consumo, construido con **Tauri v2 (React/TypeScript + Rust/SQLite)**. Diseñado para gestionar, indexar y reproducir tus colecciones musicales privadas con streaming nativo directo desde disco, soporte para múltiples espacios de trabajo (*workspaces*) y un módulo complementario opcional para importar pistas y listas remotas mediante enlaces.
 
 ---
 
 ## Características Principales
 
-* 🎵 **Motor de Streaming Nativo (HTTP 206 Partial Content):** Reproducción de audio local eficiente directamente desde disco con bajo consumo de CPU y memoria.
-* 📁 **Workspaces Aislados:** Múltiples bibliotecas independientes organizadas con base de datos SQLite embebida por cada directorio de música.
-* ❤️ **Favoritos y Likes Híbridos:** Sistema local de canciones favoritas en SQLite con soporte de sincronización bidireccional opcional con tu cuenta de YouTube.
+* 🎵 **Reproductor de Música Local Nativo:** Transmisión de audio eficiente mediante HTTP 206 Partial Content directamente desde tus carpetas de música, sin saturar la memoria RAM.
+* 📁 **Gestión Libre de Archivos y Workspaces:** Copia libremente tus archivos de música (`.mp3`, `.m4a`, `.opus`, etc.) dentro de la carpeta `tracks/` del espacio de trabajo; la aplicación los detecta e indexa automáticamente en su base de datos SQLite integrada.
+* 📊 **Dashboard y Métricas:** Panel principal de bienvenida con estadísticas de duración acumulada, recuento de pistas, uso de almacenamiento en disco, pistas recientes y acceso rápido a playlists.
+* 🎨 **Listas de Reproducción con Portadas Dinámicas:** Generación automática de carátulas para tus playlists, reproducción con un solo clic (*Quick Play*) y visualizadores de audio reactivos integrados.
+* ⬇️ **Módulo Opcional de Importación Remota:** Soporte complementario para descargar pistas o playlists completas pegando enlaces de audio mediante un microservicio local en Docker.
 
 ---
 
-## Guía de Instalación y Puesta en Marcha (Usuario Final)
+## Instalación (Usuario Final)
 
-### Requisito Base: Motor de Descargas (Docker)
+Descarga el instalador o ejecutable correspondiente a tu sistema operativo desde la sección de **[Releases](https://github.com/joelsanchz/yt-player/releases)**:
 
-La aplicación utiliza un microservicio local en Go que encapsula `yt-dlp` y `FFmpeg` para procesar descargas y metadatos sin ensuciar tu sistema operativo.
+### Windows 🪟
+1. Descarga el instalador oficial: formato **`.msi`** (Microsoft Installer) o **`.exe`** (Asistente de instalación).
+2. Ejecuta el asistente y abre **Your Tracks Music Server** desde tu Menú Inicio o Escritorio.
+3. Selecciona tu carpeta de música para comenzar a reproducir al instante.
 
-1. Asegúrate de tener instalado **Docker Desktop** (en Windows/macOS) o el servicio de **Docker** (en Linux).
-2. Desde la raíz del proyecto, construye y levanta el servicio:
-   ```bash
-   docker compose up -d --build
-   ```
-   *(A partir de este paso, puedes iniciar o detener el contenedor cuando quieras desde Docker Desktop o con `docker compose up -d` / `docker compose down`)*.
-
-> [!WARNING]
-> **Mantenimiento y Actualizaciones del Contenedor:**  
-> YouTube actualiza continuamente sus firmas y protecciones antibot. Si las descargas comienzan a arrojar errores inesperados, reconstruye el contenedor sin caché para obtener la versión más reciente de `yt-dlp`:
-> ```bash
-> docker compose build --no-cache
-> docker compose up -d
-> ```
+### Linux 🐧
+* **Ubuntu / Debian / Pop!_OS / Linux Mint:** Descarga el archivo **`.deb`** e instálalo con doble clic o con `sudo dpkg -i ytms-player_*_amd64.deb`.
+* **Fedora / RHEL / openSUSE:** Descarga el archivo **`.rpm`** e instálalo con `sudo dnf install ./ytms-player-*.x86_64.rpm`.
+* **Arch Linux / Universales:** Descarga el paquete universal **`.AppImage`**, dale permisos de ejecución (`chmod +x ytms-player_*.AppImage`) y ejecútalo directamente.
 
 ---
 
-### Instalación en Windows
-
-1. Dirígete a la sección de **Releases** y descarga el instalador oficial para Windows:
-   - Formato **`.msi`** (Microsoft Installer) o **`.exe`** (Asistente NSIS).
-2. Ejecuta el archivo y sigue los pasos del asistente de instalación.
-3. La aplicación creará automáticamente los accesos directos en el **Menú Inicio**, en el **Escritorio** y se registrará en el sistema.
-4. Asegúrate de que Docker esté corriendo y abre la aplicación.
-
----
-
-### Instalación en Linux
-
-Descarga el paquete correspondiente a tu distribución desde la sección de **Releases**:
-
-1. **Ubuntu / Debian / Pop!_OS / Linux Mint:**
-   - Descarga el archivo **`.deb`**.
-   - Instálalo con un clic en tu tienda de software o desde la terminal:
-     ```bash
-     sudo dpkg -i ytms-player_*_amd64.deb
-     ```
-   - Registra automáticamente el icono y lanzador en el menú de aplicaciones del sistema.
-2. **Fedora / RHEL / openSUSE:**
-   - Descarga el paquete **`.rpm`**.
-   - Instálalo con doble clic o mediante:
-     ```bash
-     sudo dnf install ./ytms-player-*.x86_64.rpm
-     ```
-3. **Arch Linux / Manjaro u otras distribuciones:**
-   - Descarga el paquete **`AppImage`** o el archivo comprimido **`.tar.gz`**.
-   - Para el AppImage, concede permisos de ejecución y ábrelo directamente:
-     ```bash
-     chmod +x ytms-player_*.AppImage
-     ./ytms-player_*.AppImage
-     ```
-
----
-
-### Configuración de Google Cloud Platform y Cookies (Opcional)
+## Módulo Opcional: Microservicio de Descargas (Docker)
 
 > [!NOTE]
-> **ytms-player no requiere cuentas para funcionar al 100%.**  
-> Puedes buscar, descargar, crear listas y reproducir sin iniciar sesión.
+> **El reproductor no requiere Docker para escuchar tu música local.**  
+> Puedes copiar tus canciones directamente a tu carpeta de música y reproducirlas de inmediato.
 
-* **Sincronización de Likes con YouTube (Opcional):** Si deseas que tus Likes locales se marquen en tu cuenta oficial de YouTube, consulta la [Guía Opcional de Google Cloud Platform (`docs/setup-gcp.md`)](docs/setup-gcp.md).
-* **Cookies de YouTube (`cookies.txt`) (Opcional):** Solo se requieren si necesitas descargar canciones restringidas por edad (+18) o contenido exclusivo. Puedes importar tu archivo `.txt` directamente en la pestaña *Configuración* de la app.
+Si además deseas importar música remotamente pegando enlaces de listas o canciones, puedes levantar el microservicio complementario en segundo plano:
+
+1. Asegúrate de tener **Docker Desktop** (en Windows/macOS) o **Docker** activo (en Linux).
+2. Desde la terminal en la raíz del proyecto:
+   ```bash
+   docker compose up -d
+   ```
+
+---
+
+### Integraciones Remotas Opcionales (OAuth / Cookies)
+
+> [!NOTE]
+> **Your Tracks Music Server no requiere cuentas externas para funcionar al 100%.**  
+> Puedes organizar, copiar carpetas locales, crear listas y reproducir toda tu música sin iniciar sesión.
+
+* **Sincronización remota (Opcional):** Si deseas sincronizar Likes con cuentas externas, consulta la [Guía Opcional de Configuración (`docs/setup-gcp.md`)](docs/setup-gcp.md).
+* **Gestión de Cookies de Sesión (`cookies.txt`) (Opcional):** Solo si utilizas el microservicio complementario para respaldar contenido con restricciones de sesión, puedes importar tu archivo `.txt` directamente en la pestaña *Configuración* de la aplicación.
 
 ---
 

@@ -37,17 +37,18 @@ pub enum DomainError {
 
 pub type DomainResult<T> = Result<T, DomainError>;
 
-/// Valida que un `youtube_id` cumpla con el estándar de 11 caracteres alfanuméricos, guiones o guiones bajos.
+/// Valida que el identificador de la pista sea seguro y no esté vacío.
 pub fn validate_youtube_id(youtube_id: &str) -> DomainResult<()> {
     let trimmed = youtube_id.trim();
-    if trimmed.len() != 11 {
-        return Err(DomainError::InvalidYouTubeId(youtube_id.to_string()));
+    if trimmed.is_empty() {
+        return Err(DomainError::ValidationError(
+            "Track identifier cannot be empty".to_string(),
+        ));
     }
-    let is_valid = trimmed
-        .chars()
-        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
-    if !is_valid {
-        return Err(DomainError::InvalidYouTubeId(youtube_id.to_string()));
+    if trimmed.contains('/') || trimmed.contains('\\') || trimmed.contains("..") {
+        return Err(DomainError::ValidationError(format!(
+            "Invalid track identifier: {youtube_id}"
+        )));
     }
     Ok(())
 }

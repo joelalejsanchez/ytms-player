@@ -594,25 +594,27 @@ pub async fn adopt_orphan_file(
         let mut final_liked: Option<bool> = None;
 
         if let Some(client) = client {
-            if let Ok(preview) =
-                client.preview_url(&format!("https://www.youtube.com/watch?v={youtube_id}"))
-            {
-                if let Some(item) = preview.items.into_iter().next() {
-                    if !item.title.trim().is_empty() {
-                        final_title = item.title;
-                    }
-                    if !item.artist.trim().is_empty() {
-                        final_artist = item.artist;
-                    }
-                    if item.duration > 0 {
-                        final_duration = item.duration;
+            if youtube_id.trim().len() == 11 {
+                if let Ok(preview) =
+                    client.preview_url(&format!("https://www.youtube.com/watch?v={youtube_id}"))
+                {
+                    if let Some(item) = preview.items.into_iter().next() {
+                        if !item.title.trim().is_empty() {
+                            final_title = item.title;
+                        }
+                        if !item.artist.trim().is_empty() {
+                            final_artist = item.artist;
+                        }
+                        if item.duration > 0 {
+                            final_duration = item.duration;
+                        }
                     }
                 }
-            }
-            if let Ok(sync_res) = client.sync_likes(std::slice::from_ref(&youtube_id), None) {
-                if let Some(liked_item) = sync_res.results.into_iter().next() {
-                    if liked_item.synced {
-                        final_liked = Some(liked_item.liked);
+                if let Ok(sync_res) = client.sync_likes(std::slice::from_ref(&youtube_id), None) {
+                    if let Some(liked_item) = sync_res.results.into_iter().next() {
+                        if liked_item.synced {
+                            final_liked = Some(liked_item.liked);
+                        }
                     }
                 }
             }
