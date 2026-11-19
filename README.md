@@ -65,8 +65,9 @@ Si además deseas importar música remotamente pegando enlaces de listas o canci
 
 ## ¿Quieres Realizar Modificaciones o Colaborar? (Guía Técnica)
 
-Si deseas modificar el código fuente, agregar nuevas funcionalidades o compilar la aplicación por tu cuenta, consulta las guías de configuración del entorno de desarrollo:
+Si deseas modificar el código fuente, agregar nuevas funcionalidades o colaborar con el proyecto, consulta nuestras guías técnicas y de desarrollo:
 
+* 🤝 **[Guía de Contribución y Buenas Prácticas (`CONTRIBUTING.md`)](CONTRIBUTING.md):** Estándares de desarrollo, optimización de rendimiento (React/Rust/Go), formato de commits atómicos y pre-flight checks.
 * 🐧 **[Guía de Desarrollo en Linux (`docs/setup-linux.md`)](docs/setup-linux.md):** WebKitGTK 4.1, Rustup, Node.js y compilación local.
 * 🪟 **[Guía de Desarrollo en Windows (`docs/setup-windows.md`)](docs/setup-windows.md):** Visual Studio C++ Build Tools, WebView2, Rustup (MSVC) y Docker Desktop WSL2.
 
@@ -89,6 +90,7 @@ just docker-down # Detiene el microservicio en Docker
 
 ## Documentación Adicional
 
+- [Guía de Contribución (`CONTRIBUTING.md`)](CONTRIBUTING.md): Pautas de colaboración, formato de commits y rendimiento.
 - [Registro de Cambios (`docs/changelog.md`)](docs/changelog.md): Historial cronológico de versiones y novedades.
 - [Backlog e Ideas Futuras (`docs/backlog.md`)](docs/backlog.md): Roadmap técnico y mejoras planificadas.
 - [Especificación de Diseño de Software (`docs/sdd.md`)](docs/sdd.md): Arquitectura detallada, diagramas de secuencia y contratos de API.
