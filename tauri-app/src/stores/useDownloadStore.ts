@@ -138,13 +138,15 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
           for (const item of response.items) {
             const key = buildTaskKey(response.task_id, item.youtube_id);
             const prev = nextTasks[key];
-            const isAdvanced =
-              prev?.status === "downloading" ||
-              prev?.status === "processing" ||
-              prev?.status === "completed" ||
-              prev?.status === "skipped" ||
-              prev?.status === "failed";
-            const finalStatus = isAdvanced ? prev.status : item.status;
+            const finalStatus =
+              prev &&
+              (prev.status === "downloading" ||
+                prev.status === "processing" ||
+                prev.status === "completed" ||
+                prev.status === "skipped" ||
+                prev.status === "failed")
+                ? prev.status
+                : item.status;
             const finalProgress =
               finalStatus === "completed" || finalStatus === "skipped"
                 ? 100
@@ -195,14 +197,14 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
           }
 
           // Prevenir degradación del estado si el flujo SSE ya avanzó en tiempo real
-          const isAdvancedStatus =
+          const finalStatus =
             existingStatus === "downloading" ||
             existingStatus === "processing" ||
             existingStatus === "completed" ||
             existingStatus === "skipped" ||
-            existingStatus === "failed";
-
-          const finalStatus = isAdvancedStatus ? existingStatus : response.status;
+            existingStatus === "failed"
+              ? existingStatus
+              : response.status;
 
           const finalProgress =
             finalStatus === "completed" || finalStatus === "skipped"

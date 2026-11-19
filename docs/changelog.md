@@ -6,6 +6,14 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.7.4] - 2026-11-18
+
+### Corregido
+
+- **Tipado estricto en TypeScript**: Corrección de inferencia de tipo `DownloadStatus` en `useDownloadStore.ts` y adición de propiedades requeridas `force_overwrite` y `async_mode` en las pruebas unitarias de `stores_and_schemas.test.ts`, asegurando compilación 100% limpia con `tsc --noEmit`.
+
+---
+
 ## [1.7.3] - 2026-11-18
 
 ### Corregido

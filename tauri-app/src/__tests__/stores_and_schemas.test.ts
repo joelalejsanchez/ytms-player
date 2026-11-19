@@ -247,6 +247,8 @@ describe("useDownloadStore & Utility Helpers", () => {
     await store.startDownloadTask({
       url: "https://www.youtube.com/watch?v=race_track_1",
       audio_format: "mp3",
+      force_overwrite: false,
+      async_mode: true,
     });
 
     // 3. Verificar que no se degradó de "processing" a "queued"

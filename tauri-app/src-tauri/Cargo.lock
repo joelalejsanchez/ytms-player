@@ -4916,7 +4916,7 @@ dependencies = [
 
 [[package]]
 name = "ytms-player"
-version = "1.7.3"
+version = "1.7.4"
 dependencies = [
  "chrono",
  "reqwest 0.12.28",
