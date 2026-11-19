@@ -1,7 +1,7 @@
 [package]
 name = "ytms-player"
-version = "1.6.0"
-description = "ytms-player Desktop Application - High performance YouTube media manager and player"
+version = "1.7.0"
+description = "Your Tracks Music Server (ytms-player) - High performance local media manager and player"
 authors = ["Joel Alejandro Sanchez Valdez <joelalejsanchez@gmail.com>"]
 edition = "2021"
 rust-version = "1.77"

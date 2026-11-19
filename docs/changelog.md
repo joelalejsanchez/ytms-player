@@ -6,6 +6,43 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.7.0] - 2026-11-18
+
+### Añadido
+
+#### Identidad de Marca Oficial: Your Tracks Music Server (YTMS)
+- **Denominación oficial**: Desligamiento de marcas comerciales y adopción del nombre **Your Tracks Music Server** (**YTMS**), enfocado en la propiedad y privacidad de las bibliotecas de audio locales.
+- **Actualización global**: Reflejado en la barra de título de la aplicación, cabecera de la barra lateral, diálogos nativos y documentación del proyecto.
+
+#### Dashboard Principal y Página de Bienvenida (Home View)
+- **Página de inicio predeterminada**: Nueva vista `HomeView` accesible desde el Sidebar con saludo dinámico según el horario del día y accesos rápidos a la biblioteca y descargas.
+- **Métricas globales de la biblioteca**:
+  - *Total de canciones*: Conteo en tiempo real de pistas locales registradas.
+  - *Duración acumulada*: Suma total formateada de manera amigable (ej. `14h 32m` o `45 min`).
+  - *Almacenamiento en disco*: Espacio físico total ocupado por los archivos de audio en MB/GB.
+  - *Favoritos*: Recuento reactivo de pistas con *Me gusta*.
+- **Cuadrícula interactiva de Playlists con Quick Play**:
+  - Tarjetas visuales con carátula dinámica o gradiente musical de respaldo.
+  - Metadatos integrados: recuento de canciones y duración acumulada de la playlist.
+  - Botón flotante de reproducción rápida con 1 clic para iniciar o pausar la lista completa al instante.
+  - Navegación directa al detalle de la playlist seleccionada en `PlaylistsView`.
+- **Pistas recientes y actividad**:
+  - Listado compacto de las últimas pistas agregadas con reproducción instantánea y toggle de favoritos.
+  - Historial de actividad de descargas con badges de estado (`completado`, `procesando`, `error`, `omitido`) y formatos.
+
+#### Automatización y CI/CD en GitHub Actions
+- **Pipeline de Integración Continua (`.github/workflows/ci.yml`)**:
+  - Validación automatizada de calidad, linters y tests en React/TypeScript (Vitest, Prettier, ESLint, TypeScript), Go (gofmt, go vet, go test) y Rust/Tauri (cargo fmt, clippy, cargo test).
+- **Pipeline de Publicación de Releases (`.github/workflows/release.yml`)**:
+  - Empaquetado multiplataforma automático activado por tags Git (`v*`) con `tauri-apps/tauri-action`.
+  - Generación de instaladores para Windows (`.msi`, `.exe` NSIS) y Linux (`.AppImage`, `.deb`, `.rpm`) adjuntos a GitHub Releases.
+
+### Corregido
+
+- **Compatibilidad y empaquetado de AppImage**: Corrección del plugin de GStreamer en distribuciones Linux no Debian y configuración de rutas de códecs de audio del anfitrión para evitar congelamientos en WebKitGTK.
+
+---
+
 ## [1.6.0] - 2026-11-18
 
 ### Añadido
