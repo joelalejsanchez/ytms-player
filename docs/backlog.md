@@ -39,6 +39,10 @@ Este documento registra las características, mejoras y extensiones que **no est
   - La sección de Personalización se ha tornado extensa al incorporar paletas cromáticas, modos de tema y selector de visualizadores.
   - Implementar componentes desplegables/colapsables (`Collapsible` o `Accordion`) exclusivamente para los 3 bloques de Personalización (Paleta de Colores, Modo de Tema y Visualizador predeterminado) para mantener compacta la interfaz.
 
+- [ ] **Consumo dinámico de versión desde `package.json` en UI (`WorkspaceSettingsView`):**
+  - Actualmente el badge de versión en la sección de Personalización (`WorkspaceSettingsView.tsx`) está escrito como un literal estático (ej. `v1.7.5`), lo que exige edición manual en cada release.
+  - Configurar la importación dinámica de la versión desde `package.json` en Vite o mediante la API de Tauri (`@tauri-apps/api/app`), asegurando que la interfaz siempre refleje la versión real del proyecto automáticamente sin riesgo de desincronización humana.
+
 - [ ] **Tarjeta superior de información de la aplicación (`WorkspaceSettingsView`):**
   - Incorporar en la cabecera superior de la vista de Configuración una tarjeta informativa del sistema con:
     - **Nombre oficial:** Your Tracks Music Server (`ytms-player`).
