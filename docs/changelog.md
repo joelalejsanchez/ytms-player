@@ -6,6 +6,16 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.7.5] - 2026-11-18
+
+### Corregido
+
+- **Compatibilidad de opacidad y variables CSS en Tailwind**: Configuración de `withOpacity` en `tailwind.config.js` mediante `color-mix(in srgb, var(...) calc(<alpha-value> * 100%), transparent)` para soportar modificadores de transparencia (`/<alpha>`) en todas las variables semánticas de Tailwind (`bg-primary/10`, `border-border/80`, `bg-card/60`, `ring-primary/20`, etc.).
+- **Fondo sólido y renderizado en Notificaciones Toast (`ToastContainer`)**: Asignación de fondo `bg-card` y borde `border-border` sólidos a las notificaciones toast, evitando que aparezcan transparentes y garantizando nitidez y contraste en el texto y elementos visuales.
+- **Sincronización de versión en panel de configuración y metadatos**: Actualización del indicador de versión a `v1.7.5` en el panel de Personalización (`WorkspaceSettingsView.tsx`), `package.json`, `tauri.conf.json` y `Cargo.toml`.
+
+---
+
 ## [1.7.4] - 2026-11-18
 
 ### Corregido
