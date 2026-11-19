@@ -23,6 +23,8 @@ jobs:
     name: Build (${{ matrix.platform }})
     needs: [ci]
     runs-on: ${{ matrix.platform }}
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
