@@ -15,8 +15,13 @@ permissions:
   contents: write
 
 jobs:
+  ci:
+    name: Verificación previa de CI
+    uses: ./.github/workflows/ci.yml
+
   build-tauri:
     name: Build (${{ matrix.platform }})
+    needs: [ci]
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
@@ -52,11 +57,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             libwebkit2gtk-4.1-dev \
-            build-essential \
-            curl \
-            wget \
-            file \
-            libssl-dev \
             libgtk-3-dev \
             libayatana-appindicator3-dev \
             librsvg2-dev \
