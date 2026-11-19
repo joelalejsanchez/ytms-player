@@ -11,9 +11,42 @@ Este documento registra las características, mejoras y extensiones que **no est
   - **Solución requerida para tracking de playlist:** Vincular el estado de reproducción al identificador de la playlist activa (`activePlaylistId` en `usePlayerStore` o contexto de la cola) en vez de basarse únicamente en la presencia de la canción.
   - **Visibilidad y acción en listas sin pistas:** Cuando una playlist no posee canciones (`hasTracks === false`), el botón de Quick Play desaparece y el clic sobre la card redirige a la pantalla de Playlists. Proveer un botón visible (o estado deshabilitado con feedback visual) para evitar saltos inesperados de pantalla y mejorar la consistencia de interacción.
 
+- [ ] **Transición instantánea en indicadores circulares de reproducción y volumen (`PersistentPlayer` y `NowPlayingView`):**
+  - Al hacer clic o arrastrar en la barra de progreso (seek bar) o en el control de volumen, el indicador circular debe posicionarse instantáneamente bajo el cursor del ratón.
+  - Actualmente existe una animación de transición con curva Bézier que genera un salto visual elástico perceptible o desfasado antes de estabilizarse.
+  - Se debe suprimir la animación de transición (`transition-none` o duración cero en la posición del thumb) manteniendo íntegra la lógica y comportamiento de audio actual.
+
+- [ ] **Rediseño de navegación en Playlists (Vista de lista completa -> Vista de detalle):**
+  - Sustituir la distribución actual de dos paneles divididos simultáneos por una vista secuencial limpia:
+    1. **Pantalla principal:** Muestra la lista completa de playlists en cuadrícula/lista a ancho completo.
+    2. **Pantalla de detalle:** Al hacer clic sobre una playlist, se abre la vista detallada con su carátula, estadísticas y todas sus canciones.
+    3. **Botón de retorno:** Botón superior para volver fácilmente a la vista general de todas las playlists.
+
 ---
 
 ## 2. Prioridad Media (Roadmap v1.x)
+
+- [ ] **Alineación de metadatos en cards de Playlists (`HomeView`):**
+  - En las tarjetas de playlist de la pantalla de inicio, ubicar en la misma fila horizontal el título de la playlist y su duración acumulada.
+  - Ubicar el conteo de canciones justo debajo de ambos elementos en una segunda línea para mayor legibilidad y orden visual.
+
+- [ ] **Modernización y controles en la vista de Descargas (`DownloadsView`):**
+  - **Switch selector para Mix/Playlist vs Solo canción:** Al detectar una URL de lista o mix de YouTube, sustituir los radio buttons por un switch toggle moderno de 2 estados. A la izquierda: _"Solo la canción"_ (removiendo el texto "Recomendado"); a la derecha: _"Mix completo / Lista completa"_. Destacar visualmente con tipografía y color la opción activa seleccionada.
+  - **Acción rápida para limpiar historial:** Simplificar la limpieza de descargas sustituyendo el menú contextual de tres puntos actual por un botón directo de _"Limpiar historial"_ con icono de escoba (`Broom` / `Eraser` / `Trash`).
+  - **Eliminación de opción obsoleta:** Remover el checkbox de _"Forzar redescarga"_ (`force_overwrite`), dado que está deprecado por el nuevo flujo de sincronización y validación de descargas.
+
+- [ ] **Paneles colapsables en sección de Personalización (`WorkspaceSettingsView`):**
+  - La sección de Personalización se ha tornado extensa al incorporar paletas cromáticas, modos de tema y selector de visualizadores.
+  - Implementar componentes desplegables/colapsables (`Collapsible` o `Accordion`) exclusivamente para los 3 bloques de Personalización (Paleta de Colores, Modo de Tema y Visualizador predeterminado) para mantener compacta la interfaz.
+
+- [ ] **Tarjeta superior de información de la aplicación (`WorkspaceSettingsView`):**
+  - Incorporar en la cabecera superior de la vista de Configuración una tarjeta informativa del sistema con:
+    - **Nombre oficial:** Your Tracks Music Server (`ytms-player`).
+    - **Versión del producto:** Badge dinámico sincronizado (ej. `v1.7.5`).
+    - **Autor(es) y contacto:** Joel Alejandro Sánchez Valdez.
+    - **Licencia:** GPL-3.0-or-later con enlace a términos de licencia.
+    - **Tecnologías y arquitectura:** Tauri v2, React 18, Vite, Rust, SQLite.
+    - **Enlaces rápidos:** Acceso directo a documentación local (`docs/`), repositorio y reporte de incidencias.
 
 - [ ] **Acción rápida para redescarga de Playlists vinculadas:**
   - Botón directo en la vista de playlist para aquellas que posean un `youtube_playlist_id`.
