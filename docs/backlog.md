@@ -6,11 +6,7 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 1. Prioridad Alta (Bugs y Core UX)
 
-- [ ] **Sincronización completa de la cola al reproducir Playlist mediante acceso rápido con pista precargada (`HomeView` / `PlaylistsView` / `usePlayerStore`):**
-  - **Diagnóstico del problema:** Al pulsar el botón de reproducción rápida de una playlist (en las tarjetas de `HomeView` o en `PlaylistsView`), la lógica evalúa si la playlist ya figura como activa (`activePlaylistId === playlistId`) para solo alternar pausa/reanudación (`togglePlayPause()`). Si la sesión inició precargando una sola pista en memoria desde `localStorage` (`queue: [savedPrefs.currentTrack]`), o si la pista actual pertenecía a la playlist pero la cola no se había poblado en su totalidad, la app no agrega el resto de canciones de la playlist a la cola de reproducción (`queue`), dejando al usuario con una cola truncada a una única pista.
-  - **Verificación de integridad de la cola:** Al detonar la reproducción de una playlist, comprobar si la cola actual contiene verdaderamente la totalidad de las canciones de dicha playlist (`playlistTracks.length === queue.length` y correspondencia de pistas), en lugar de limitarse a cotejar únicamente el identificador `activePlaylistId`.
-  - **Carga de cola preservando la pista actual:** Si la pista precargada o en reproducción actual ya pertenece a la playlist pero la cola está incompleta, invocar `setQueuePreservingCurrent(playlistTracks, playlistId)` para poblar el resto de canciones manteniendo intacta la reproducción y posición de la pista activa.
-  - **Conmutación limpia cuando la pista no coincide:** Si la pista precargada no forma parte de la playlist seleccionada, cargar la playlist completa e iniciar la reproducción desde la primera pista disponible.
+*(No hay tareas pendientes en esta categoría actualmente).*
 
 ---
 

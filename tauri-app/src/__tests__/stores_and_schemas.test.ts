@@ -1551,4 +1551,126 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       expect(usePlayerStore.getState().currentTime).toBe(0);
     });
   });
+
+  describe("playPlaylist complete queue synchronization and integrity", () => {
+    const track1: Track = {
+      ...sampleTrack,
+      id: 101,
+      youtube_id: "yt_101",
+      title: "Tema 1",
+    };
+    const track2: Track = {
+      ...sampleTrack,
+      id: 102,
+      youtube_id: "yt_102",
+      title: "Tema 2",
+    };
+    const track3: Track = {
+      ...sampleTrack,
+      id: 103,
+      youtube_id: "yt_103",
+      title: "Tema 3",
+    };
+
+    beforeEach(() => {
+      usePlayerStore.getState().clearQueue();
+      useToastStore.getState().clear();
+      usePlayerStore.setState({
+        currentTrack: null,
+        isPlaying: false,
+        activePlaylistId: null,
+        isShuffle: false,
+      });
+    });
+
+    it("displays info toast and does nothing when playlist has no playable tracks", () => {
+      usePlayerStore.getState().playPlaylist([], 99);
+      expect(usePlayerStore.getState().queue).toHaveLength(0);
+      expect(useToastStore.getState().toasts).toHaveLength(1);
+      expect(useToastStore.getState().toasts[0].title).toBe("Playlist sin canciones");
+    });
+
+    it("toggles play/pause when the queue is already complete and matches the playlist", () => {
+      // Configuramos cola completa de 3 temas ya activa
+      usePlayerStore.setState({
+        queue: [track1, track2, track3],
+        activePlaylistId: 77,
+        isPlaying: false,
+        currentTrack: track1,
+      });
+
+      usePlayerStore.getState().playPlaylist([track1, track2, track3], 77);
+      // Solo debe alternar reproducción
+      expect(usePlayerStore.getState().isPlaying).toBe(true);
+      expect(usePlayerStore.getState().queue).toHaveLength(3);
+      // No debe emitir toast de cola sincronizada
+      expect(useToastStore.getState().toasts).toHaveLength(0);
+
+      usePlayerStore.getState().playPlaylist([track1, track2, track3], 77);
+      expect(usePlayerStore.getState().isPlaying).toBe(false);
+    });
+
+    it("populates missing tracks preserving currentTrack and emits feedback toast when queue is truncated", () => {
+      // Sesión restaurada con solo 1 tema en cola de una playlist de 3
+      usePlayerStore.setState({
+        queue: [track2],
+        activePlaylistId: 77,
+        isPlaying: false,
+        currentTrack: track2,
+      });
+
+      usePlayerStore.getState().playPlaylist([track1, track2, track3], 77);
+
+      // Debe preservar track2 como activo e iniciar reproducción
+      expect(usePlayerStore.getState().currentTrack?.youtube_id).toBe("yt_102");
+      expect(usePlayerStore.getState().isPlaying).toBe(true);
+
+      // La cola debe estar completa con los 3 temas
+      expect(usePlayerStore.getState().queue).toHaveLength(3);
+      expect(usePlayerStore.getState().currentIndex).toBe(1); // track2 está en índice 1
+
+      // Debe emitir toast de sincronización
+      const toasts = useToastStore.getState().toasts;
+      expect(toasts.some((t) => t.title === "Cola sincronizada")).toBe(true);
+    });
+
+    it("preserves shuffle mode placing currentTrack at index 0 when completing truncated queue", () => {
+      usePlayerStore.setState({
+        queue: [track2],
+        activePlaylistId: 77,
+        isPlaying: false,
+        currentTrack: track2,
+        isShuffle: true,
+      });
+
+      usePlayerStore.getState().playPlaylist([track1, track2, track3], 77);
+
+      expect(usePlayerStore.getState().queue).toHaveLength(3);
+      expect(usePlayerStore.getState().queue[0].youtube_id).toBe("yt_102");
+      expect(usePlayerStore.getState().currentIndex).toBe(0);
+      expect(usePlayerStore.getState().originalQueue).toHaveLength(3);
+    });
+
+    it("switches cleanly starting from first track when currentTrack does not belong to playlist", () => {
+      const otherTrack: Track = {
+        ...sampleTrack,
+        id: 999,
+        youtube_id: "other_yt",
+        title: "Otro",
+      };
+      usePlayerStore.setState({
+        queue: [otherTrack],
+        activePlaylistId: 55,
+        isPlaying: true,
+        currentTrack: otherTrack,
+      });
+
+      usePlayerStore.getState().playPlaylist([track1, track2, track3], 77);
+
+      // Debe arrancar desde track1 de la nueva playlist
+      expect(usePlayerStore.getState().currentTrack?.youtube_id).toBe("yt_101");
+      expect(usePlayerStore.getState().activePlaylistId).toBe(77);
+      expect(usePlayerStore.getState().queue).toHaveLength(3);
+    });
+  });
 });

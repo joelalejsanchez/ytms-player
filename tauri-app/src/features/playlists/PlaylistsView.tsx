@@ -482,7 +482,7 @@ export const PlaylistsView = React.memo(() => {
   const activePlaylistId = usePlayerStore((s) => s.activePlaylistId);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const playTrack = usePlayerStore((s) => s.playTrack);
-  const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
+  const playPlaylist = usePlayerStore((s) => s.playPlaylist);
 
   // Mapa de duraciones acumuladas por playlist
   const playlistDurations = useMemo(() => {
@@ -627,38 +627,22 @@ export const PlaylistsView = React.memo(() => {
     [activePlaylist, handleRemoveTrack],
   );
 
-  // Reproducción de playlist completa
+  // Reproducción de playlist completa con sincronización e integridad de cola
   const handlePlayPlaylist = useCallback(() => {
-    if (!activePlaylist || activePlaylist.tracks.length === 0) {
-      return;
-    }
-    if (activePlaylistId === activePlaylist.playlist.id) {
-      togglePlayPause();
-      return;
-    }
-    const firstPlayable = activePlaylist.tracks.find((t) => !t.is_missing);
-    if (firstPlayable) {
-      playTrack(firstPlayable, activePlaylist.tracks, activePlaylist.playlist.id);
-    }
-  }, [activePlaylist, activePlaylistId, playTrack, togglePlayPause]);
+    if (!activePlaylist) return;
+    playPlaylist(activePlaylist.tracks, activePlaylist.playlist.id);
+  }, [activePlaylist, playPlaylist]);
 
-  // Reproducción rápida por ID desde la vista de lista/cuadrícula
+  // Reproducción rápida por ID desde la vista de lista/cuadrícula con verificación de cola
   const handlePlayPlaylistById = useCallback(
     async (playlistId: number) => {
-      if (activePlaylistId === playlistId) {
-        togglePlayPause();
-        return;
-      }
       await selectPlaylist(playlistId);
       const currentActive = useLibraryStore.getState().activePlaylist;
       const tracksToPlay =
         currentActive?.playlist.id === playlistId ? currentActive.tracks : [];
-      const firstPlayable = tracksToPlay.find((t) => !t.is_missing);
-      if (firstPlayable) {
-        playTrack(firstPlayable, tracksToPlay, playlistId);
-      }
+      playPlaylist(tracksToPlay, playlistId);
     },
-    [activePlaylistId, playTrack, selectPlaylist, togglePlayPause],
+    [playPlaylist, selectPlaylist],
   );
 
   // Navegación de retorno hacia la vista general de todas las playlists

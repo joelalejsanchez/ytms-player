@@ -6,6 +6,24 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.9] - 2026-11-20
+
+### Corregido
+
+#### Sincronización Completa de la Cola al Reproducir Playlists (`usePlayerStore`, `HomeView` y `PlaylistsView`)
+- **Acción centralizada de reproducción de playlists (`playPlaylist`)**:
+  - Evaluación profunda de la integridad de la cola: valida que la cantidad y correspondencia de pistas coincida con el contenido total de la playlist (`playable.every`) en lugar de limitarse al cotejo superficial de `activePlaylistId`.
+- **Preservación de pista activa y de la posición de reproducción**:
+  - Si la sesión inició precargando una única pista desde el almacenamiento persistente (`localStorage`), o si la pista en curso ya forma parte de la lista seleccionada pero la cola se encontraba truncada, se invoca `setQueuePreservingCurrent` para poblar la totalidad de los temas sin interrumpir la reproducción ni reiniciar el minutero a cero.
+- **Conservación inteligente del modo aleatorio (`shuffle`)**:
+  - Al expandir una cola incompleta con `isShuffle: true`, la pista activa se conserva al frente en el índice actual y las canciones entrantes se barajan aleatoriamente en el resto de la cola respetando el estándar de reproducción.
+- **Notificación toast informativa de cola sincronizada**:
+  - Emisión de alerta contextual (`toast.info("Cola sincronizada", "+N canciones añadidas...")`) cuando se detecta y expande una cola previamente incompleta.
+- **Conmutación limpia**:
+  - Si la pista activa no pertenece a la playlist detonada, se carga la playlist completa y la reproducción arranca de inmediato desde su primera pista disponible.
+
+---
+
 ## [1.9.8] - 2026-11-20
 
 ### Añadido

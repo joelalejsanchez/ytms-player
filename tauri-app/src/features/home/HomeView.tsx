@@ -44,6 +44,7 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
   const activePlaylistId = usePlayerStore((s) => s.activePlaylistId);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const playTrack = usePlayerStore((s) => s.playTrack);
+  const playPlaylist = usePlayerStore((s) => s.playPlaylist);
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
 
   useEffect(() => {
@@ -112,34 +113,14 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
       .slice(0, 8);
   }, [tracks]);
 
-  // Manejo de reproducción rápida de playlist
+  // Manejo de reproducción rápida de playlist con verificación e integridad de cola
   const handleQuickPlayPlaylist = (
     e: React.MouseEvent,
     playlistTracks: Track[],
-    isCurrentlyPlaying: boolean,
     playlistId: number,
   ) => {
     e.stopPropagation();
-    if (playlistTracks.length === 0) {
-      toast.info(
-        "Playlist sin canciones",
-        "Esta playlist no tiene canciones para reproducir.",
-      );
-      return;
-    }
-
-    if (isCurrentlyPlaying) {
-      togglePlayPause();
-    } else if (activePlaylistId === playlistId) {
-      // Misma playlist activa pero pausada: reanudar
-      togglePlayPause();
-    } else {
-      // Conmutar reproducción hacia la playlist seleccionada
-      const firstPlayable = playlistTracks.find((t) => !t.is_missing);
-      if (firstPlayable) {
-        playTrack(firstPlayable, playlistTracks, playlistId);
-      }
-    }
+    playPlaylist(playlistTracks, playlistId);
   };
 
   // Abrir playlist en su vista detallada
@@ -348,12 +329,7 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
                       <button
                         type="button"
                         onClick={(e) =>
-                          handleQuickPlayPlaylist(
-                            e,
-                            playlist.tracks,
-                            playlist.isCurrentlyPlaying,
-                            playlist.id,
-                          )
+                          handleQuickPlayPlaylist(e, playlist.tracks, playlist.id)
                         }
                         title={
                           playlist.isCurrentlyPlaying

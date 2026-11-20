@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { toast } from "@/stores/useToastStore";
 import type { Track } from "@/types/models";
 
 export type RepeatMode = "off" | "all" | "one";
@@ -23,6 +24,7 @@ export interface PlayerState {
 
   setActivePlaylistId: (playlistId: number | null) => void;
   playTrack: (track: Track, newQueue?: Track[], playlistId?: number | null) => void;
+  playPlaylist: (playlistTracks: Track[], playlistId: number) => void;
   setQueuePreservingCurrent: (newQueue: Track[], playlistId?: number | null) => void;
   markTrackCorrupted: (youtubeId: string) => void;
   clearCorruptedTrack: (youtubeId: string) => void;
@@ -132,6 +134,52 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set((state) => ({
       corruptedTrackIds: state.corruptedTrackIds.filter((id) => id !== youtubeId),
     })),
+
+  playPlaylist: (playlistTracks, playlistId) => {
+    const playable = playlistTracks.filter((t) => !t.is_missing);
+    if (playable.length === 0) {
+      toast.info(
+        "Playlist sin canciones",
+        "Esta playlist no tiene canciones para reproducir.",
+      );
+      return;
+    }
+
+    const { currentTrack, queue, isPlaying, activePlaylistId } = get();
+
+    // 1. Verificar si la cola actual ya contiene la totalidad de canciones de la playlist activa
+    const isQueueComplete =
+      activePlaylistId === playlistId &&
+      queue.length === playable.length &&
+      playable.every((pt) => queue.some((qt) => qt.youtube_id === pt.youtube_id));
+
+    if (isQueueComplete) {
+      get().togglePlayPause();
+      return;
+    }
+
+    // 2. Comprobar si la pista activa pertenece a la playlist seleccionada
+    const currentTrackInPlaylist =
+      currentTrack && playable.some((t) => t.youtube_id === currentTrack.youtube_id);
+
+    if (currentTrackInPlaylist) {
+      const prevQueueCount = queue.length;
+      get().setQueuePreservingCurrent(playlistTracks, playlistId);
+      if (!isPlaying) {
+        get().setPlaying(true);
+      }
+      const addedCount = Math.max(0, playable.length - prevQueueCount);
+      if (addedCount > 0) {
+        toast.info(
+          "Cola sincronizada",
+          `${addedCount} ${addedCount === 1 ? "canción añadida" : "canciones añadidas"} de la playlist.`,
+        );
+      }
+    } else {
+      // 3. Conmutación limpia desde la primera pista reproducible
+      get().playTrack(playable[0], playable, playlistId);
+    }
+  },
 
   setQueuePreservingCurrent: (newQueue, playlistId) => {
     const { currentTrack, isShuffle } = get();
