@@ -6,7 +6,11 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 1. Prioridad Alta (Bugs y Core UX)
 
-*(No hay tareas pendientes en esta categoría actualmente).*
+- [ ] **Sincronización completa de la cola al reproducir Playlist mediante acceso rápido con pista precargada (`HomeView` / `PlaylistsView` / `usePlayerStore`):**
+  - **Diagnóstico del problema:** Al pulsar el botón de reproducción rápida de una playlist (en las tarjetas de `HomeView` o en `PlaylistsView`), la lógica evalúa si la playlist ya figura como activa (`activePlaylistId === playlistId`) para solo alternar pausa/reanudación (`togglePlayPause()`). Si la sesión inició precargando una sola pista en memoria desde `localStorage` (`queue: [savedPrefs.currentTrack]`), o si la pista actual pertenecía a la playlist pero la cola no se había poblado en su totalidad, la app no agrega el resto de canciones de la playlist a la cola de reproducción (`queue`), dejando al usuario con una cola truncada a una única pista.
+  - **Verificación de integridad de la cola:** Al detonar la reproducción de una playlist, comprobar si la cola actual contiene verdaderamente la totalidad de las canciones de dicha playlist (`playlistTracks.length === queue.length` y correspondencia de pistas), en lugar de limitarse a cotejar únicamente el identificador `activePlaylistId`.
+  - **Carga de cola preservando la pista actual:** Si la pista precargada o en reproducción actual ya pertenece a la playlist pero la cola está incompleta, invocar `setQueuePreservingCurrent(playlistTracks, playlistId)` para poblar el resto de canciones manteniendo intacta la reproducción y posición de la pista activa.
+  - **Conmutación limpia cuando la pista no coincide:** Si la pista precargada no forma parte de la playlist seleccionada, cargar la playlist completa e iniciar la reproducción desde la primera pista disponible.
 
 ---
 
@@ -14,8 +18,9 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 - [ ] **Sistema configurable de atajos de teclado y gestor de Hotkeys (`useHotkeyStore` / `WorkspaceSettingsView`):**
   - **Arquitectura de atajos desacoplada y centralizada (`useHotkeyStore`):** Diseñar un store Zustand específico con persistencia en `localStorage` que gestione el mapeo de combinaciones de teclas hacia acciones del reproductor y navegación de la aplicación (ej. `togglePlayPause`, `playNext`, `playPrevious`, `volumeUp`, `volumeDown`, `toggleMute`, `toggleShuffle`, `cycleRepeat`, `toggleNowPlayingExpanded`, `focusSearch`).
-  - **Mapeos predeterminados intuitivos:** Configuración por defecto con teclas multimedia estándar y combinaciones comunes: `Espacio` (reproducir / pausar), `Alt + Flecha Derecha` (pista siguiente), `Alt + Flecha Izquierda` (pista anterior), `Flecha Arriba` / `Flecha Abajo` (subir/bajar volumen en saltos del 5%), `M` (silenciar/reactivar), `S` (modo aleatorio), `R` (modo repetición) y `F` / `Escape` (expandir/cerrar vista Now Playing).
+  - **Mapeos predeterminados intuitivos:** Configuración por defecto con teclas multimedia estándar y combinaciones comunes: `Espacio` (reproducir / pausar), `Alt + Flecha Derecha` (pista siguiente), `Alt + Flecha Izquierda` (pista anterior), `Flecha Arriba` / `Flecha Abajo` (subir/bajar volumen en saltos del 5%), `M` (silenciar/reactivar preservando el volumen previo), `S` (modo aleatorio), `R` (modo repetición) y `F` / `Escape` (expandir/cerrar vista Now Playing).
   - **Aislamiento contextual de foco:** Detector inteligente de pulsaciones a nivel global en `window` con guardia estricta para ignorar disparos cuando el foco activo del usuario resida en elementos de entrada editables (`HTMLInputElement`, `HTMLTextAreaElement`, selectores desplegables o elementos con atributo `contenteditable`).
+  - **Normalización y presentación multiplataforma de modificadores:** Representación visual de teclas contextual según el sistema operativo detectado (desplegando símbolos nativos como `⌘` / `⌥` en macOS y `Ctrl` / `Alt` en Linux y Windows).
   - **Panel de configuración y reasignación interactiva en Ajustes (`WorkspaceSettingsView`):**
     - Interfaz visual dentro de la sección de Configuración para visualizar todos los atajos registrados, su acción asignada y su combinación de teclas actual.
     - Modo de captura interactiva (*Record Hotkey*): botón para reasignar un atajo haciendo clic y pulsando la combinación deseada (soportando modificadores `Ctrl`, `Alt`, `Shift`, `Meta` + Tecla).
