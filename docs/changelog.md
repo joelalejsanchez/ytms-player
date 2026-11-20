@@ -6,6 +6,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.10.1] - 2026-11-20
+
+### Corregido
+
+#### Estandarización de Estilo en Rust y Optimización de Documentación de Pipeline
+- **Formateo y Estilo en Core Rust**:
+  - Aplicación de `cargo fmt` en infraestructura (`go_microservice_client.rs`, `sqlite_repository.rs`), interfaces de comandos y pruebas unitarias.
+- **Mantenimiento y Documentación**:
+  - Depuración de tareas redundantes de empaquetado (`.exe` / `.msi`) en el backlog cubiertas por el workflow de release.
+
+---
+
 ## [1.10.0] - 2026-11-20
 
 ### Añadido
