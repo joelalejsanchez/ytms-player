@@ -27,17 +27,16 @@ Para mantener la calidad, estabilidad y coherencia de la base de código, solici
 
 ### 1.2 Puntos de Sincronización de Versión
 
-Cuando un cambio amerite incrementar la versión (Minor o Patch), debe sincronizarse en los **7 lugares obligatorios**:
+Cuando un cambio amerite incrementar la versión (Minor o Patch), debe sincronizarse en los **6 manifiestos obligatorios**:
 
-| #   | Archivo                                                      | Campo / Ubicación                                                                                       |
-| --- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
-| 1   | `tauri-app/package.json`                                     | `"version": "x.y.z"`                                                                                    |
-| 2   | `tauri-app/src-tauri/Cargo.toml`                             | `version = "x.y.z"`                                                                                     |
-| 3   | `tauri-app/src-tauri/Cargo.lock`                             | Sincronizado automáticamente con `cargo check`                                                          |
-| 4   | `tauri-app/src-tauri/tauri.conf.json`                        | `"version": "x.y.z"`                                                                                    |
-| 5   | `README.md`                                                  | Badge de versión: `[![Release](https://img.shields.io/badge/version-x.y.z-red.svg)](docs/changelog.md)` |
-| 6   | `docs/changelog.md`                                          | Nueva sección `## [x.y.z] - YYYY-MM-DD`                                                                 |
-| 7   | `tauri-app/src/features/workspace/WorkspaceSettingsView.tsx` | `<Badge tone="info">vx.y.z</Badge>`                                                                     |
+| #   | Archivo                               | Campo / Ubicación                                                                                       | Propósito                                            |
+| --- | ------------------------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| 1   | `tauri-app/package.json`              | `"version": "x.y.z"`                                                                                    | Manifiesto de frontend y fuente de verdad para la UI |
+| 2   | `tauri-app/src-tauri/Cargo.toml`      | `version = "x.y.z"`                                                                                     | Manifiesto principal de Rust/Tauri                   |
+| 3   | `tauri-app/src-tauri/Cargo.lock`      | Sincronizado automáticamente con `cargo check`                                                          | Lockfile de dependencias del core nativo             |
+| 4   | `tauri-app/src-tauri/tauri.conf.json` | `"version": "x.y.z"`                                                                                    | Metadatos del empaquetador Tauri                     |
+| 5   | `README.md`                           | Badge de versión: `[![Release](https://img.shields.io/badge/version-x.y.z-red.svg)](docs/changelog.md)` | Identificador visible del repositorio                |
+| 6   | `docs/changelog.md`                   | Nueva sección `## [x.y.z] - YYYY-MM-DD`                                                                 | Registro de cambios Keep a Changelog                 |
 
 ### 1.3 Higiene de Backlog y Changelog
 
