@@ -19,7 +19,7 @@ import { tauriApi } from "@/services/tauriIpc";
 import { buildTaskKey, useDownloadStore } from "@/stores/useDownloadStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { useThemeStore } from "@/stores/useThemeStore";
-import { toast, useToastStore } from "@/stores/useToastStore";
+import { sortToastsByPriority, toast, useToastStore } from "@/stores/useToastStore";
 import { ToastContainer } from "@/components/ui/ToastContainer";
 import {
   getAllVisualizers,
@@ -437,6 +437,84 @@ describe("useToastStore and toast API", () => {
       fireEvent.mouseLeave(hoverContainer);
       expect(backCard.style.transform).toContain("scale(0.94)");
     }
+  });
+
+  it("enforces strict visual limit of 3 visible cards, shows +N badge, and prioritizes by severity", () => {
+    // Agregamos 5 toasts: 4 informativos y 1 de error crítico
+    toast.info("Descarga 1", "Pista 1");
+    toast.info("Descarga 2", "Pista 2");
+    toast.info("Descarga 3", "Pista 3");
+    toast.info("Descarga 4", "Pista 4");
+    const errorId = toast.error("Fallo crítico", "Error en red");
+
+    // En memoria el store debe retener los 5 toasts sin descartarlos prematuramente
+    expect(useToastStore.getState().toasts).toHaveLength(5);
+
+    const { getAllByRole, getByText } = render(React.createElement(ToastContainer));
+
+    // Tope visual estricto: solo 3 tarjetas físicas en el DOM
+    const visibleAlerts = getAllByRole("alert");
+    expect(visibleAlerts).toHaveLength(3);
+
+    // Priorización por severidad: la tarjeta de error debe situarse al frente (scale 1)
+    const frontAlert = visibleAlerts[visibleAlerts.length - 1];
+    expect(frontAlert).toHaveTextContent("Fallo crítico");
+    expect(frontAlert.style.transform).toContain("scale(1)");
+
+    // Badge numérico indicador (+2 más esperando en la cola)
+    expect(getByText("+2 más")).toBeInTheDocument();
+
+    // Drenaje secuencial: al descartar el error, el siguiente toast pasa al frente y el badge decrece a +1
+    toast.dismiss(errorId);
+    expect(useToastStore.getState().toasts).toHaveLength(4);
+  });
+
+  it("sorts toasts by severity (error > warning > success > info) and then FIFO", () => {
+    const list = [
+      {
+        id: "1",
+        title: "Info 1",
+        variant: "info" as const,
+        duration: 3000,
+        createdAt: 100,
+      },
+      {
+        id: "2",
+        title: "Success 1",
+        variant: "success" as const,
+        duration: 3000,
+        createdAt: 200,
+      },
+      {
+        id: "3",
+        title: "Error 1",
+        variant: "error" as const,
+        duration: 3000,
+        createdAt: 300,
+      },
+      {
+        id: "4",
+        title: "Warning 1",
+        variant: "warning" as const,
+        duration: 3000,
+        createdAt: 400,
+      },
+      {
+        id: "5",
+        title: "Error 2",
+        variant: "error" as const,
+        duration: 3000,
+        createdAt: 150,
+      },
+    ];
+
+    const sorted = [...list].sort(sortToastsByPriority);
+    // Errores primero ordenados por createdAt (150 antes de 300)
+    expect(sorted[0].id).toBe("5"); // Error 2 (t=150)
+    expect(sorted[1].id).toBe("3"); // Error 1 (t=300)
+    expect(sorted[2].id).toBe("4"); // Warning 1
+    expect(sorted[3].id).toBe("2"); // Success 1
+    expect(sorted[4].id).toBe("1"); // Info 1
   });
 });
 

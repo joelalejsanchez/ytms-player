@@ -1,6 +1,7 @@
 import { AlertCircle, AlertTriangle, CheckCircle, Info, X } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  sortToastsByPriority,
   type ToastItem,
   type ToastVariant,
   useToastStore,
@@ -29,6 +30,8 @@ interface ToastRowProps {
   zIndex: number;
   pointerEvents: "auto" | "none";
   isHovered: boolean;
+  isFront: boolean;
+  hiddenCount: number;
   onDismiss: (id: string) => void;
   onHeightMeasured: (id: string, height: number) => void;
 }
@@ -42,6 +45,8 @@ const ToastRow: React.FC<ToastRowProps> = React.memo(
     zIndex,
     pointerEvents,
     isHovered,
+    isFront,
+    hiddenCount,
     onDismiss,
     onHeightMeasured,
   }) => {
@@ -56,9 +61,9 @@ const ToastRow: React.FC<ToastRowProps> = React.memo(
       }
     }, [toast.id, toast.title, toast.description, onHeightMeasured]);
 
-    // Gestión del temporizador con pausa automática al pasar el cursor (hover)
+    // Gestión del temporizador: solo corre cuando la tarjeta está al frente (isFront) y no está en hover (!isHovered)
     useEffect(() => {
-      if (isHovered) {
+      if (isHovered || !isFront) {
         const elapsed = Date.now() - lastStartRef.current;
         remainingTimeRef.current = Math.max(500, remainingTimeRef.current - elapsed);
         return;
@@ -70,7 +75,7 @@ const ToastRow: React.FC<ToastRowProps> = React.memo(
       }, remainingTimeRef.current);
 
       return () => clearTimeout(timer);
-    }, [toast.id, onDismiss, isHovered]);
+    }, [toast.id, onDismiss, isHovered, isFront]);
 
     return (
       <div
@@ -86,8 +91,18 @@ const ToastRow: React.FC<ToastRowProps> = React.memo(
           transition:
             "transform 320ms cubic-bezier(0.16, 1, 0.3, 1), opacity 240ms ease",
         }}
-        className="absolute bottom-0 right-0 left-0 flex items-center justify-between gap-3 overflow-hidden rounded-xl border border-border/80 bg-card p-3.5 text-card-foreground shadow-2xl backdrop-blur-md select-none"
+        className="absolute bottom-0 right-0 left-0 flex items-center justify-between gap-3 rounded-xl border border-border/80 bg-card p-3.5 text-card-foreground shadow-2xl backdrop-blur-md select-none"
       >
+        {/* Badge indicador numérico (+N más) anclado a la tarjeta al frente */}
+        {isFront && hiddenCount > 0 && (
+          <div
+            className="absolute -top-2.5 right-4 z-30 flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground shadow-md ring-2 ring-background animate-in fade-in zoom-in-95 duration-200"
+            title={`${hiddenCount} ${hiddenCount === 1 ? "notificación adicional" : "notificaciones adicionales"} en cola`}
+            aria-label={`+${hiddenCount} más`}
+          >
+            <span>+{hiddenCount} más</span>
+          </div>
+        )}
         {/* Temporizador perimetral animado (SVG con pathLength=100) */}
         <svg
           className="pointer-events-none absolute inset-0 h-full w-full rounded-xl overflow-hidden"
@@ -121,7 +136,7 @@ const ToastRow: React.FC<ToastRowProps> = React.memo(
             className={variantPerimeterColors[toast.variant]}
             style={{
               animation: `toast-perimeter ${toast.duration}ms linear forwards`,
-              animationPlayState: isHovered ? "paused" : "running",
+              animationPlayState: isHovered || !isFront ? "paused" : "running",
             }}
           />
         </svg>
@@ -176,8 +191,15 @@ export const ToastContainer: React.FC = () => {
 
   if (toasts.length === 0) return null;
 
-  // Mostramos hasta 4 toasts en la pila visual
-  const visibleToasts = toasts.slice(-4);
+  // Ordenamos por severidad y antigüedad (priorización estricta)
+  const sorted = [...toasts].sort(sortToastsByPriority);
+  // Tope estricto de hasta 3 tarjetas físicas visibles simultáneas en el DOM
+  const candidates = sorted.slice(0, 3);
+  // Conteo de notificaciones acumuladas en cola no visibles aún
+  const hiddenCount = Math.max(0, toasts.length - candidates.length);
+  // Invertimos para que el elemento de mayor prioridad (candidato 0) sea el último del array,
+  // quedando al frente de la pila (reversedIndex === 0) y encima en el DOM
+  const visibleToasts = [...candidates].reverse();
   const frontToast = visibleToasts[visibleToasts.length - 1];
   const frontHeight = frontToast ? heights[frontToast.id] || 64 : 64;
 
@@ -203,6 +225,7 @@ export const ToastContainer: React.FC = () => {
       >
         {visibleToasts.map((item, index) => {
           const reversedIndex = visibleToasts.length - 1 - index;
+          const isFront = reversedIndex === 0;
 
           let translateY = 0;
           let scale = 1;
@@ -222,15 +245,10 @@ export const ToastContainer: React.FC = () => {
               scale = 0.94;
               opacity = 0.9;
               pointerEvents = "auto";
-            } else if (reversedIndex === 2) {
+            } else {
               translateY = -24;
               scale = 0.88;
               opacity = 0.65;
-              pointerEvents = "none";
-            } else {
-              translateY = -36;
-              scale = 0.82;
-              opacity = 0;
               pointerEvents = "none";
             }
           } else {
@@ -257,6 +275,8 @@ export const ToastContainer: React.FC = () => {
               zIndex={zIndex}
               pointerEvents={pointerEvents}
               isHovered={isHovered}
+              isFront={isFront}
+              hiddenCount={hiddenCount}
               onDismiss={dismiss}
               onHeightMeasured={handleHeightMeasured}
             />

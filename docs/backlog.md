@@ -6,11 +6,7 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 1. Prioridad Alta (Bugs y Core UX)
 
-- [ ] **Límite visual e indicador numérico de notificaciones acumuladas (`ToastContainer` / `useToastStore`):**
-  - **Diagnóstico del problema:** Al detonar ráfagas de eventos simultáneos (ej. importación masiva de playlists o sincronización de múltiples canciones), la pila de toasts puede saturar el viewport vertical al acumular decenas de elementos en el DOM, afectando la nitidez visual y el rendimiento de renderizado.
-  - **Tope visual estricto de tarjetas en pantalla:** Renderizar un máximo de 3 a 4 tarjetas físicas simultáneas en el DOM de la pila superpuesta, reteniendo el excedente en una cola en memoria.
-  - **Badge indicador numérico (*+N más*):** Desplegar una pastilla o contador flotante animado (ej. `Badge` con `+3 pendientes` o `+N más`) anclada a la tarjeta superior de la pila, informando al usuario cuántas notificaciones adicionales aguardan en cola.
-  - **Consumo y drenaje secuencial:** Conforme expiren o se descarten manualmente las alertas visibles, las notificaciones en espera deben transicionar fluidamente al frente de la pila sin desbordar el contenedor.
+*(No hay tareas pendientes en esta categoría actualmente).*
 
 ---
 

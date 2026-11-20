@@ -3,6 +3,27 @@ import { logger } from "@/stores/useLogStore";
 
 export type ToastVariant = "info" | "success" | "warning" | "error";
 
+export const TOAST_SEVERITY_WEIGHT: Record<ToastVariant, number> = {
+  error: 4,
+  warning: 3,
+  success: 2,
+  info: 1,
+};
+
+/**
+ * Función de ordenamiento por severidad y antigüedad para la cola de notificaciones.
+ * Prioriza severidades mayores (error > warning > success > info).
+ * Ante igual severidad, aplica FIFO (la más antigua primero).
+ */
+export function sortToastsByPriority(a: ToastItem, b: ToastItem): number {
+  const weightA = TOAST_SEVERITY_WEIGHT[a.variant] ?? 1;
+  const weightB = TOAST_SEVERITY_WEIGHT[b.variant] ?? 1;
+  if (weightA !== weightB) {
+    return weightB - weightA;
+  }
+  return a.createdAt - b.createdAt;
+}
+
 export interface ToastItem {
   id: string;
   title: string;
@@ -11,6 +32,8 @@ export interface ToastItem {
   duration: number; // Duración en ms, por defecto 3000
   createdAt: number;
 }
+
+const MAX_STORED_TOASTS = 40;
 
 interface ToastState {
   toasts: ToastItem[];
@@ -44,9 +67,13 @@ export const useToastStore = create<ToastState>((set) => ({
       logger.warn(title, description, "toast");
     }
 
-    set((state) => ({
-      toasts: [...state.toasts.slice(-4), newItem],
-    }));
+    set((state) => {
+      const nextToasts = [...state.toasts, newItem];
+      if (nextToasts.length > MAX_STORED_TOASTS) {
+        return { toasts: nextToasts.slice(-MAX_STORED_TOASTS) };
+      }
+      return { toasts: nextToasts };
+    });
     return id;
   },
   dismiss: (id) => {

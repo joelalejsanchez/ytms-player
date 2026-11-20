@@ -6,6 +6,22 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.7] - 2026-11-20
+
+### Añadido
+
+#### Límite Visual de Toasts, Indicador Numérico (+N más) y Priorización por Severidad (`ToastContainer` y `useToastStore`)
+- **Tope visual estricto de tarjetas en pantalla**:
+  - Limitación del renderizado a un máximo de 3 tarjetas físicas simultáneas en el DOM (`candidates.slice(0, 3)`), reteniendo el excedente en una cola en memoria dentro del store en lugar de descartarlo con `.slice(-4)`.
+- **Priorización estricta por severidad y drenaje secuencial**:
+  - Algoritmo de ponderación semántica (`error: 4` > `warning: 3` > `success: 2` > `info: 1`) con resolución cronológica FIFO para alertas del mismo nivel.
+  - Las alertas de error y advertencia crítica se anteponen automáticamente al frente de la pila visible, desplazando notificaciones meramente informativas hacia la cola.
+  - Temporizadores perimetrales y cuenta regresiva activos exclusivamente en la tarjeta al frente (`isFront`); las tarjetas en capas posteriores resguardan su tiempo restante y pausan su animación SVG hasta tomar el primer plano.
+- **Badge indicador numérico flotante (+N más)**:
+  - Despliegue de una pastilla flotante animada (`+{hiddenCount} más`) anclada a la esquina superior derecha de la tarjeta al frente cuando existen alertas adicionales en espera en la cola, informando con claridad cuántos mensajes aguardan sin saturar el viewport.
+
+---
+
 ## [1.9.6] - 2026-11-20
 
 ### Mejorado
