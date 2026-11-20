@@ -6,6 +6,17 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.23] - 2026-11-20
+
+### Añadido
+
+#### Microinteracción UX en Logo de Cabecera del Sidebar (`Sidebar.tsx`)
+- **Microinteracción de Alternancia de Barra Lateral**:
+  - Sustitución dinámica y fluida mediante transiciones CSS de escala y opacidad (`duration-200`) del isotipo (`AppLogo`) por iconos estándar de barra lateral (`PanelLeftClose` al estar expandido, `PanelLeftOpen` al estar colapsado) al posar el cursor (`group-hover/logo`) o enfocar con teclado (`group-focus-visible/logo`).
+  - Incorporación de accesibilidad con `aria-label` descriptivo (*"Contraer barra lateral"* / *"Expandir barra lateral"*) y retroalimentación de foco accesible (`focus-visible:ring-2 focus-visible:ring-primary`), comunicando de manera intuitiva que el logo funciona como botón interactivo para alternar el ancho del sidebar.
+
+---
+
 ## [1.9.22] - 2026-11-20
 
 ### Añadido

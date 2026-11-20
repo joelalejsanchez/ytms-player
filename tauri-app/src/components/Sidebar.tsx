@@ -5,6 +5,8 @@ import {
   Library,
   ListMusic,
   Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
   Sun,
 } from "lucide-react";
@@ -204,14 +206,26 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
         <button
           type="button"
           onClick={toggleCollapsed}
+          aria-label={isCollapsed ? "Expandir barra lateral" : "Contraer barra lateral"}
           title={
             isCollapsed
               ? `Expandir barra lateral (v${APP_VERSION})`
               : `Contraer barra lateral (v${APP_VERSION})`
           }
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary bg-primary/15 text-primary shadow-xs transition hover:bg-primary/25 cursor-pointer"
+          className="group/logo relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary bg-primary/15 text-primary shadow-xs transition hover:bg-primary/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer overflow-hidden"
         >
-          <AppLogo className="h-5 w-5" />
+          <AppLogo className="h-5 w-5 transition-all duration-200 group-hover/logo:scale-0 group-hover/logo:opacity-0 group-focus-visible/logo:scale-0 group-focus-visible/logo:opacity-0" />
+          {isCollapsed ? (
+            <PanelLeftOpen
+              className="absolute h-5 w-5 transition-all duration-200 scale-0 opacity-0 group-hover/logo:scale-100 group-hover/logo:opacity-100 group-focus-visible/logo:scale-100 group-focus-visible/logo:opacity-100"
+              aria-hidden="true"
+            />
+          ) : (
+            <PanelLeftClose
+              className="absolute h-5 w-5 transition-all duration-200 scale-0 opacity-0 group-hover/logo:scale-100 group-hover/logo:opacity-100 group-focus-visible/logo:scale-100 group-focus-visible/logo:opacity-100"
+              aria-hidden="true"
+            />
+          )}
         </button>
 
         {!isCollapsed && (

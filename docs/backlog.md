@@ -12,9 +12,6 @@ _(No hay tareas pendientes en esta categoría actualmente)._
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
-- [ ] **Microinteracción UX en el logo del Sidebar:**
-  - Al colocar el cursor (hover) sobre el logo de la aplicación en la cabecera del sidebar, sustituir dinámicamente el logo por el icono estándar de colapsar/expandir barra lateral (ej. `PanelLeftClose` / icono de sidebar común).
-  - Clarifica al usuario que el logo actúa como detonante interactivo para alternar el estado del sidebar.
 - [ ] **Estabilización de ancho y prevención de saltos visuales en selects de Tracks (`LibraryView`):**
   - Los desplegables `CustomSelect` de formato y ordenamiento varían dinámicamente de anchura según la longitud del texto de la opción activa (ej. al alternar entre _"Todos los formatos"_ vs _"MP3"_, o _"Fecha de descarga"_ vs _"Título"_), provocando desplazamientos horizontales bruscos en los controles adyacentes (botón ASC/DESC).
   - Asignar anchos mínimos consistentes o anchos fijos calibrados (`min-w-[130px]` / `min-w-[150px]` o `w-36` / `w-40`) a los contenedores/triggers de `CustomSelect` para garantizar estabilidad en la interfaz sin saltos de layout al cambiar filtros.

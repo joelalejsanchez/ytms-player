@@ -2692,5 +2692,42 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       fireEvent.click(configBtn);
       expect(onSelectTab).toHaveBeenCalledWith("workspace");
     });
+
+    it("renders logo hover microinteraction toggling between AppLogo and sidebar collapse/expand icons", () => {
+      localStorage.removeItem("yt_sidebar_collapsed");
+      const onSelectTab = vi.fn();
+      const { getByRole } = render(
+        React.createElement(Sidebar, {
+          activeTab: "home",
+          onSelectTab,
+        }),
+      );
+
+      // Estado inicial expandido: botón con aria-label 'Contraer barra lateral'
+      const toggleBtn = getByRole("button", { name: /Contraer barra lateral/i });
+      expect(toggleBtn).toBeInTheDocument();
+      expect(toggleBtn.classList.contains("group/logo")).toBe(true);
+
+      // Contiene AppLogo y el icono de cierre (PanelLeftClose) para el hover
+      const svgElements = toggleBtn.querySelectorAll("svg");
+      expect(svgElements.length).toBe(2);
+
+      // Hacer clic para colapsar
+      fireEvent.click(toggleBtn);
+      expect(localStorage.getItem("yt_sidebar_collapsed")).toBe("true");
+
+      // Ahora el botón debe tener aria-label 'Expandir barra lateral' y renderizar PanelLeftOpen
+      const expandBtn = getByRole("button", { name: /Expandir barra lateral/i });
+      expect(expandBtn).toBeInTheDocument();
+      const svgsAfterCollapse = expandBtn.querySelectorAll("svg");
+      expect(svgsAfterCollapse.length).toBe(2);
+
+      // Volver a expandir
+      fireEvent.click(expandBtn);
+      expect(localStorage.getItem("yt_sidebar_collapsed")).toBe("false");
+      expect(
+        getByRole("button", { name: /Contraer barra lateral/i }),
+      ).toBeInTheDocument();
+    });
   });
 });
