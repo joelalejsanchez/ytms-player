@@ -6,6 +6,22 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.5] - 2026-11-20
+
+### Añadido
+
+#### Rediseño de Toasts de Notificación: Apilado de Hojas y Temporizador Perimetral Animado (`ToastContainer`)
+- **Presentación apilada estilo hojas superpuestas (Stacked Cards)**:
+  - Sustitución de la lista vertical continua por una pila compacta estilo *Sonner* / *stacked sheets* en la esquina inferior derecha.
+  - La notificación más reciente se sitúa al frente con escala completa (`scale(1)`), mientras las precedentes se resguardan sutilmente en capas superpuestas con escala reducida (`scale(0.94)`, `scale(0.88)`) y elevación vertical, eliminando la sobrecarga y saturación visual.
+  - Expansión interactiva fluida al posar el cursor (`hover`): la pila se despliega verticalmente hacia arriba separando las tarjetas para permitir la lectura y el descarte individual.
+- **Temporizador perimetral animado y supresión del loader circular**:
+  - Retiro definitivo del antiguo reloj circular SVG en el extremo derecho.
+  - Nuevo borde perimetral animado trazado con SVG (`pathLength="100"` y animación `toast-perimeter`), recorriendo el perímetro de la tarjeta en cuenta regresiva con el color semántico correspondiente (`text-primary` para info, `text-emerald-500` para éxito, `text-amber-500` para advertencia y `text-destructive` para error).
+  - Pausa inteligente en hover: la animación perimetral y el temporizador de auto-cierre se congelan mientras el usuario interactúa con la notificación y reanudan su marcha al retirar el cursor.
+
+---
+
 ## [1.9.4] - 2026-11-20
 
 ### Corregido

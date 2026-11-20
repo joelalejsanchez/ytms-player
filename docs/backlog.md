@@ -6,7 +6,11 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 1. Prioridad Alta (Bugs y Core UX)
 
-_Actualmente no hay incidencias críticas ni bugs de alta prioridad pendientes._
+- [ ] **Límite visual e indicador numérico de notificaciones acumuladas (`ToastContainer` / `useToastStore`):**
+  - **Diagnóstico del problema:** Al detonar ráfagas de eventos simultáneos (ej. importación masiva de playlists o sincronización de múltiples canciones), la pila de toasts puede saturar el viewport vertical al acumular decenas de elementos en el DOM, afectando la nitidez visual y el rendimiento de renderizado.
+  - **Tope visual estricto de tarjetas en pantalla:** Renderizar un máximo de 3 a 4 tarjetas físicas simultáneas en el DOM de la pila superpuesta, reteniendo el excedente en una cola en memoria.
+  - **Badge indicador numérico (*+N más*):** Desplegar una pastilla o contador flotante animado (ej. `Badge` con `+3 pendientes` o `+N más`) anclada a la tarjeta superior de la pila, informando al usuario cuántas notificaciones adicionales aguardan en cola.
+  - **Consumo y drenaje secuencial:** Conforme expiren o se descarten manualmente las alertas visibles, las notificaciones en espera deben transicionar fluidamente al frente de la pila sin desbordar el contenedor.
 
 ---
 
@@ -34,10 +38,10 @@ _Actualmente no hay incidencias críticas ni bugs de alta prioridad pendientes._
   - **Mensajes de navegación hacia atrás:** Mostrar *"Reiniciar canción"* cuando `currentTime > 3s`, *"Anterior"* cuando sea posible saltar a la pista previa, y conmutar a *"Inicio de la cola"* cuando se encuentre bloqueado en la primera pista (`currentIndex === 0` y `currentTime <= 3s`) con repetición inactiva.
   - **Claridad cognitiva UX:** Garantizar que los usuarios comprendan inmediatamente el motivo por el cual un botón no responde o se encuentra atenuado sin generar frustración ni ambigüedad.
 
-- [ ] **Rediseño de Toasts de notificación: Apilado de hojas (Stacked Cards) y temporizador perimetral animado (`ToastContainer`):**
-  - **Presentación apilada estilo hojas superpuestas:** Reemplazar la lista vertical de alertas por una pila de tarjetas superpuestas (estilo *Sonner* / *stacked sheets*). El último mensaje recibido se ubica al frente con legibilidad completa, mientras los anteriores se resguardan sutilmente detrás con escala reducida y ligero desplazamiento vertical, reduciendo la saturación visual.
-  - **Supresión del loader circular:** Retirar el reloj circular SVG de cuenta regresiva del extremo derecho de cada toast.
-  - **Temporizador en borde perimetral animado:** Dibujar una animación de borde perimetral que recorre la tarjeta con el color correspondiente a la variante (destructivo para error, ámbar para advertencia, esmeralda para éxito y primario para info), rotando o avanzando progresivamente para indicar el tiempo de expiración restante de forma elegante.
+- [ ] **Acción interactiva primaria y callbacks en notificaciones Toast (`ToastItem` / `ToastContainer`):**
+  - **Extensión del contrato de datos (`ToastItem`):** Incorporar propiedades opcionales `action?: { label: string; onClick: () => void }` y `onDismissCallback?: () => void` en la interfaz `ToastItem` y en las funciones auxiliares de `toast.*`.
+  - **Renderizado de botón de acción contextual:** En toasts con acción definida (ej. alerta de descarga completa con *"Ver en biblioteca"*, fallo recuperable con *"Reintentar"*, o playlist importada con *"Reproducir ahora"*), desplegar un botón primario compacto (`size="sm"`) junto al mensaje.
+  - **Aislamiento de propagación y cierre automático:** Asegurar que hacer clic en el botón de acción ejecute la función asignada, cierre inmediatamente el toast (`onDismiss`) y detenga la propagación de eventos para no alterar la pila de hojas.
 
 - [ ] **Accesibilidad, bloqueo de scroll y trampa de foco en componentes emergentes y modales (`UI / A11y`):**
   - **Diagnóstico del problema:** Los modales y diálogos emergentes actuales (`ConfirmationModal`, `PlaylistImportModal`, `MetadataSyncModal`, `ErrorLogsModal`, `ActionMenu`) permiten que la rueda del ratón o gestos táctiles continúen desplazando el fondo de la pantalla (_scroll leak_), no capturan totalmente las interacciones de puntero y carecen de confinamiento de teclado. Al presionar `Tab`, el foco salta a controles invisibles o situados detrás del modal, violando las pautas de accesibilidad WAI-ARIA Dialog.
@@ -96,6 +100,11 @@ _Actualmente no hay incidencias críticas ni bugs de alta prioridad pendientes._
 ---
 
 ## 3. Prioridad Baja (Casos Específicos o Opcionales)
+
+- [ ] **Descarte gestual mediante deslizamiento lateral (Swipe to Dismiss en Toasts) (`ToastContainer`):**
+  - **Detección gestual táctil y de puntero:** Capturar eventos de arrastre (`onPointerDown`, `onPointerMove`, `onPointerUp`) sobre la tarjeta activa del frente (`stackIndex === 0`).
+  - **Respuesta elástica y desvanecimiento dinámico:** A medida que el usuario arrastra la tarjeta hacia la derecha, desplazarla proporcionalmente en el eje X y reducir su opacidad progresivamente con un efecto de fricción física.
+  - **Umbral de expulsión (Threshold):** Si el desplazamiento supera el 40% del ancho de la tarjeta o se detecta una velocidad de lanzamiento rápida (*flick*), disparar la animación de expulsión lateral completa fuera de la pantalla y descartar el toast; de lo contrario, retornar suavemente a su posición original con efecto resorte (*spring*).
 
 - [ ] **Descarga independiente de videos completos:**
   - Posibilidad de descargar el archivo de video completo (video + audio) desde YouTube sin reproducirlo en la aplicación.

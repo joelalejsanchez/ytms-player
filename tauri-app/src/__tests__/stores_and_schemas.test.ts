@@ -404,6 +404,40 @@ describe("useToastStore and toast API", () => {
     expect(getByText("Descarga completa")).toBeInTheDocument();
     expect(getByText("Pista guardada correctamente")).toBeInTheDocument();
   });
+
+  it("renders stacked cards with perimeter timer and suppresses circular countdown clock", () => {
+    toast.info("Toast Uno", "Primer mensaje");
+    toast.warning("Toast Dos", "Segundo mensaje");
+    const { container, getAllByRole } = render(React.createElement(ToastContainer));
+
+    // Debe renderizar ambas alertas
+    const alerts = getAllByRole("alert");
+    expect(alerts).toHaveLength(2);
+
+    // 1. Supresión del reloj circular previo: ningún elemento debe tener id toast-clock-grad
+    expect(container.querySelector('[id^="toast-clock-grad-"]')).toBeNull();
+
+    // 2. Temporizador perimetral animado: debe existir <rect> con toast-perimeter
+    const perimeterRects = container.querySelectorAll("rect[pathLength='100']");
+    expect(perimeterRects.length).toBe(2);
+
+    // 3. Tarjeta superior al frente (Toast Dos) y previa detrás con escala reducida
+    const frontCard = alerts[1]; // Último añadido
+    const backCard = alerts[0];
+    expect(frontCard.style.transform).toContain("scale(1)");
+    expect(backCard.style.transform).toContain("scale(0.94)");
+
+    // 4. Al pasar el cursor (hover), la pila se expande
+    const hoverContainer = container.querySelector(".pointer-events-auto");
+    expect(hoverContainer).not.toBeNull();
+    if (hoverContainer) {
+      fireEvent.mouseEnter(hoverContainer);
+      expect(backCard.style.transform).toContain("scale(1)");
+
+      fireEvent.mouseLeave(hoverContainer);
+      expect(backCard.style.transform).toContain("scale(0.94)");
+    }
+  });
 });
 
 describe("usePlayerStore - queue preservation and corrupted tracks", () => {
