@@ -12,11 +12,6 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
-- [ ] **Acción interactiva primaria y callbacks en notificaciones Toast (`ToastItem` / `ToastContainer`):**
-  - **Extensión del contrato de datos (`ToastItem`):** Incorporar propiedades opcionales `action?: { label: string; onClick: () => void }` y `onDismissCallback?: () => void` en la interfaz `ToastItem` y en las funciones auxiliares de `toast.*`.
-  - **Renderizado de botón de acción contextual:** En toasts con acción definida (ej. alerta de descarga completa con *"Ver en biblioteca"*, fallo recuperable con *"Reintentar"*, o playlist importada con *"Reproducir ahora"*), desplegar un botón primario compacto (`size="sm"`) junto al mensaje.
-  - **Aislamiento de propagación y cierre automático:** Asegurar que hacer clic en el botón de acción ejecute la función asignada, cierre inmediatamente el toast (`onDismiss`) y detenga la propagación de eventos para no alterar la pila de hojas.
-
 - [ ] **Accesibilidad, bloqueo de scroll y trampa de foco en componentes emergentes y modales (`UI / A11y`):**
   - **Diagnóstico del problema:** Los modales y diálogos emergentes actuales (`ConfirmationModal`, `PlaylistImportModal`, `MetadataSyncModal`, `ErrorLogsModal`, `ActionMenu`) permiten que la rueda del ratón o gestos táctiles continúen desplazando el fondo de la pantalla (_scroll leak_), no capturan totalmente las interacciones de puntero y carecen de confinamiento de teclado. Al presionar `Tab`, el foco salta a controles invisibles o situados detrás del modal, violando las pautas de accesibilidad WAI-ARIA Dialog.
   - **Bloqueo de scroll (Scroll Lock estilo shadcn/Radix):** Inmovilizar el desplazamiento de fondo (`overflow: hidden` o bloqueo en contenedor raíz) al abrir cualquier diálogo o modal, compensando dinámicamente el ancho de la barra de desplazamiento para evitar saltos visuales de interfaz (_layout shift_).

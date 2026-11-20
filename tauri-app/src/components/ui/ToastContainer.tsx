@@ -1,5 +1,6 @@
 import { AlertCircle, AlertTriangle, CheckCircle, Info, X } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import {
   sortToastsByPriority,
   type ToastItem,
@@ -53,17 +54,26 @@ const ToastRow: React.FC<ToastRowProps> = React.memo(
     const rowRef = useRef<HTMLDivElement>(null);
     const remainingTimeRef = useRef(toast.duration);
     const lastStartRef = useRef(Date.now());
+    const [isRowHovered, setIsRowHovered] = useState(false);
+
+    const isEffectivelyHovered = isHovered || isRowHovered;
 
     // Medir altura del toast para la expansión fluida en hover
     useEffect(() => {
       if (rowRef.current) {
         onHeightMeasured(toast.id, rowRef.current.offsetHeight);
       }
-    }, [toast.id, toast.title, toast.description, onHeightMeasured]);
+    }, [
+      toast.id,
+      toast.title,
+      toast.description,
+      toast.action?.label,
+      onHeightMeasured,
+    ]);
 
-    // Gestión del temporizador: solo corre cuando la tarjeta está al frente (isFront) y no está en hover (!isHovered)
+    // Gestión del temporizador: solo corre cuando la tarjeta está al frente (isFront) y no está en hover (!isEffectivelyHovered)
     useEffect(() => {
-      if (isHovered || !isFront) {
+      if (isEffectivelyHovered || !isFront) {
         const elapsed = Date.now() - lastStartRef.current;
         remainingTimeRef.current = Math.max(500, remainingTimeRef.current - elapsed);
         return;
@@ -75,13 +85,15 @@ const ToastRow: React.FC<ToastRowProps> = React.memo(
       }, remainingTimeRef.current);
 
       return () => clearTimeout(timer);
-    }, [toast.id, onDismiss, isHovered, isFront]);
+    }, [toast.id, onDismiss, isEffectivelyHovered, isFront]);
 
     return (
       <div
         ref={rowRef}
         role="alert"
         aria-live="assertive"
+        onMouseEnter={() => setIsRowHovered(true)}
+        onMouseLeave={() => setIsRowHovered(false)}
         style={{
           transform: `translate3d(0, ${translateY}px, 0) scale(${scale})`,
           transformOrigin: "bottom center",
@@ -136,7 +148,8 @@ const ToastRow: React.FC<ToastRowProps> = React.memo(
             className={variantPerimeterColors[toast.variant]}
             style={{
               animation: `toast-perimeter ${toast.duration}ms linear forwards`,
-              animationPlayState: isHovered || !isFront ? "paused" : "running",
+              animationPlayState:
+                isEffectivelyHovered || !isFront ? "paused" : "running",
             }}
           />
         </svg>
@@ -155,6 +168,33 @@ const ToastRow: React.FC<ToastRowProps> = React.memo(
             )}
           </div>
         </div>
+
+        {/* Botón de acción interactiva contextual si existe */}
+        {toast.action && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              try {
+                toast.action?.onClick();
+              } finally {
+                onDismiss(toast.id);
+              }
+            }}
+            className={cn(
+              "relative z-10 shrink-0 text-xs font-semibold px-2.5 py-1 rounded-md transition-all duration-150 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer select-none",
+              toast.variant === "error"
+                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                : toast.variant === "warning"
+                  ? "bg-amber-600 text-white hover:bg-amber-700"
+                  : toast.variant === "success"
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90",
+            )}
+          >
+            {toast.action.label}
+          </button>
+        )}
 
         {/* Botón rápido de cierre "X" */}
         <button

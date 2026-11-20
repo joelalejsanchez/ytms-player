@@ -6,6 +6,23 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.12] - 2026-11-20
+
+### Añadido
+
+#### Acciones Interactivas Primarias, Callbacks y Pausa Contextual en Notificaciones Toast (`useToastStore`, `ToastContainer` y `ToastRow`)
+- **Extensión del contrato de datos de Toast (`ToastItem` y `ToastOptions`)**:
+  - Incorporadas las propiedades opcionales `action?: { label: string; onClick: () => void }` y `onDismissCallback?: () => void` en la interfaz `ToastItem` y en todas las variantes auxiliares (`toast.info`, `toast.success`, `toast.warning`, `toast.error`, `toast.show`).
+- **Botón de acción contextual con estilos semánticos**:
+  - Despliegue de un botón de acción primario compacto con diseño adaptado al nivel de severidad de la alerta (`primary` para info, `emerald` para success, `amber` para warning y `destructive` para error).
+- **Aislamiento de eventos y descarte automático**:
+  - Al hacer clic en el botón de acción se ejecuta la lógica asignada, se descarta limpiamente el toast (`onDismiss`) y se detiene la propagación de eventos (`e.stopPropagation()`).
+- **Extensión de duración automática y pausa al interactuar**:
+  - Los toasts que contienen acciones interactivas elevan automáticamente su duración predeterminada de 3000ms a 7000ms si no se especifica otra duración.
+  - Al colocar el cursor sobre el toast o el contenedor, el temporizador de autodestrucción y el recorrido perimetral animado se pausan de forma reactiva, evitando que la alerta desaparezca mientras el usuario interactúa con ella.
+
+---
+
 ## [1.9.11] - 2026-11-20
 
 ### Mejorado

@@ -473,6 +473,59 @@ describe("useToastStore and toast API", () => {
     expect(useToastStore.getState().toasts).toHaveLength(4);
   });
 
+  it("renders contextual action button, defaults duration to 7000ms, and executes callbacks on click", () => {
+    let actionExecuted = false;
+    let dismissCallbackExecuted = false;
+
+    const id = toast.success("Descarga completada", "Canción lista en biblioteca", {
+      action: {
+        label: "Ver en biblioteca",
+        onClick: () => {
+          actionExecuted = true;
+        },
+      },
+      onDismissCallback: () => {
+        dismissCallbackExecuted = true;
+      },
+    });
+
+    const toastItem = useToastStore.getState().toasts.find((t) => t.id === id);
+    expect(toastItem).toBeDefined();
+    expect(toastItem?.duration).toBe(7000);
+    expect(toastItem?.action?.label).toBe("Ver en biblioteca");
+
+    const { getByText } = render(React.createElement(ToastContainer));
+    const actionBtn = getByText("Ver en biblioteca");
+    expect(actionBtn).toBeInTheDocument();
+    expect(actionBtn.tagName).toBe("BUTTON");
+
+    // Al hacer clic en el botón de acción: ejecuta onClick, onDismissCallback y remueve el toast
+    act(() => {
+      fireEvent.click(actionBtn);
+    });
+
+    expect(actionExecuted).toBe(true);
+    expect(dismissCallbackExecuted).toBe(true);
+    expect(useToastStore.getState().toasts.some((t) => t.id === id)).toBe(false);
+  });
+
+  it("executes onDismissCallback when toast is dismissed manually", () => {
+    let dismissCallbackCount = 0;
+    const id = toast.info("Notificación con callback", "Detalle", {
+      onDismissCallback: () => {
+        dismissCallbackCount++;
+      },
+    });
+
+    expect(useToastStore.getState().toasts).toHaveLength(1);
+    act(() => {
+      toast.dismiss(id);
+    });
+
+    expect(dismissCallbackCount).toBe(1);
+    expect(useToastStore.getState().toasts).toHaveLength(0);
+  });
+
   it("sorts toasts by severity (error > warning > success > info) and then FIFO", () => {
     const list = [
       {
