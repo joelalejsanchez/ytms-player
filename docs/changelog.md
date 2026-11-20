@@ -6,6 +6,28 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.18] - 2026-11-20
+
+### Añadido
+
+#### Flujo de Importación de Playlist en 2 Pasos con Wizard Stepper y Destino a Existente por Defecto (`PlaylistImportModal`)
+- **Navegación Stepper de 2 Pasos**:
+  - **Paso 1 (Selección y revisión de pistas):** Espacio vertical optimizado y dedicado para inspeccionar tracks previsualizados, alternar presets (`Todas`, `Ninguna`, `< 7 min`, `< 15 min`), usar el buscador instantáneo y consultar la paginación progresiva remota.
+    - Botón **Cancelar:** Estilo _outline_ con icono descriptivo `X`.
+    - Botón **Atrás:** Estilo _outline_ con icono `ArrowLeft`, deshabilitado en el primer paso para claridad visual.
+    - Botón **Siguiente:** Estilo _primary_ con icono `ArrowRight`, activo al haber al menos una pista seleccionada.
+  - **Paso 2 (Destino de guardado y confirmación):** Vista limpia y despejada para configurar el destino y opciones de sincronización sin sobrecargar el modal:
+    - **Tarjeta de resumen de importación:** Métricas destacadas en mosaico con *Canciones seleccionadas*, *Pendientes de descarga*, *Ya en biblioteca* y *Destino configurado*.
+    - **Destino predeterminado "Agregar a una playlist existente":** La opción por defecto selecciona agregar las pistas a una lista existente en la biblioteca local, autoseleccionando la coincidencia de nombre o la primera playlist disponible, reflejando el caso de uso más habitual.
+    - Opciones alternativas accesibles para *Crear nueva playlist local* o *Solo importar a mi biblioteca (sin playlist)*.
+    - Opción de desvinculación masiva de canciones ausentes en YouTube al sincronizar playlists.
+    - Botón **Atrás:** Estilo _outline_ con icono `ArrowLeft` que retorna al Paso 1 conservando intacta la selección y paginación en memoria.
+    - Botón **Descargar / Sincronizar:** Estilo _primary_ con icono descriptivo dinámico (`Download` / `CheckCircle2` / `Loader2`).
+- **Barra Stepper Visual Superior**:
+  - Indicadores interactivos tipo pill numerados (`1. Selección de canciones` y `2. Destino y sincronización`) con recuento en tiempo real de canciones seleccionadas.
+
+---
+
 ## [1.9.17] - 2026-11-20
 
 ### Añadido

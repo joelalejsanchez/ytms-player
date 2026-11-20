@@ -2316,6 +2316,37 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       fireEvent.click(clearBtn);
       expect(getByText("Song Track 1")).toBeInTheDocument();
 
+      // 8. Flujo Stepper de 2 pasos: Navegación visual y destino existente por defecto
+      const backBtn = getByRole("button", { name: /Atrás/i });
+      expect(backBtn).toBeDisabled();
+
+      const nextBtn = getByRole("button", { name: /Siguiente/i });
+      expect(nextBtn).toBeEnabled();
+
+      // Avanzar al Paso 2
+      fireEvent.click(nextBtn);
+      expect(
+        getByText(/Paso 2 de 2: Configura el destino y opciones de sincronización/i),
+      ).toBeInTheDocument();
+      expect(getByText(/Resumen de la Importación:/i)).toBeInTheDocument();
+
+      // Verificar que el destino por defecto sea 'existing' (Agregar a playlist existente)
+      const existingRadio = getByRole("radio", {
+        name: /Agregar a una playlist existente \(Predeterminado\)/i,
+      });
+      expect(existingRadio).toBeChecked();
+
+      // Botón Atrás ahora habilitado en Paso 2
+      expect(backBtn).toBeEnabled();
+
+      // Regresar al Paso 1 conservando la selección de 120 canciones intacta
+      fireEvent.click(backBtn);
+      expect(
+        getByText(/Paso 1 de 2: Revisa y selecciona las canciones a descargar/i),
+      ).toBeInTheDocument();
+      expect(getByText("Song Track 1")).toBeInTheDocument();
+      expect(backBtn).toBeDisabled();
+
       previewSpy.mockRestore();
     });
   });

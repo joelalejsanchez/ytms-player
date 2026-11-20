@@ -12,18 +12,6 @@ _(No hay tareas pendientes en esta categoría actualmente)._
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
-- [ ] **Flujo de importación de Playlist en 2 pasos con navegación visual e iconos (`PlaylistImportModal` / `DownloadsView`):**
-  - **Separación modular del flujo (Wizard Stepper):** Para facilitar la revisión de las canciones y evitar sobrecargar el modal con selectores de destino simultáneos, dividir la decisión en un asistente de 2 pasos:
-    1. **Paso 1 (Selección y revisión de pistas):** Vista dedicada a revisar canciones previsualizadas, seleccionar/deseleccionar pistas en lote y verificar canciones ya descargadas.
-       - Botón **Cancelar:** Estilo _outline_ con icono de cancelación (`X` / `Ban`).
-       - Botón **Atrás:** Estilo _outline_ con icono de retroceso (`ArrowLeft` / `ChevronLeft`), deshabilitado en este paso.
-       - Botón **Siguiente:** Estilo _primary_ con icono de avance (`ArrowRight` / `ChevronRight`), activo cuando existan pistas seleccionadas.
-    2. **Paso 2 (Destino de guardado y confirmación):** Vista dedicada a elegir el destino (crear nueva playlist, agregar a playlist existente o solo importar a biblioteca) y opciones de sincronización.
-       - Botón **Cancelar:** Estilo _outline_ con icono de cancelación (`X` / `Ban`).
-       - Botón **Atrás:** Estilo _outline_ con icono de retroceso (`ArrowLeft` / `ChevronLeft`), permite retornar al Paso 1 conservando la selección intacta.
-       - Botón **Descargar:** Estilo _primary_ destacado con icono de descarga (`Download`), que ejecuta la importación y sincronización.
-  - **Diferenciación visual:** Aplicar estilos _outline_ claros a los botones secundarios (Cancelar y Atrás) para evitar confusión visual con la acción principal (_primary_), e incorporar iconos descriptivos en cada acción como guía visual inmediata.
-
 - [ ] **Paneles colapsables en sección de Personalización (`WorkspaceSettingsView`):**
   - La sección de Personalización se ha tornado extensa al incorporar paletas cromáticas, modos de tema y selector de visualizadores.
   - Implementar componentes desplegables/colapsables (`Collapsible` o `Accordion`) exclusivamente para los 3 bloques de Personalización (Paleta de Colores, Modo de Tema y Visualizador predeterminado) para mantener compacta la interfaz.

@@ -1,5 +1,7 @@
 import {
   AlertCircle,
+  ArrowLeft,
+  ArrowRight,
   CheckCircle2,
   ChevronDown,
   Clock,
@@ -50,12 +52,13 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
   const libraryTracks = useLibraryStore((s) => s.tracks);
   const startDownloadTask = useDownloadStore((s) => s.startDownloadTask);
 
+  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewData, setPreviewData] = useState<PlaylistPreviewDto | null>(null);
 
   const [destination, setDestination] = useState<"new" | "existing" | "library_only">(
-    "new",
+    "existing",
   );
   const [newTitle, setNewTitle] = useState("");
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<number | null>(null);
@@ -318,8 +321,13 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
       );
       setSelectedTrackIds(defaultSelected);
 
-      // Si existe una playlist local asociada al mismo youtube_playlist_id, sugerir vincularla
-      const matched = playlists.find((p) => p.youtube_playlist_id === data.target_id);
+      // Si existe una playlist local asociada al mismo youtube_playlist_id o mismo título, seleccionarla
+      const matched = playlists.find(
+        (p) =>
+          (data.target_id && p.youtube_playlist_id === data.target_id) ||
+          (data.playlist_title &&
+            p.title.trim().toLowerCase() === data.playlist_title.trim().toLowerCase()),
+      );
       if (matched) {
         setDestination("existing");
         setSelectedPlaylistId(matched.id);
@@ -341,7 +349,38 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
   }, [url, playlists]);
 
   useEffect(() => {
+    if (playlists.length > 0 && selectedPlaylistId === null) {
+      const matching = previewData?.playlist_title
+        ? playlists.find(
+            (p) =>
+              p.title.trim().toLowerCase() ===
+              previewData.playlist_title?.trim().toLowerCase(),
+          )
+        : undefined;
+      setSelectedPlaylistId(matching ? matching.id : playlists[0].id);
+    }
+  }, [playlists, selectedPlaylistId, previewData?.playlist_title]);
+
+  const destinationSummary = useMemo(() => {
+    if (destination === "existing") {
+      const pl = playlists.find((p) => p.id === selectedPlaylistId);
+      return pl ? pl.title : "Playlist existente";
+    }
+    if (destination === "new") {
+      return newTitle.trim() || previewData?.playlist_title?.trim() || "Nueva Playlist";
+    }
+    return "Solo biblioteca (sin playlist)";
+  }, [
+    destination,
+    playlists,
+    selectedPlaylistId,
+    newTitle,
+    previewData?.playlist_title,
+  ]);
+
+  useEffect(() => {
     if (isOpen) {
+      setCurrentStep(1);
       setSearchQuery("");
       setIsLoadingMore(false);
       void loadPreview();
@@ -352,6 +391,7 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
       setSearchQuery("");
       setIsLoadingMore(false);
       setIsSubmitting(false);
+      setCurrentStep(1);
     }
   }, [isOpen, loadPreview]);
 
@@ -466,7 +506,9 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                 Previsualización e Importación de Lista
               </h3>
               <p className="text-xs text-muted-foreground">
-                Selecciona cómo organizar las canciones en tu biblioteca local
+                {currentStep === 1
+                  ? "Paso 1 de 2: Revisa y selecciona las canciones a descargar"
+                  : "Paso 2 de 2: Configura el destino y opciones de sincronización"}
               </p>
             </div>
           </div>
@@ -479,6 +521,69 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
             <X className="h-5 w-5" />
           </button>
         </header>
+
+        {/* Barra Stepper de 2 Pasos */}
+        {previewData && !isLoadingPreview && (
+          <div className="flex items-center justify-between border-b border-border/80 bg-muted/20 px-6 py-2.5 text-xs">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentStep(1)}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium transition",
+                  currentStep === 1
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold",
+                    currentStep === 1
+                      ? "bg-primary-foreground/25 text-primary-foreground"
+                      : "bg-muted-foreground/20 text-muted-foreground",
+                  )}
+                >
+                  1
+                </span>
+                <span>1. Selección de canciones</span>
+              </button>
+
+              <div className="h-0.5 w-6 bg-border" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedCount > 0) setCurrentStep(2);
+                }}
+                disabled={selectedCount === 0}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium transition disabled:pointer-events-none disabled:opacity-40",
+                  currentStep === 2
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold",
+                    currentStep === 2
+                      ? "bg-primary-foreground/25 text-primary-foreground"
+                      : "bg-muted-foreground/20 text-muted-foreground",
+                  )}
+                >
+                  2
+                </span>
+                <span>2. Destino y sincronización</span>
+              </button>
+            </div>
+
+            <div className="text-[11px] text-muted-foreground">
+              <strong className="text-foreground">{selectedCount}</strong>{" "}
+              {selectedCount === 1 ? "canción seleccionada" : "canciones seleccionadas"}
+            </div>
+          </div>
+        )}
 
         {/* Contenido principal */}
         <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4 text-xs">
@@ -503,478 +608,577 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
 
           {previewData && !isLoadingPreview && (
             <>
-              {/* Información y lista de canciones */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-semibold text-foreground">
-                      {previewData.playlist_title || "Lista sin título"} (
-                      {previewData.total_tracks
-                        ? `${previewData.items.length} de ${previewData.total_tracks} canciones`
-                        : `${previewData.items.length}${previewData.has_more ? "+" : ""} canciones cargadas`}
-                      )
-                    </h4>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      <span className="font-medium text-emerald-500">
-                        {downloadedCount} ya en biblioteca
-                      </span>
-                      {pendingCount > 0 ? (
-                        <span>
-                          {" "}
-                          · <strong className="text-amber-500">
-                            {pendingCount}
-                          </strong>{" "}
-                          pendientes de descarga
+              {/* PASO 1: Selección y revisión de pistas */}
+              {currentStep === 1 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-foreground">
+                        {previewData.playlist_title || "Lista sin título"} (
+                        {previewData.total_tracks
+                          ? `${previewData.items.length} de ${previewData.total_tracks} canciones`
+                          : `${previewData.items.length}${previewData.has_more ? "+" : ""} canciones cargadas`}
+                        )
+                      </h4>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        <span className="font-medium text-emerald-500">
+                          {downloadedCount} ya en biblioteca
                         </span>
-                      ) : selectedCount > 0 ? (
-                        <span>
-                          {" "}
-                          ·{" "}
-                          <strong className="text-emerald-500">
-                            Todas descargadas
-                          </strong>
+                        {pendingCount > 0 ? (
+                          <span>
+                            {" "}
+                            · <strong className="text-amber-500">
+                              {pendingCount}
+                            </strong>{" "}
+                            pendientes de descarga
+                          </span>
+                        ) : selectedCount > 0 ? (
+                          <span>
+                            {" "}
+                            ·{" "}
+                            <strong className="text-emerald-500">
+                              Todas descargadas
+                            </strong>
+                          </span>
+                        ) : null}
+                      </p>
+                    </div>
+                    <Badge
+                      tone={previewData.content_type === "mix" ? "warning" : "info"}
+                    >
+                      {previewData.content_type === "mix" ? "Mix" : "Playlist"}
+                    </Badge>
+                  </div>
+
+                  {/* Barra de selección rápida */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] font-medium text-muted-foreground">
+                        Seleccionar:
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={activePreset === "all" ? "outline" : "ghost"}
+                        onClick={selectAll}
+                        className={cn(
+                          "h-6 px-2 text-[11px]",
+                          activePreset === "all" &&
+                            "border-primary text-primary font-semibold shadow-xs",
+                        )}
+                      >
+                        Todas
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={activePreset === "15min" ? "outline" : "ghost"}
+                        onClick={selectUnder15Min}
+                        className={cn(
+                          "h-6 px-2 text-[11px]",
+                          activePreset === "15min" &&
+                            "border-primary text-primary font-semibold shadow-xs",
+                        )}
+                      >
+                        &lt; 15 min
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={activePreset === "7min" ? "outline" : "ghost"}
+                        onClick={selectUnder7Min}
+                        className={cn(
+                          "h-6 px-2 text-[11px]",
+                          activePreset === "7min" &&
+                            "border-primary text-primary font-semibold shadow-xs",
+                        )}
+                      >
+                        &lt; 7 min
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={activePreset === "none" ? "outline" : "ghost"}
+                        onClick={deselectAll}
+                        className={cn(
+                          "h-6 px-2 text-[11px]",
+                          activePreset === "none" &&
+                            "border-primary text-primary font-semibold shadow-xs",
+                        )}
+                      >
+                        Ninguna
+                      </Button>
+                    </div>
+
+                    <span className="text-[11px] text-muted-foreground">
+                      <strong
+                        className={
+                          selectedCount > 0 ? "text-foreground" : "text-destructive"
+                        }
+                      >
+                        {selectedCount}
+                      </strong>{" "}
+                      de {visibleItems.length} cargadas seleccionadas
+                      {previewData?.total_tracks ? (
+                        <span className="ml-1 font-normal text-muted-foreground/80">
+                          (de {previewData.total_tracks} en total en la playlist)
+                        </span>
+                      ) : previewData?.has_more ? (
+                        <span className="ml-1 font-normal text-muted-foreground/80">
+                          (Mix continuo de YouTube)
                         </span>
                       ) : null}
-                    </p>
-                  </div>
-                  <Badge tone={previewData.content_type === "mix" ? "warning" : "info"}>
-                    {previewData.content_type === "mix" ? "Mix" : "Playlist"}
-                  </Badge>
-                </div>
-
-                {/* Barra de selección rápida */}
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] font-medium text-muted-foreground">
-                      Seleccionar:
                     </span>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={activePreset === "all" ? "outline" : "ghost"}
-                      onClick={selectAll}
-                      className={cn(
-                        "h-6 px-2 text-[11px]",
-                        activePreset === "all" &&
-                          "border-primary text-primary font-semibold shadow-xs",
-                      )}
-                    >
-                      Todas
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={activePreset === "15min" ? "outline" : "ghost"}
-                      onClick={selectUnder15Min}
-                      className={cn(
-                        "h-6 px-2 text-[11px]",
-                        activePreset === "15min" &&
-                          "border-primary text-primary font-semibold shadow-xs",
-                      )}
-                    >
-                      &lt; 15 min
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={activePreset === "7min" ? "outline" : "ghost"}
-                      onClick={selectUnder7Min}
-                      className={cn(
-                        "h-6 px-2 text-[11px]",
-                        activePreset === "7min" &&
-                          "border-primary text-primary font-semibold shadow-xs",
-                      )}
-                    >
-                      &lt; 7 min
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={activePreset === "none" ? "outline" : "ghost"}
-                      onClick={deselectAll}
-                      className={cn(
-                        "h-6 px-2 text-[11px]",
-                        activePreset === "none" &&
-                          "border-primary text-primary font-semibold shadow-xs",
-                      )}
-                    >
-                      Ninguna
-                    </Button>
                   </div>
 
-                  <span className="text-[11px] text-muted-foreground">
-                    <strong
-                      className={
-                        selectedCount > 0 ? "text-foreground" : "text-destructive"
-                      }
-                    >
-                      {selectedCount}
-                    </strong>{" "}
-                    de {visibleItems.length} cargadas seleccionadas
-                    {previewData?.total_tracks ? (
-                      <span className="ml-1 font-normal text-muted-foreground/80">
-                        (de {previewData.total_tracks} en total en la playlist)
-                      </span>
-                    ) : previewData?.has_more ? (
-                      <span className="ml-1 font-normal text-muted-foreground/80">
-                        (Mix continuo de YouTube)
-                      </span>
-                    ) : null}
-                  </span>
-                </div>
-
-                {/* Buscador interno rápido */}
-                <div className="relative">
-                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                    }}
-                    placeholder="Filtrar canciones por título, artista o ID..."
-                    className="h-8 bg-card/60 pl-8 pr-8 text-xs"
-                    aria-label="Filtrar canciones de la previsualización"
-                  />
-                  {searchQuery.trim() && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSearchQuery("");
+                  {/* Buscador interno rápido */}
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
                       }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
-                      aria-label="Limpiar filtro de previsualización"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Contenedor de lista con paginación progresiva */}
-                <div className="overflow-hidden rounded-lg border border-border bg-card/60">
-                  <div className="max-h-56 space-y-1 overflow-y-auto p-2">
-                    {filteredItems.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-                        <Search className="mb-1.5 h-6 w-6 opacity-40" />
-                        <p className="text-xs font-medium text-foreground">
-                          No se encontraron canciones
-                        </p>
-                        <p className="text-[11px]">
-                          Ningún tema coincide con &quot;{searchQuery}&quot;
-                        </p>
-                      </div>
-                    ) : (
-                      visibleItems.map((item) => {
-                        const originalIndex = itemIndexMap.get(item.youtube_id) ?? 1;
-                        const isAlreadyDownloaded = existingTrackIds.has(
-                          item.youtube_id,
-                        );
-                        const isSelected = selectedTrackIds.has(item.youtube_id);
-                        const isLong = (item.duration || 0) >= 420;
-
-                        return (
-                          <div
-                            key={item.youtube_id}
-                            onClick={() => toggleTrack(item.youtube_id)}
-                            className={`flex cursor-pointer items-center justify-between gap-3 rounded px-2.5 py-1.5 transition select-none ${
-                              isSelected
-                                ? "bg-primary/10 hover:bg-primary/15"
-                                : "opacity-60 hover:opacity-100 hover:bg-muted/40"
-                            }`}
-                          >
-                            <div className="flex min-w-0 items-center gap-2.5">
-                              <div
-                                onClick={(e) => e.stopPropagation()}
-                                className="flex shrink-0 items-center"
-                              >
-                                <Checkbox
-                                  checked={isSelected}
-                                  onChange={() => toggleTrack(item.youtube_id)}
-                                />
-                              </div>
-                              <span className="w-6 text-right font-mono text-[11px] text-muted-foreground">
-                                {originalIndex}.
-                              </span>
-                              <div className="truncate">
-                                <p
-                                  className={`truncate font-medium text-xs ${isSelected ? "text-primary font-semibold" : "text-foreground"}`}
-                                >
-                                  {item.title || item.youtube_id}
-                                </p>
-                                <p className="truncate text-[11px] text-muted-foreground">
-                                  {item.artist}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="flex shrink-0 items-center gap-2">
-                              {isLong && (
-                                <Badge
-                                  tone="warning"
-                                  className="px-1.5 py-0 text-[10px]"
-                                >
-                                  &ge; 7 min
-                                </Badge>
-                              )}
-                              {isAlreadyDownloaded && (
-                                <Badge
-                                  tone="success"
-                                  className="px-1.5 py-0 text-[10px]"
-                                >
-                                  <CheckCircle2 className="h-3 w-3" />
-                                  Descargada
-                                </Badge>
-                              )}
-                              <span className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                {formatDuration(item.duration)}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })
+                      placeholder="Filtrar canciones por título, artista o ID..."
+                      className="h-8 bg-card/60 pl-8 pr-8 text-xs"
+                      aria-label="Filtrar canciones de la previsualización"
+                    />
+                    {searchQuery.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery("");
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
+                        aria-label="Limpiar filtro de previsualización"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
                     )}
                   </div>
 
-                  {/* Barra inferior de paginación e información de carga remota progresiva */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 bg-muted/30 px-3 py-2 text-[11px]">
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                      <span>
-                        Mostrando{" "}
-                        <strong className="text-foreground">
-                          {visibleItems.length}
-                        </strong>
-                        {previewData?.total_tracks ? (
-                          <>
-                            {" "}
-                            de{" "}
-                            <strong className="text-foreground">
-                              {previewData.total_tracks}
-                            </strong>{" "}
-                            canciones en total
-                          </>
+                  {/* Contenedor de lista con paginación progresiva */}
+                  <div className="overflow-hidden rounded-lg border border-border bg-card/60">
+                    <div className="max-h-56 space-y-1 overflow-y-auto p-2">
+                      {filteredItems.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                          <Search className="mb-1.5 h-6 w-6 opacity-40" />
+                          <p className="text-xs font-medium text-foreground">
+                            No se encontraron canciones
+                          </p>
+                          <p className="text-[11px]">
+                            Ningún tema coincide con &quot;{searchQuery}&quot;
+                          </p>
+                        </div>
+                      ) : (
+                        visibleItems.map((item) => {
+                          const originalIndex = itemIndexMap.get(item.youtube_id) ?? 1;
+                          const isAlreadyDownloaded = existingTrackIds.has(
+                            item.youtube_id,
+                          );
+                          const isSelected = selectedTrackIds.has(item.youtube_id);
+                          const isLong = (item.duration || 0) >= 420;
+
+                          return (
+                            <div
+                              key={item.youtube_id}
+                              onClick={() => toggleTrack(item.youtube_id)}
+                              className={`flex cursor-pointer items-center justify-between gap-3 rounded px-2.5 py-1.5 transition select-none ${
+                                isSelected
+                                  ? "bg-primary/10 hover:bg-primary/15"
+                                  : "opacity-60 hover:opacity-100 hover:bg-muted/40"
+                              }`}
+                            >
+                              <div className="flex min-w-0 items-center gap-2.5">
+                                <div
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="flex shrink-0 items-center"
+                                >
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onChange={() => toggleTrack(item.youtube_id)}
+                                  />
+                                </div>
+                                <span className="w-6 text-right font-mono text-[11px] text-muted-foreground">
+                                  {originalIndex}.
+                                </span>
+                                <div className="truncate">
+                                  <p
+                                    className={`truncate font-medium text-xs ${isSelected ? "text-primary font-semibold" : "text-foreground"}`}
+                                  >
+                                    {item.title || item.youtube_id}
+                                  </p>
+                                  <p className="truncate text-[11px] text-muted-foreground">
+                                    {item.artist}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex shrink-0 items-center gap-2">
+                                {isLong && (
+                                  <Badge
+                                    tone="warning"
+                                    className="px-1.5 py-0 text-[10px]"
+                                  >
+                                    &ge; 7 min
+                                  </Badge>
+                                )}
+                                {isAlreadyDownloaded && (
+                                  <Badge
+                                    tone="success"
+                                    className="px-1.5 py-0 text-[10px]"
+                                  >
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    Descargada
+                                  </Badge>
+                                )}
+                                <span className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  {formatDuration(item.duration)}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Barra inferior de paginación e información de carga remota progresiva */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 bg-muted/30 px-3 py-2 text-[11px]">
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <span>
+                          Mostrando{" "}
+                          <strong className="text-foreground">
+                            {visibleItems.length}
+                          </strong>
+                          {previewData?.total_tracks ? (
+                            <>
+                              {" "}
+                              de{" "}
+                              <strong className="text-foreground">
+                                {previewData.total_tracks}
+                              </strong>{" "}
+                              canciones en total
+                            </>
+                          ) : (
+                            <> canciones cargadas</>
+                          )}
+                          {searchQuery.trim() && previewData && (
+                            <span className="ml-1 font-normal text-muted-foreground/80">
+                              ({previewData.items.length} en memoria)
+                            </span>
+                          )}
+                        </span>
+                        {previewData?.total_tracks && previewData.total_tracks > 0 ? (
+                          <span className="font-mono text-muted-foreground/75">
+                            (
+                            {Math.round(
+                              (visibleItems.length / previewData.total_tracks) * 100,
+                            )}
+                            % cargado)
+                          </span>
+                        ) : !previewData?.has_more ? (
+                          <span className="font-medium text-emerald-500">
+                            · Lista completa obtenida
+                          </span>
                         ) : (
-                          <> canciones cargadas</>
-                        )}
-                        {searchQuery.trim() && previewData && (
-                          <span className="ml-1 font-normal text-muted-foreground/80">
-                            ({previewData.items.length} en memoria)
+                          <span className="font-medium text-amber-500">
+                            · Mix continuo de YouTube
                           </span>
                         )}
-                      </span>
-                      {previewData?.total_tracks && previewData.total_tracks > 0 ? (
-                        <span className="font-mono text-muted-foreground/75">
-                          (
-                          {Math.round(
-                            (visibleItems.length / previewData.total_tracks) * 100,
-                          )}
-                          % cargado)
-                        </span>
-                      ) : !previewData?.has_more ? (
-                        <span className="font-medium text-emerald-500">
-                          · Lista completa obtenida
-                        </span>
-                      ) : (
-                        <span className="font-medium text-amber-500">
-                          · Mix continuo de YouTube
-                        </span>
-                      )}
-                    </div>
-
-                    {previewData?.has_more && !searchQuery.trim() && (
-                      <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => void handleLoadMore()}
-                          disabled={isLoadingMore}
-                          className="h-6 gap-1 px-2.5 text-[11px] text-foreground"
-                        >
-                          {isLoadingMore ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <ChevronDown className="h-3 w-3" />
-                          )}
-                          Cargar 50 más
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => void handleLoadAll()}
-                          disabled={isLoadingMore}
-                          className="h-6 px-2 text-[11px] font-medium text-primary hover:text-primary"
-                        >
-                          {isLoadingMore ? (
-                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                          ) : null}
-                          Cargar todas
-                          {previewData?.total_tracks
-                            ? ` (${previewData.total_tracks})`
-                            : ""}
-                        </Button>
                       </div>
-                    )}
-                  </div>
-                </div>
-              </div>
 
-              {/* Selector de destino */}
-              <div className="space-y-3 rounded-xl border border-border bg-card/40 p-4">
-                <h4 className="font-semibold text-foreground">
-                  Destino de las canciones:
-                </h4>
-
-                <div className="space-y-2">
-                  {/* Opción 1: Crear nueva playlist */}
-                  <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-2.5 transition hover:bg-muted/50">
-                    <RadioButton
-                      name="destination"
-                      value="new"
-                      checked={destination === "new"}
-                      onChange={() => setDestination("new")}
-                      containerClassName="mt-0.5"
-                    />
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <FolderPlus className="h-4 w-4 text-primary" />
-                        <span className="font-medium text-foreground">
-                          Crear nueva playlist local
-                        </span>
-                      </div>
-                      {destination === "new" && (
-                        <Input
-                          value={newTitle}
-                          onChange={(e) => setNewTitle(e.target.value)}
-                          placeholder="Nombre de la nueva playlist..."
-                          className="h-8 text-xs"
-                        />
-                      )}
-                    </div>
-                  </label>
-
-                  {/* Opción 2: Agregar a playlist existente */}
-                  <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-2.5 transition hover:bg-muted/50">
-                    <RadioButton
-                      name="destination"
-                      value="existing"
-                      checked={destination === "existing"}
-                      onChange={() => setDestination("existing")}
-                      containerClassName="mt-0.5"
-                    />
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <ListMusic className="h-4 w-4 text-primary" />
-                        <span className="font-medium text-foreground">
-                          Agregar a una playlist existente
-                        </span>
-                      </div>
-                      {destination === "existing" && (
-                        <div>
-                          {playlists.length === 0 ? (
-                            <p className="text-[11px] text-amber-500">
-                              No tienes playlists creadas todavía. Elige "Crear nueva
-                              playlist".
-                            </p>
-                          ) : (
-                            <CustomSelect
-                              value={
-                                selectedPlaylistId ? String(selectedPlaylistId) : ""
-                              }
-                              onChange={(val) => setSelectedPlaylistId(Number(val))}
-                              options={playlists.map((pl) => ({
-                                value: String(pl.id),
-                                label: `${pl.title} (${pl.track_count} canciones)`,
-                              }))}
-                              placeholder="Selecciona una playlist..."
-                              className="w-full"
-                              triggerClassName="h-8 w-full text-xs"
-                            />
-                          )}
+                      {previewData?.has_more && !searchQuery.trim() && (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void handleLoadMore()}
+                            disabled={isLoadingMore}
+                            className="h-6 gap-1 px-2.5 text-[11px] text-foreground"
+                          >
+                            {isLoadingMore ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <ChevronDown className="h-3 w-3" />
+                            )}
+                            Cargar 50 más
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => void handleLoadAll()}
+                            disabled={isLoadingMore}
+                            className="h-6 px-2 text-[11px] font-medium text-primary hover:text-primary"
+                          >
+                            {isLoadingMore ? (
+                              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                            ) : null}
+                            Cargar todas
+                            {previewData?.total_tracks
+                              ? ` (${previewData.total_tracks})`
+                              : ""}
+                          </Button>
                         </div>
                       )}
                     </div>
-                  </label>
-
-                  {/* Opción 3: Solo biblioteca */}
-                  <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-2.5 transition hover:bg-muted/50">
-                    <RadioButton
-                      name="destination"
-                      value="library_only"
-                      checked={destination === "library_only"}
-                      onChange={() => setDestination("library_only")}
-                      containerClassName="mt-0.5"
-                    />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Library className="h-4 w-4 text-emerald-500" />
-                        <span className="font-medium text-foreground">
-                          Solo importar a mi biblioteca (sin playlist)
-                        </span>
-                      </div>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        Los audios se descargarán en tu biblioteca general sin asociarse
-                        a ninguna lista.
-                      </p>
-                    </div>
-                  </label>
-                </div>
-
-                {/* Sincronización y desvinculación bulk de eliminados */}
-                {destination !== "library_only" && (
-                  <div className="mt-3 rounded-lg border border-border bg-card/60 p-3">
-                    <label className="flex cursor-pointer items-center gap-2.5 text-foreground">
-                      <Checkbox
-                        checked={unlinkRemoved}
-                        onChange={(e) => setUnlinkRemoved(e.target.checked)}
-                      />
-                      <span className="font-medium">
-                        Desvincular canciones que ya no estén en YouTube
-                      </span>
-                    </label>
-                    <p className="mt-1 pl-6 text-[11px] text-muted-foreground">
-                      Si una canción ya no existe en la lista de YouTube, se quitará de
-                      la playlist pero continuará guardada en tu biblioteca.
-                    </p>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+
+              {/* PASO 2: Destino de guardado y confirmación */}
+              {currentStep === 2 && (
+                <div className="space-y-4">
+                  {/* Resumen de la selección */}
+                  <div className="rounded-xl border border-border bg-card/60 p-3.5">
+                    <h4 className="mb-2.5 text-xs font-semibold text-foreground">
+                      Resumen de la Importación:
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                      <div className="space-y-0.5 rounded-lg border border-border/60 bg-muted/30 p-2">
+                        <p className="text-[11px] font-medium text-muted-foreground">
+                          Seleccionadas
+                        </p>
+                        <p className="text-base font-bold text-foreground">
+                          {selectedCount}
+                        </p>
+                      </div>
+                      <div className="space-y-0.5 rounded-lg border border-border/60 bg-muted/30 p-2">
+                        <p className="text-[11px] font-medium text-muted-foreground">
+                          Pendientes de descarga
+                        </p>
+                        <p className="text-base font-bold text-amber-500">
+                          {pendingCount}
+                        </p>
+                      </div>
+                      <div className="space-y-0.5 rounded-lg border border-border/60 bg-muted/30 p-2">
+                        <p className="text-[11px] font-medium text-muted-foreground">
+                          Ya en biblioteca
+                        </p>
+                        <p className="text-base font-bold text-emerald-500">
+                          {downloadedCount}
+                        </p>
+                      </div>
+                      <div className="space-y-0.5 rounded-lg border border-border/60 bg-muted/30 p-2">
+                        <p className="text-[11px] font-medium text-muted-foreground">
+                          Destino configurado
+                        </p>
+                        <p
+                          className="truncate text-xs font-semibold text-primary"
+                          title={destinationSummary}
+                        >
+                          {destinationSummary}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Selector de destino */}
+                  <div className="space-y-3 rounded-xl border border-border bg-card/40 p-4">
+                    <h4 className="font-semibold text-foreground">
+                      Destino de las canciones:
+                    </h4>
+
+                    <div className="space-y-2">
+                      {/* Opción 1 (Por defecto): Agregar a playlist existente */}
+                      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-2.5 transition hover:bg-muted/50">
+                        <RadioButton
+                          name="destination"
+                          value="existing"
+                          checked={destination === "existing"}
+                          onChange={() => setDestination("existing")}
+                          containerClassName="mt-0.5"
+                        />
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <ListMusic className="h-4 w-4 text-primary" />
+                            <span className="font-medium text-foreground">
+                              Agregar a una playlist existente (Predeterminado)
+                            </span>
+                          </div>
+                          {destination === "existing" && (
+                            <div>
+                              {playlists.length === 0 ? (
+                                <p className="text-[11px] text-amber-500">
+                                  No tienes playlists creadas todavía. Elige "Crear
+                                  nueva playlist" o "Solo biblioteca".
+                                </p>
+                              ) : (
+                                <CustomSelect
+                                  value={
+                                    selectedPlaylistId ? String(selectedPlaylistId) : ""
+                                  }
+                                  onChange={(val) => setSelectedPlaylistId(Number(val))}
+                                  options={playlists.map((pl) => ({
+                                    value: String(pl.id),
+                                    label: `${pl.title} (${pl.track_count} canciones)`,
+                                  }))}
+                                  placeholder="Selecciona una playlist..."
+                                  className="w-full"
+                                  triggerClassName="h-8 w-full text-xs"
+                                />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </label>
+
+                      {/* Opción 2: Crear nueva playlist local */}
+                      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-2.5 transition hover:bg-muted/50">
+                        <RadioButton
+                          name="destination"
+                          value="new"
+                          checked={destination === "new"}
+                          onChange={() => setDestination("new")}
+                          containerClassName="mt-0.5"
+                        />
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <FolderPlus className="h-4 w-4 text-primary" />
+                            <span className="font-medium text-foreground">
+                              Crear nueva playlist local
+                            </span>
+                          </div>
+                          {destination === "new" && (
+                            <Input
+                              value={newTitle}
+                              onChange={(e) => setNewTitle(e.target.value)}
+                              placeholder="Nombre de la nueva playlist..."
+                              className="h-8 text-xs"
+                            />
+                          )}
+                        </div>
+                      </label>
+
+                      {/* Opción 3: Solo biblioteca */}
+                      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-2.5 transition hover:bg-muted/50">
+                        <RadioButton
+                          name="destination"
+                          value="library_only"
+                          checked={destination === "library_only"}
+                          onChange={() => setDestination("library_only")}
+                          containerClassName="mt-0.5"
+                        />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Library className="h-4 w-4 text-emerald-500" />
+                            <span className="font-medium text-foreground">
+                              Solo importar a mi biblioteca (sin playlist)
+                            </span>
+                          </div>
+                          <p className="mt-0.5 text-[11px] text-muted-foreground">
+                            Los audios se descargarán en tu biblioteca general sin
+                            asociarse a ninguna lista.
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+
+                    {/* Sincronización y desvinculación bulk de eliminados */}
+                    {destination !== "library_only" && (
+                      <div className="mt-3 rounded-lg border border-border bg-card/60 p-3">
+                        <label className="flex cursor-pointer items-center gap-2.5 text-foreground">
+                          <Checkbox
+                            checked={unlinkRemoved}
+                            onChange={(e) => setUnlinkRemoved(e.target.checked)}
+                          />
+                          <span className="font-medium">
+                            Desvincular canciones que ya no estén en YouTube
+                          </span>
+                        </label>
+                        <p className="mt-1 pl-6 text-[11px] text-muted-foreground">
+                          Si una canción ya no existe en la lista de YouTube, se quitará
+                          de la playlist pero continuará guardada en tu biblioteca.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
 
-        {/* Acciones */}
-        <footer className="flex items-center justify-end gap-2.5 border-t border-border px-6 py-4">
-          <Button variant="secondary" onClick={onClose} disabled={isSubmitting}>
+        {/* Acciones y Navegación del Wizard */}
+        <footer className="flex items-center justify-between border-t border-border px-6 py-4">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="gap-1.5"
+          >
+            <X className="h-4 w-4" />
             Cancelar
           </Button>
-          <Button
-            onClick={() => void handleConfirm()}
-            disabled={
-              !previewData || isLoadingPreview || isSubmitting || selectedCount === 0
-            }
-          >
-            {isSubmitting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : selectedCount === 0 ? (
-              <AlertCircle className="h-4 w-4" />
-            ) : pendingCount === 0 ? (
-              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+
+          <div className="flex items-center gap-2.5">
+            {currentStep === 2 ? (
+              <Button
+                variant="outline"
+                onClick={() => setCurrentStep(1)}
+                disabled={isSubmitting}
+                className="gap-1.5"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Atrás
+              </Button>
             ) : (
-              <Download className="h-4 w-4" />
+              <Button variant="outline" disabled={true} className="gap-1.5 opacity-50">
+                <ArrowLeft className="h-4 w-4" />
+                Atrás
+              </Button>
             )}
-            {isSubmitting
-              ? "Sincronizando..."
-              : selectedCount === 0
-                ? "Selecciona canciones"
-                : pendingCount === 0
-                  ? destination === "library_only"
-                    ? "Ya en biblioteca (0 descargas)"
-                    : "Sincronizar a Playlist (0 descargas)"
-                  : pendingCount === visibleItems.length
-                    ? `Descargar ${pendingCount} cargadas y ${destination === "library_only" ? "Guardar" : "Sincronizar"}`
-                    : `Descargar ${pendingCount} de ${visibleItems.length} y ${destination === "library_only" ? "Guardar" : "Sincronizar"}`}
-          </Button>
+
+            {currentStep === 1 ? (
+              <Button
+                onClick={() => setCurrentStep(2)}
+                disabled={!previewData || isLoadingPreview || selectedCount === 0}
+                className="gap-1.5"
+              >
+                Siguiente
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                onClick={() => void handleConfirm()}
+                disabled={
+                  !previewData ||
+                  isLoadingPreview ||
+                  isSubmitting ||
+                  selectedCount === 0 ||
+                  (destination === "existing" &&
+                    (selectedPlaylistId === null || playlists.length === 0)) ||
+                  (destination === "new" &&
+                    !newTitle.trim() &&
+                    !previewData.playlist_title?.trim())
+                }
+                className="gap-1.5"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : selectedCount === 0 ? (
+                  <AlertCircle className="h-4 w-4" />
+                ) : pendingCount === 0 ? (
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                {isSubmitting
+                  ? "Sincronizando..."
+                  : selectedCount === 0
+                    ? "Selecciona canciones"
+                    : pendingCount === 0
+                      ? destination === "library_only"
+                        ? "Ya en biblioteca (0 descargas)"
+                        : "Sincronizar a Playlist (0 descargas)"
+                      : pendingCount === visibleItems.length
+                        ? `Descargar ${pendingCount} cargadas y ${destination === "library_only" ? "Guardar" : "Sincronizar"}`
+                        : `Descargar ${pendingCount} de ${visibleItems.length} y ${destination === "library_only" ? "Guardar" : "Sincronizar"}`}
+              </Button>
+            )}
+          </div>
         </footer>
       </div>
     </div>
