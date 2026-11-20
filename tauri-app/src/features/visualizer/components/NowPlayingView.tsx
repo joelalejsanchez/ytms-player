@@ -13,7 +13,7 @@ import {
   VolumeX,
   X,
 } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/Primitives";
 import { usePlayerControlTooltips } from "@/hooks/usePlayerControlTooltips";
 import { formatDuration, toAssetUrl } from "@/lib/utils";
@@ -78,20 +78,88 @@ export const NowPlayingView: React.FC = () => {
   // Estado local para scrubbing de tiempo fluido a 60 FPS
   const [isSeekingLocally, setIsSeekingLocally] = useState(false);
   const [localSeekTime, setLocalSeekTime] = useState(0);
+  const [showVolumePopover, setShowVolumePopover] = useState(false);
+  const volumePopoverRef = useRef<HTMLDivElement | null>(null);
+  const volumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Cerrar con tecla Escape
+  const handleVolumeMouseEnter = useCallback(() => {
+    if (volumeTimeoutRef.current) {
+      clearTimeout(volumeTimeoutRef.current);
+      volumeTimeoutRef.current = null;
+    }
+    setShowVolumePopover(true);
+  }, []);
+
+  const handleVolumeMouseLeave = useCallback(() => {
+    volumeTimeoutRef.current = setTimeout(() => {
+      setShowVolumePopover(false);
+    }, 250);
+  }, []);
+
+  // Control directo de rueda de ratón (Scroll Wheel)
+  const handleVolumeWheel = useCallback(
+    (e: React.WheelEvent) => {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 0.05 : -0.05;
+      const current = isMuted ? 0 : volume;
+      const nextVolume = Math.max(
+        0,
+        Math.min(1, Math.round((current + delta) * 100) / 100),
+      );
+      if (isMuted && delta > 0) {
+        toggleMute();
+      }
+      setVolume(nextVolume);
+    },
+    [isMuted, volume, toggleMute, setVolume],
+  );
+
+  const handleVerticalVolumePointer = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const offsetY = rect.bottom - e.clientY;
+      const newVol = Math.max(0, Math.min(1, offsetY / rect.height));
+      setVolume(newVol);
+    },
+    [setVolume],
+  );
+
+  // Cerrar popover al hacer clic fuera
+  useEffect(() => {
+    if (!showVolumePopover) return;
+
+    const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (volumePopoverRef.current && !volumePopoverRef.current.contains(target)) {
+        setShowVolumePopover(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown, true);
+    document.addEventListener("touchstart", handlePointerDown, true);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown, true);
+      document.removeEventListener("touchstart", handlePointerDown, true);
+    };
+  }, [showVolumePopover]);
+
+  // Cerrar con tecla Escape (priorizando el popover de volumen si está abierto)
   useEffect(() => {
     if (!isNowPlayingExpanded) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        if (showVolumePopover) {
+          setShowVolumePopover(false);
+          return;
+        }
         setNowPlayingExpanded(false);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isNowPlayingExpanded, setNowPlayingExpanded]);
+  }, [isNowPlayingExpanded, setNowPlayingExpanded, showVolumePopover]);
 
   const handleSeekChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -360,7 +428,7 @@ export const NowPlayingView: React.FC = () => {
           {/* Fila de Controles de Reproducción y Volumen */}
           <div className="flex w-full items-center justify-between gap-4 pt-1">
             {/* Espaciador izquierdo para centrar controles principales simétricamente */}
-            <div className="hidden sm:block min-w-[200px]" />
+            <div className="w-9 sm:min-w-[180px] shrink-0" />
 
             {/* Controles Principales Centrados */}
             <div className="flex items-center gap-4 sm:gap-6 mx-auto">
@@ -429,58 +497,160 @@ export const NowPlayingView: React.FC = () => {
               </Button>
             </div>
 
-            {/* Control de Volumen en Esquina Derecha con estilos unificados */}
-            <div className="hidden sm:flex min-w-[200px] items-center justify-end gap-3 text-muted-foreground">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleMute}
-                title={isMuted ? "Reactivar audio" : "Silenciar"}
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            {/* Control de Volumen en Esquina Derecha con estilos unificados y adaptativos */}
+            <div className="flex items-center justify-end gap-2 text-muted-foreground shrink-0 sm:min-w-[180px]">
+              {/* En pantallas anchas (>= sm): selector horizontal con soporte de rueda del ratón */}
+              <div
+                className="hidden sm:flex items-center gap-2.5"
+                onWheel={handleVolumeWheel}
               >
-                {isMuted || volume === 0 ? (
-                  <VolumeX className="h-4 w-4 text-rose-400" />
-                ) : (
-                  <Volume2 className="h-4 w-4" />
-                )}
-              </Button>
-
-              {/* Selector de volumen con relleno visual exacto en color primario e indicador dinámico */}
-              <div className="group relative flex h-4 w-24 cursor-pointer select-none items-center">
-                {/* Pista de fondo sólida */}
-                <div
-                  style={{ backgroundColor: "var(--muted)" }}
-                  className="relative h-1 w-full overflow-hidden rounded-full bg-muted transition-all duration-150 group-hover:h-1.5"
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleMute}
+                  title={
+                    isMuted
+                      ? "Reactivar audio"
+                      : `Volumen: ${Math.round(volumePercent)}% (rueda para regular)`
+                  }
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
                 >
-                  {/* Relleno hasta el valor de volumen con color primario del tema */}
+                  {isMuted || volume === 0 ? (
+                    <VolumeX className="h-4 w-4 text-rose-400" />
+                  ) : (
+                    <Volume2 className="h-4 w-4" />
+                  )}
+                </Button>
+
+                {/* Selector de volumen con relleno visual exacto en color primario e indicador dinámico */}
+                <div className="group relative flex h-4 w-20 lg:w-24 cursor-pointer select-none items-center">
+                  {/* Pista de fondo sólida */}
                   <div
-                    className="h-full bg-primary transition-none"
-                    style={{ width: `${volumePercent}%` }}
+                    style={{ backgroundColor: "var(--muted)" }}
+                    className="relative h-1 w-full overflow-hidden rounded-full bg-muted transition-all duration-150 group-hover:h-1.5"
+                  >
+                    {/* Relleno hasta el valor de volumen con color primario del tema */}
+                    <div
+                      className="h-full bg-primary transition-none"
+                      style={{ width: `${volumePercent}%` }}
+                    />
+                  </div>
+
+                  {/* Indicador / Thumb pequeño que crece al acercar el ratón */}
+                  <div
+                    className="pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full bg-foreground shadow-md transition-none group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-primary"
+                    style={{ left: `${volumePercent}%` }}
+                  />
+
+                  {/* Input range transparente */}
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={volumeValue}
+                    onChange={handleVolumeInput}
+                    aria-label="Control de volumen"
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                   />
                 </div>
 
-                {/* Indicador / Thumb pequeño que crece al acercar el ratón */}
-                <div
-                  className="pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full bg-foreground shadow-md transition-none group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-primary"
-                  style={{ left: `${volumePercent}%` }}
-                />
-
-                {/* Input range transparente */}
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={volumeValue}
-                  onChange={handleVolumeInput}
-                  aria-label="Control de volumen"
-                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                />
+                <span className="w-8 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
+                  {Math.round(volumePercent)}%
+                </span>
               </div>
 
-              <span className="w-8 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
-                {Math.round(volumePercent)}%
-              </span>
+              {/* En pantallas compactas (< sm): selector de volumen vertical flotante para que NUNCA desaparezca */}
+              <div
+                className="relative flex sm:hidden"
+                ref={volumePopoverRef}
+                onMouseEnter={handleVolumeMouseEnter}
+                onMouseLeave={handleVolumeMouseLeave}
+                onWheel={handleVolumeWheel}
+              >
+                <Button
+                  variant={showVolumePopover ? "secondary" : "ghost"}
+                  size="icon"
+                  onClick={() => setShowVolumePopover((prev) => !prev)}
+                  title={
+                    isMuted
+                      ? "Volumen silenciado (acercar ratón o rueda para regular)"
+                      : `Volumen: ${Math.round(volumePercent)}%`
+                  }
+                  aria-label="Ajustar volumen"
+                  aria-haspopup="dialog"
+                  aria-expanded={showVolumePopover}
+                  className="h-9 w-9 text-foreground"
+                >
+                  {isMuted || volume === 0 ? (
+                    <VolumeX className="h-5 w-5 text-rose-400" />
+                  ) : (
+                    <Volume2 className="h-5 w-5" />
+                  )}
+                </Button>
+
+                {showVolumePopover && (
+                  <div
+                    role="dialog"
+                    aria-label="Ajuste de volumen vertical flotante"
+                    onMouseEnter={handleVolumeMouseEnter}
+                    onMouseLeave={handleVolumeMouseLeave}
+                    className="absolute bottom-full right-0 mb-2 flex flex-col items-center gap-2 rounded-xl border border-border bg-popover py-3 px-2 text-popover-foreground shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-100"
+                  >
+                    <span className="text-[10px] font-mono tabular-nums text-muted-foreground">
+                      {Math.round(volumePercent)}%
+                    </span>
+
+                    <div
+                      className="relative flex h-24 w-6 cursor-pointer select-none items-center justify-center"
+                      onPointerDown={handleVerticalVolumePointer}
+                    >
+                      <div className="relative h-full w-1.5 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="absolute bottom-0 left-0 right-0 bg-primary transition-none"
+                          style={{ height: `${volumePercent}%` }}
+                        />
+                      </div>
+
+                      <div
+                        className="pointer-events-none absolute left-1/2 -translate-x-1/2 h-2.5 w-2.5 rounded-full bg-foreground shadow-md transition-none"
+                        style={{ bottom: `${volumePercent}%`, marginBottom: "-5px" }}
+                      />
+
+                      <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={volumeValue}
+                        onChange={handleVolumeInput}
+                        aria-label="Control de volumen vertical"
+                        aria-orientation="vertical"
+                        className="absolute cursor-pointer opacity-0"
+                        style={{
+                          transform: "rotate(-90deg)",
+                          width: "96px",
+                          height: "24px",
+                        }}
+                      />
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={toggleMute}
+                      title={isMuted ? "Reactivar audio" : "Silenciar"}
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    >
+                      {isMuted || volume === 0 ? (
+                        <VolumeX className="h-3.5 w-3.5 text-rose-400" />
+                      ) : (
+                        <Volume2 className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

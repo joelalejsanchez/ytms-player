@@ -6,32 +6,28 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 1. Prioridad Alta (Bugs y Core UX)
 
-*(No hay tareas pendientes en esta categoría actualmente).*
+_(No hay tareas pendientes en esta categoría actualmente)._
 
 ---
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
-- [ ] **Unificación del selector de volumen flotante vertical en vista completa (`PersistentPlayer`):**
-  - **Contexto y paridad de interfaz:** Actualmente, al estrechar la ventana de la aplicación o en modo compacto, el control de volumen se transforma en un selector vertical flotante (popover vertical emergente al interactuar con el icono de altavoz), liberando espacio horizontal. Sin embargo, en la vista completa/escritorio se mantiene un slider horizontal fijo que ocupa espacio continuo en la barra inferior.
-  - **Comportamiento unificado:** Aplicar la misma funcionalidad del selector flotante vertical al modo de vista completa estándar. Al interactuar con el icono de altavoz o sobrevolarlo, desplegar el popover vertical con el porcentaje, slider vertical de volumen y botón de silenciar, manteniendo la barra inferior despejada y consistente en todas las resoluciones.
-
 - [ ] **Carga progresiva y paginación en previsualización de Playlists y Mixes (`PlaylistImportModal` / `DownloadsView`):**
   - **Problema de rendimiento:** Al previsualizar listas de reproducción o mixes extensos de YouTube (que pueden contener cientos de canciones), renderizar todos los elementos de golpe provoca saturación del DOM, latencia en la apertura del modal y lentitud en el scroll.
   - **Paginación progresiva de 50 en 50:** Limitar la visualización inicial de la lista a las primeras 50 canciones.
-  - **Botón de carga incremental:** Incluir al final de la lista un botón interactivo *"Cargar 50 más"* (o mostrar el recuento de temas restantes) que agregue el siguiente bloque de 50 canciones de manera fluida hasta completar la totalidad de la lista previsualizada, optimizando el rendimiento y la memoria.
+  - **Botón de carga incremental:** Incluir al final de la lista un botón interactivo _"Cargar 50 más"_ (o mostrar el recuento de temas restantes) que agregue el siguiente bloque de 50 canciones de manera fluida hasta completar la totalidad de la lista previsualizada, optimizando el rendimiento y la memoria.
 
 - [ ] **Flujo de importación de Playlist en 2 pasos con navegación visual e iconos (`PlaylistImportModal` / `DownloadsView`):**
   - **Separación modular del flujo (Wizard Stepper):** Para facilitar la revisión de las canciones y evitar sobrecargar el modal con selectores de destino simultáneos, dividir la decisión en un asistente de 2 pasos:
     1. **Paso 1 (Selección y revisión de pistas):** Vista dedicada a revisar canciones previsualizadas, seleccionar/deseleccionar pistas en lote y verificar canciones ya descargadas.
-       - Botón **Cancelar:** Estilo *outline* con icono de cancelación (`X` / `Ban`).
-       - Botón **Atrás:** Estilo *outline* con icono de retroceso (`ArrowLeft` / `ChevronLeft`), deshabilitado en este paso.
-       - Botón **Siguiente:** Estilo *primary* con icono de avance (`ArrowRight` / `ChevronRight`), activo cuando existan pistas seleccionadas.
+       - Botón **Cancelar:** Estilo _outline_ con icono de cancelación (`X` / `Ban`).
+       - Botón **Atrás:** Estilo _outline_ con icono de retroceso (`ArrowLeft` / `ChevronLeft`), deshabilitado en este paso.
+       - Botón **Siguiente:** Estilo _primary_ con icono de avance (`ArrowRight` / `ChevronRight`), activo cuando existan pistas seleccionadas.
     2. **Paso 2 (Destino de guardado y confirmación):** Vista dedicada a elegir el destino (crear nueva playlist, agregar a playlist existente o solo importar a biblioteca) y opciones de sincronización.
-       - Botón **Cancelar:** Estilo *outline* con icono de cancelación (`X` / `Ban`).
-       - Botón **Atrás:** Estilo *outline* con icono de retroceso (`ArrowLeft` / `ChevronLeft`), permite retornar al Paso 1 conservando la selección intacta.
-       - Botón **Descargar:** Estilo *primary* destacado con icono de descarga (`Download`), que ejecuta la importación y sincronización.
-  - **Diferenciación visual:** Aplicar estilos *outline* claros a los botones secundarios (Cancelar y Atrás) para evitar confusión visual con la acción principal (*primary*), e incorporar iconos descriptivos en cada acción como guía visual inmediata.
+       - Botón **Cancelar:** Estilo _outline_ con icono de cancelación (`X` / `Ban`).
+       - Botón **Atrás:** Estilo _outline_ con icono de retroceso (`ArrowLeft` / `ChevronLeft`), permite retornar al Paso 1 conservando la selección intacta.
+       - Botón **Descargar:** Estilo _primary_ destacado con icono de descarga (`Download`), que ejecuta la importación y sincronización.
+  - **Diferenciación visual:** Aplicar estilos _outline_ claros a los botones secundarios (Cancelar y Atrás) para evitar confusión visual con la acción principal (_primary_), e incorporar iconos descriptivos en cada acción como guía visual inmediata.
 
 - [ ] **Paneles colapsables en sección de Personalización (`WorkspaceSettingsView`):**
   - La sección de Personalización se ha tornado extensa al incorporar paletas cromáticas, modos de tema y selector de visualizadores.
@@ -76,14 +72,14 @@ Este documento registra las características, mejoras y extensiones que **no est
   - **Normalización y presentación multiplataforma de modificadores:** Representación visual de teclas contextual según el sistema operativo detectado (desplegando símbolos nativos como `⌘` / `⌥` en macOS y `Ctrl` / `Alt` en Linux y Windows).
   - **Panel de configuración y reasignación interactiva en Ajustes (`WorkspaceSettingsView`):**
     - Interfaz visual dentro de la sección de Configuración para visualizar todos los atajos registrados, su acción asignada y su combinación de teclas actual.
-    - Modo de captura interactiva (*Record Hotkey*): botón para reasignar un atajo haciendo clic y pulsando la combinación deseada (soportando modificadores `Ctrl`, `Alt`, `Shift`, `Meta` + Tecla).
+    - Modo de captura interactiva (_Record Hotkey_): botón para reasignar un atajo haciendo clic y pulsando la combinación deseada (soportando modificadores `Ctrl`, `Alt`, `Shift`, `Meta` + Tecla).
     - Detección de colisiones y duplicados: advertencia visual inmediata si una combinación asignada entra en conflicto con otro atajo existente.
-    - Botón de restauración de atajos predeterminados (*Reset to Defaults*).
+    - Botón de restauración de atajos predeterminados (_Reset to Defaults_).
 
 - [ ] **Descarte gestual mediante deslizamiento lateral (Swipe to Dismiss en Toasts) (`ToastContainer`):**
   - **Detección gestual táctil y de puntero:** Capturar eventos de arrastre (`onPointerDown`, `onPointerMove`, `onPointerUp`) sobre la tarjeta activa del frente (`stackIndex === 0`).
   - **Respuesta elástica y desvanecimiento dinámico:** A medida que el usuario arrastra la tarjeta hacia la derecha, desplazarla proporcionalmente en el eje X y reducir su opacidad progresivamente con un efecto de fricción física.
-  - **Umbral de expulsión (Threshold):** Si el desplazamiento supera el 40% del ancho de la tarjeta o se detecta una velocidad de lanzamiento rápida (*flick*), disparar la animación de expulsión lateral completa fuera de la pantalla y descartar el toast; de lo contrario, retornar suavemente a su posición original con efecto resorte (*spring*).
+  - **Umbral de expulsión (Threshold):** Si el desplazamiento supera el 40% del ancho de la tarjeta o se detecta una velocidad de lanzamiento rápida (_flick_), disparar la animación de expulsión lateral completa fuera de la pantalla y descartar el toast; de lo contrario, retornar suavemente a su posición original con efecto resorte (_spring_).
 
 - [ ] **Descarga independiente de videos completos:**
   - Posibilidad de descargar el archivo de video completo (video + audio) desde YouTube sin reproducirlo en la aplicación.

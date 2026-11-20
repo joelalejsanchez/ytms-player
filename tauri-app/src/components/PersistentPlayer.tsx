@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/Primitives";
 import { ScrollableText } from "@/components/ui/ScrollableText";
 import { useMediaSession } from "@/hooks/useMediaSession";
 import { usePlayerControlTooltips } from "@/hooks/usePlayerControlTooltips";
-import { formatDuration, toAssetUrl } from "@/lib/utils";
+import { cn, formatDuration, toAssetUrl } from "@/lib/utils";
 import { tauriApi } from "@/services/tauriIpc";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { toast } from "@/stores/useToastStore";
@@ -46,6 +46,200 @@ function dataUrlToBlobUrl(dataUrl: string): string {
   return dataUrl;
 }
 
+interface VerticalVolumeControlProps {
+  className?: string;
+}
+
+/**
+ * Control unificado de volumen flotante vertical con soporte híbrido de hover, click y rueda del ratón.
+ */
+const VerticalVolumeControl = React.memo(
+  ({ className }: VerticalVolumeControlProps) => {
+    const [showPopover, setShowPopover] = useState(false);
+    const popoverRef = useRef<HTMLDivElement | null>(null);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const volume = usePlayerStore((s) => s.volume);
+    const isMuted = usePlayerStore((s) => s.isMuted);
+    const setVolume = usePlayerStore((s) => s.setVolume);
+    const toggleMute = usePlayerStore((s) => s.toggleMute);
+
+    const volumeValue = isMuted ? 0 : volume;
+    const volumePercent = Math.min(100, Math.max(0, volumeValue * 100));
+
+    const handleMouseEnter = useCallback(() => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      setShowPopover(true);
+    }, []);
+
+    const handleMouseLeave = useCallback(() => {
+      timeoutRef.current = setTimeout(() => {
+        setShowPopover(false);
+      }, 250);
+    }, []);
+
+    // Control directo de rueda de ratón (Scroll Wheel)
+    const handleWheel = useCallback(
+      (e: React.WheelEvent) => {
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 0.05 : -0.05;
+        const current = isMuted ? 0 : volume;
+        const nextVolume = Math.max(
+          0,
+          Math.min(1, Math.round((current + delta) * 100) / 100),
+        );
+        if (isMuted && delta > 0) {
+          toggleMute();
+        }
+        setVolume(nextVolume);
+      },
+      [isMuted, volume, toggleMute, setVolume],
+    );
+
+    // Cierre al hacer clic fuera o presionar Escape
+    useEffect(() => {
+      if (!showPopover) return;
+
+      const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+        const target = e.target as Node;
+        if (popoverRef.current && !popoverRef.current.contains(target)) {
+          setShowPopover(false);
+        }
+      };
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          setShowPopover(false);
+        }
+      };
+
+      document.addEventListener("mousedown", handlePointerDown, true);
+      document.addEventListener("touchstart", handlePointerDown, true);
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        document.removeEventListener("mousedown", handlePointerDown, true);
+        document.removeEventListener("touchstart", handlePointerDown, true);
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    }, [showPopover]);
+
+    const handleVerticalVolumePointer = useCallback(
+      (e: React.PointerEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const offsetY = rect.bottom - e.clientY;
+        const newVol = Math.max(0, Math.min(1, offsetY / rect.height));
+        setVolume(newVol);
+      },
+      [setVolume],
+    );
+
+    const handleVolumeInput = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newVol = parseFloat(e.target.value);
+        setVolume(newVol);
+      },
+      [setVolume],
+    );
+
+    return (
+      <div
+        className={cn("relative", className)}
+        ref={popoverRef}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onWheel={handleWheel}
+      >
+        <Button
+          variant={showPopover ? "secondary" : "ghost"}
+          size="icon"
+          onClick={() => setShowPopover((prev) => !prev)}
+          title={
+            isMuted
+              ? "Volumen silenciado (acercar ratón o rueda para regular)"
+              : `Volumen: ${Math.round(volumePercent)}% (rueda para regular)`
+          }
+          aria-label="Ajustar volumen"
+          aria-haspopup="dialog"
+          aria-expanded={showPopover}
+        >
+          {isMuted || volume === 0 ? (
+            <VolumeX className="h-4 w-4 text-rose-400" />
+          ) : (
+            <Volume2 className="h-4 w-4" />
+          )}
+        </Button>
+
+        {/* Slider flotante VERTICAL */}
+        {showPopover && (
+          <div
+            role="dialog"
+            aria-label="Ajuste de volumen vertical flotante"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            className="absolute bottom-full right-1/2 translate-x-1/2 mb-2 flex flex-col items-center gap-2 rounded-xl border border-border bg-popover py-3 px-2 text-popover-foreground shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-100"
+          >
+            <span className="text-[10px] font-mono tabular-nums text-muted-foreground">
+              {Math.round(volumePercent)}%
+            </span>
+
+            <div
+              className="relative flex h-24 w-6 cursor-pointer select-none items-center justify-center"
+              onPointerDown={handleVerticalVolumePointer}
+            >
+              <div className="relative h-full w-1.5 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="absolute bottom-0 left-0 right-0 bg-primary transition-none"
+                  style={{ height: `${volumePercent}%` }}
+                />
+              </div>
+
+              <div
+                className="pointer-events-none absolute left-1/2 -translate-x-1/2 h-2.5 w-2.5 rounded-full bg-foreground shadow-md transition-none"
+                style={{ bottom: `${volumePercent}%`, marginBottom: "-5px" }}
+              />
+
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={volumeValue}
+                onChange={handleVolumeInput}
+                aria-label="Control de volumen vertical"
+                aria-orientation="vertical"
+                className="absolute cursor-pointer opacity-0"
+                style={{
+                  transform: "rotate(-90deg)",
+                  width: "96px",
+                  height: "24px",
+                }}
+              />
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleMute}
+              title={isMuted ? "Reactivar audio" : "Silenciar"}
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            >
+              {isMuted || volume === 0 ? (
+                <VolumeX className="h-3.5 w-3.5 text-rose-400" />
+              ) : (
+                <Volume2 className="h-3.5 w-3.5" />
+              )}
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  },
+);
+VerticalVolumeControl.displayName = "VerticalVolumeControl";
+
 /**
  * Reproductor de audio persistente ubicado en la parte inferior de la aplicación (SDD 7.1).
  * Utiliza selectores granulares de Zustand para mantenerse desacoplado de la biblioteca visual (SDD 7.2).
@@ -55,27 +249,10 @@ export const PersistentPlayer = React.memo(() => {
   useMediaSession(audioRef);
   const fadeAnimationRef = useRef<number | null>(null);
   const [showQueue, setShowQueue] = useState(false);
-  const [showVolumePopover, setShowVolumePopover] = useState(false);
   const [isSeekingLocally, setIsSeekingLocally] = useState(false);
   const [localSeekTime, setLocalSeekTime] = useState(0);
 
   const queueRef = useRef<HTMLDivElement | null>(null);
-  const volumePopoverRef = useRef<HTMLDivElement | null>(null);
-  const volumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const handleVolumeMouseEnter = useCallback(() => {
-    if (volumeTimeoutRef.current) {
-      clearTimeout(volumeTimeoutRef.current);
-      volumeTimeoutRef.current = null;
-    }
-    setShowVolumePopover(true);
-  }, []);
-
-  const handleVolumeMouseLeave = useCallback(() => {
-    volumeTimeoutRef.current = setTimeout(() => {
-      setShowVolumePopover(false);
-    }, 200);
-  }, []);
 
   const currentTrack = usePlayerStore((s) => s.currentTrack);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
@@ -96,8 +273,6 @@ export const PersistentPlayer = React.memo(() => {
   const clearSeekTarget = usePlayerStore((s) => s.clearSeekTarget);
   const setCurrentTime = usePlayerStore((s) => s.setCurrentTime);
   const setDuration = usePlayerStore((s) => s.setDuration);
-  const setVolume = usePlayerStore((s) => s.setVolume);
-  const toggleMute = usePlayerStore((s) => s.toggleMute);
   const playNext = usePlayerStore((s) => s.playNext);
   const playPrevious = usePlayerStore((s) => s.playPrevious);
   const playTrack = usePlayerStore((s) => s.playTrack);
@@ -131,19 +306,12 @@ export const PersistentPlayer = React.memo(() => {
     isMutedRef.current = isMuted;
   }, [volume, isMuted]);
 
-  // Cierre de popovers flotantes al hacer clic fuera o presionar Escape
+  // Cierre de la cola flotante al hacer clic fuera o presionar Escape
   useEffect(() => {
-    if (!showVolumePopover && !showQueue) return;
+    if (!showQueue) return;
 
     const handlePointerDown = (e: MouseEvent | TouchEvent) => {
       const target = e.target as Node;
-      if (
-        showVolumePopover &&
-        volumePopoverRef.current &&
-        !volumePopoverRef.current.contains(target)
-      ) {
-        setShowVolumePopover(false);
-      }
       if (showQueue && queueRef.current && !queueRef.current.contains(target)) {
         const queueTrigger = document.querySelector('[data-queue-trigger="true"]');
         if (!queueTrigger || !queueTrigger.contains(target)) {
@@ -154,7 +322,6 @@ export const PersistentPlayer = React.memo(() => {
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setShowVolumePopover(false);
         setShowQueue(false);
       }
     };
@@ -167,17 +334,7 @@ export const PersistentPlayer = React.memo(() => {
       document.removeEventListener("touchstart", handlePointerDown, true);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [showVolumePopover, showQueue]);
-
-  const handleVerticalVolumePointer = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const offsetY = rect.bottom - e.clientY;
-      const newVol = Math.max(0, Math.min(1, offsetY / rect.height));
-      setVolume(newVol);
-    },
-    [setVolume],
-  );
+  }, [showQueue]);
 
   // Conversión de volumen perceptual (curva cúbica de PulseAudio / PipeWire) a ganancia lineal para HTML5 Audio
   const toLinearGain = useCallback((perceptualVolume: number) => {
@@ -550,13 +707,6 @@ export const PersistentPlayer = React.memo(() => {
     }
   }, [isSeekingLocally, localSeekTime, seekTo, isLoadingTrack]);
 
-  const handleVolumeInput = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setVolume(Number(e.target.value));
-    },
-    [setVolume],
-  );
-
   const thumbnailSrc = toAssetUrl(currentTrack?.thumbnail_path);
 
   const displayTitle = useMemo(() => {
@@ -570,8 +720,6 @@ export const PersistentPlayer = React.memo(() => {
   const displayTime = isSeekingLocally ? localSeekTime : currentTime;
   const progressPercent =
     duration > 0 ? Math.min(100, Math.max(0, (displayTime / duration) * 100)) : 0;
-  const volumeValue = isMuted ? 0 : volume;
-  const volumePercent = Math.min(100, Math.max(0, volumeValue * 100));
 
   // Renderizado reutilizable de la barra de progreso de reproducción
   const renderProgressBar = (compact = false) => (
@@ -621,42 +769,6 @@ export const PersistentPlayer = React.memo(() => {
         }
         aria-disabled={!currentTrack || isLoadingTrack}
         className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed disabled:pointer-events-none"
-      />
-    </div>
-  );
-
-  // Renderizado reutilizable del control de volumen
-  const renderVolumeSlider = (compact = false) => (
-    <div
-      className={`group relative flex h-4 ${
-        compact ? "w-24" : "w-24 lg:w-28"
-      } cursor-pointer select-none items-center`}
-    >
-      {/* Pista de fondo */}
-      <div className="relative h-1 w-full overflow-hidden rounded-full bg-muted transition-all duration-150 group-hover:h-1.5">
-        {/* Relleno hasta el valor de volumen */}
-        <div
-          className="h-full bg-primary transition-none"
-          style={{ width: `${volumePercent}%` }}
-        />
-      </div>
-
-      {/* Indicador / Thumb pequeño instantáneo */}
-      <div
-        className="pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full bg-foreground shadow-md transition-none group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-primary"
-        style={{ left: `${volumePercent}%` }}
-      />
-
-      {/* Input range transparente */}
-      <input
-        type="range"
-        min={0}
-        max={1}
-        step={0.01}
-        value={volumeValue}
-        onChange={handleVolumeInput}
-        aria-label={compact ? "Control de volumen flotante" : "Control de volumen"}
-        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
       />
     </div>
   );
@@ -865,94 +977,7 @@ export const PersistentPlayer = React.memo(() => {
 
           {/* Lado derecho: Sonido vertical flotante + Cola + Pantalla Completa */}
           <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
-            {/* Control de volumen flotante VERTICAL al acercar el ratón (hover) */}
-            <div
-              className="relative"
-              ref={volumePopoverRef}
-              onMouseEnter={handleVolumeMouseEnter}
-              onMouseLeave={handleVolumeMouseLeave}
-            >
-              <Button
-                variant={showVolumePopover ? "secondary" : "ghost"}
-                size="icon"
-                onClick={() => setShowVolumePopover((prev) => !prev)}
-                title={
-                  isMuted
-                    ? "Volumen silenciado (acercar ratón para regular)"
-                    : `Volumen: ${Math.round(volumePercent)}%`
-                }
-                aria-label="Ajustar volumen"
-              >
-                {isMuted || volume === 0 ? (
-                  <VolumeX className="h-4 w-4 text-rose-400" />
-                ) : (
-                  <Volume2 className="h-4 w-4" />
-                )}
-              </Button>
-
-              {/* Slider flotante VERTICAL */}
-              {showVolumePopover && (
-                <div
-                  role="dialog"
-                  aria-label="Ajuste de volumen vertical flotante"
-                  onMouseEnter={handleVolumeMouseEnter}
-                  onMouseLeave={handleVolumeMouseLeave}
-                  className="absolute bottom-full right-1/2 translate-x-1/2 mb-2 flex flex-col items-center gap-2 rounded-xl border border-border bg-popover py-3 px-2 text-popover-foreground shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-100"
-                >
-                  <span className="text-[10px] font-mono tabular-nums text-muted-foreground">
-                    {Math.round(volumePercent)}%
-                  </span>
-
-                  <div
-                    className="relative flex h-24 w-6 cursor-pointer select-none items-center justify-center"
-                    onPointerDown={handleVerticalVolumePointer}
-                  >
-                    <div className="relative h-full w-1.5 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="absolute bottom-0 left-0 right-0 bg-primary transition-none"
-                        style={{ height: `${volumePercent}%` }}
-                      />
-                    </div>
-
-                    <div
-                      className="pointer-events-none absolute left-1/2 -translate-x-1/2 h-2.5 w-2.5 rounded-full bg-foreground shadow-md transition-none"
-                      style={{ bottom: `${volumePercent}%`, marginBottom: "-5px" }}
-                    />
-
-                    <input
-                      type="range"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={volumeValue}
-                      onChange={handleVolumeInput}
-                      aria-label="Control de volumen vertical"
-                      aria-orientation="vertical"
-                      className="absolute cursor-pointer opacity-0"
-                      style={{
-                        transform: "rotate(-90deg)",
-                        width: "96px",
-                        height: "24px",
-                      }}
-                    />
-                  </div>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={toggleMute}
-                    title={isMuted ? "Reactivar audio" : "Silenciar"}
-                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                  >
-                    {isMuted || volume === 0 ? (
-                      <VolumeX className="h-3.5 w-3.5 text-rose-400" />
-                    ) : (
-                      <Volume2 className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </div>
-              )}
-            </div>
+            <VerticalVolumeControl />
 
             {/* Botón de Cola de reproducción */}
             <Button
@@ -1093,28 +1118,9 @@ export const PersistentPlayer = React.memo(() => {
           </div>
         </div>
 
-        {/* Lado derecho: Selector horizontal de volumen + Cola + Pantalla Completa */}
-        <div className="flex items-center justify-end gap-3 min-w-[240px]">
-          <div className="flex items-center gap-2.5">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleMute}
-              title={isMuted ? "Reactivar audio" : "Silenciar"}
-            >
-              {isMuted || volume === 0 ? (
-                <VolumeX className="h-4 w-4 text-rose-400" />
-              ) : (
-                <Volume2 className="h-4 w-4" />
-              )}
-            </Button>
-
-            {renderVolumeSlider(false)}
-
-            <span className="w-8 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
-              {Math.round(volumePercent)}%
-            </span>
-          </div>
+        {/* Lado derecho: Sonido vertical flotante unificado + Cola + Pantalla Completa */}
+        <div className="flex items-center justify-end gap-2 shrink-0">
+          <VerticalVolumeControl />
 
           <Button
             variant={showQueue ? "secondary" : "ghost"}

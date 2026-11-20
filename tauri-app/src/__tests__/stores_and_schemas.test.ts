@@ -1142,6 +1142,47 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
         expect(thumb.className).not.toContain("transition-all");
       }
     });
+
+    it("renders NowPlayingView volume controls responsively without disappearing on compact screens, providing vertical floating popover", () => {
+      usePlayerStore.getState().playTrack(sampleTrack, [sampleTrack]);
+      usePlayerStore.setState({ isNowPlayingExpanded: true, volume: 0.6 });
+      const { getByLabelText, queryByRole, getByRole } = render(
+        React.createElement(NowPlayingView),
+      );
+
+      // 1. Control de volumen en modo compacto presente (nunca desaparece)
+      const compactVolumeBtn = getByLabelText("Ajustar volumen");
+      expect(compactVolumeBtn).toBeInTheDocument();
+      expect(compactVolumeBtn).toHaveAttribute("aria-haspopup", "dialog");
+
+      // 2. Control de volumen en modo escritorio también presente
+      const desktopSlider = getByLabelText("Control de volumen");
+      expect(desktopSlider).toBeInTheDocument();
+
+      // 3. Abrir popover vertical en compacto
+      const volumeContainer = compactVolumeBtn.closest(".relative");
+      expect(volumeContainer).not.toBeNull();
+      fireEvent.mouseEnter(volumeContainer!);
+
+      const volumePopover = getByRole("dialog", {
+        name: "Ajuste de volumen vertical flotante",
+      });
+      expect(volumePopover).toBeInTheDocument();
+
+      // 4. Slider vertical accesible
+      const verticalSlider = getByLabelText("Control de volumen vertical");
+      expect(verticalSlider).toBeInTheDocument();
+
+      // 5. Ajuste con rueda del ratón
+      fireEvent.wheel(volumeContainer!, { deltaY: -100 });
+      expect(usePlayerStore.getState().volume).toBe(0.65);
+
+      // 6. Cerrar con Escape
+      fireEvent.keyDown(window, { key: "Escape" });
+      expect(
+        queryByRole("dialog", { name: "Ajuste de volumen vertical flotante" }),
+      ).toBeNull();
+    });
   });
 
   describe("Responsive PlayerBar (PersistentPlayer)", () => {
@@ -1167,22 +1208,31 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       expect(desktopContainer).not.toBeNull();
     });
 
-    it("provides responsive volume controls with vertical floating popover on hover/click and desktop inline slider", () => {
+    it("provides unified vertical floating volume popover on hover/click and wheel scroll in both compact and desktop layouts", () => {
       usePlayerStore.getState().playTrack(sampleTrack, [sampleTrack]);
+      usePlayerStore.getState().setVolume(0.5);
       render(React.createElement(PersistentPlayer));
 
-      // Botón trigger de volumen flotante en vista compacta
-      const compactVolumeBtn = screen.getByLabelText("Ajustar volumen");
+      // Botones trigger de volumen flotante unificado en ambas vistas (compacta y escritorio)
+      const volumeBtns = screen.getAllByLabelText("Ajustar volumen");
+      expect(volumeBtns.length).toBeGreaterThanOrEqual(2);
+
+      const compactVolumeBtn = volumeBtns[0];
       expect(compactVolumeBtn).toBeInTheDocument();
+      expect(compactVolumeBtn).toHaveAttribute("aria-haspopup", "dialog");
 
       // Inicialmente el popover de volumen vertical flotante no está abierto
       expect(
         screen.queryByRole("dialog", { name: "Ajuste de volumen vertical flotante" }),
       ).toBeNull();
 
-      // Al acercar el ratón (hover / mouseEnter) al contenedor de volumen compacto, se muestra el popover vertical flotante
+      // Probar ajuste directo con rueda del ratón (Scroll Wheel)
       const volumeContainer = compactVolumeBtn.closest(".relative");
       expect(volumeContainer).not.toBeNull();
+      fireEvent.wheel(volumeContainer!, { deltaY: -100 }); // scroll up -> sube volumen +0.05
+      expect(usePlayerStore.getState().volume).toBe(0.55);
+
+      // Al acercar el ratón (hover / mouseEnter) al contenedor de volumen, se muestra el popover vertical flotante
       fireEvent.mouseEnter(volumeContainer!);
 
       const volumePopover = screen.getByRole("dialog", {

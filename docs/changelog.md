@@ -6,6 +6,25 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.16] - 2026-11-20
+
+### Mejorado
+
+#### Unificación y Adaptación Responsiva del Selector de Volumen en Barra y Visualizador (`PersistentPlayer` & `NowPlayingView`)
+- **Control de volumen responsivo en el visualizador a pantalla completa (`NowPlayingView`)**:
+  - Eliminada la desaparición del control de volumen en resoluciones compactas (anteriormente oculto con `hidden sm:flex`).
+  - Implementado selector híbrido responsivo en el pie del visualizador: en pantallas de escritorio (`>= sm`) mantiene el deslizador horizontal con ajuste directo por rueda del ratón (`Scroll Wheel`), mientras que en pantallas estrechas o compactas (`< sm`) se colapsa en un botón de altavoz accesible que despliega un popover vertical flotante idéntico al del reproductor principal.
+  - Soporte completo para rueda del ratón (`wheel`), arrastre/clic táctil vertical, retardo anti-rebote de 250ms y cierre prioritario con tecla `Escape` sin cerrar inesperadamente la vista completa del visualizador.
+- **Unificación del selector de volumen flotante vertical en vista completa (`PersistentPlayer`)**:
+  - Reemplazado el control deslizante horizontal permanente de la vista de escritorio por el selector flotante vertical interactivo, unificando la experiencia del reproductor tanto en resoluciones compactas como de escritorio.
+  - Al remover el slider horizontal permanente del extremo derecho, la barra de reproducción inferior queda completamente despejada y equilibrada, concediendo mayor espacio legible para los metadatos de la pista y centrando de forma óptima la barra de progreso.
+- **Interacción híbrida inteligente (Hover + Click/Focus) y ajuste con rueda del ratón**:
+  - Despliegue fluido del selector vertical tanto al posicionar el cursor sobre el botón de altavoz como al interactuar mediante clic o foco de teclado, con retardo calibrado de cierre de 250ms para evitar cierres accidentales durante el movimiento del puntero.
+  - Incorporado ajuste directo y continuo de volumen girando la rueda del ratón (`Scroll Wheel`) sobre el disparador de volumen en incrementos del 5%, con reactivación automática de audio si se encontraba silenciado.
+  - Accesibilidad WAI-ARIA completa (`aria-haspopup="dialog"`, `aria-expanded` y trampa de escape mediante `Escape`).
+
+---
+
 ## [1.9.15] - 2026-11-20
 
 ### Añadido
