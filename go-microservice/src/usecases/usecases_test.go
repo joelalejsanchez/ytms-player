@@ -250,6 +250,27 @@ func TestSyncLikesUseCase_DeduplicationAndValidation(t *testing.T) {
 	}
 }
 
+func TestSyncLikesUseCase_ResilienceToInvalidLocalIDs(t *testing.T) {
+	port := &mockLikesSyncPort{}
+	uc := NewSyncLikesUseCase(port)
+
+	// Se envían identificadores locales no-YouTube junto con identificadores válidos
+	resp, err := uc.Execute(context.Background(), domain.LikeSyncRequest{
+		YouTubeIDs:  []string{"dQw4w9WgXcQ", "local_file_track.mp3", "short", "abc123xyz89"},
+		AccessToken: "valid-token",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// Deben procesarse únicamente los 2 IDs válidos de YouTube, ignorando los locales
+	if resp.TotalProcessed != 2 {
+		t.Errorf("expected 2 unique valid IDs processed, got %d", resp.TotalProcessed)
+	}
+	if resp.SyncedCount != 2 {
+		t.Errorf("expected 2 synced items, got %d", resp.SyncedCount)
+	}
+}
+
 func TestHealthUseCase(t *testing.T) {
 	uc := NewHealthUseCase(nil)
 	status := uc.Execute(context.Background())

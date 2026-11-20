@@ -6,6 +6,24 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.1] - 2026-11-20
+
+### Añadido
+
+#### Discriminación de Origen de Pista (`origin`) y Exclusión de Archivos Locales en Sincronización de Likes
+- **Columna `origin` y migración retrocompatible en SQLite**:
+  - Incorporación de la columna `origin TEXT NOT NULL DEFAULT 'youtube'` en la tabla `tracks` (valores admisibles: `'youtube'` y `'local'`) con migración automática segura `ALTER TABLE` para bases de datos existentes.
+  - Sincronización transparente de `origin` en los modelos de dominio Rust (`Track`, `NewTrack`) con deserialización tolerante mediante `#[serde(default = "default_origin")]` y tipado estricto en TypeScript (`TrackOrigin = "youtube" | "local"`).
+- **Filtrado previo estricto en Tauri / Rust (`sync_likes_with_youtube`)**:
+  - Exclusión automática de todas las canciones de origen local (`origin == "local"`) antes de consultar al microservicio, enviando exclusivamente identificadores válidos de YouTube y optimizando la cuota de la API.
+- **Resiliencia en Microservicio Go (`SyncLikesUseCase`)**:
+  - Validación por lotes tolerante en Go: identificadores no pertenecientes a YouTube o archivos locales no provocan rechazo en bloque (`validation_error 400`), procesando todos los IDs válidos del lote de forma ininterrumpida.
+- **Gestión local de favoritos y feedback UX (`TrackRow` y `useLibraryStore`)**:
+  - Las pistas locales gestionan su estado de `liked` puramente en la base de datos local SQLite sin detonar llamadas a YouTube ni generar falsos toasts de error de sincronización.
+  - Badge visual `Local` en `TrackRow` e icono de favorito calibrado sin indicadores de error de sincronización externa, omitiendo la acción "Copiar enlace de YouTube" en pistas locales.
+
+---
+
 ## [1.9.0] - 2026-11-19
 
 ### Añadido

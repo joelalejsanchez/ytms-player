@@ -176,6 +176,7 @@ mod tests {
         let _ = fs::remove_dir_all(&ws_dir);
     }
 
+
     #[test]
     fn test_workspace_log_file_append_and_rotation() {
         let ws_dir = temp_workspace_dir("logs");
@@ -217,6 +218,7 @@ mod tests {
         let _ = fs::remove_dir_all(&ws_dir);
     }
 
+
     #[test]
     fn test_track_deduplication_and_missing_integrity() {
         let ws_dir = temp_workspace_dir("integrity");
@@ -241,6 +243,7 @@ mod tests {
             liked: None,
             is_missing: false,
             file_size: 0,
+            origin: "youtube".to_string(),
         };
 
         let created =
@@ -274,6 +277,7 @@ mod tests {
         let _ = fs::remove_dir_all(&ws_dir);
     }
 
+
     #[test]
     fn test_playlists_and_likes_sync_transactions() {
         let ws_dir = temp_workspace_dir("playlists");
@@ -292,6 +296,7 @@ mod tests {
                 liked: None,
                 is_missing: false,
                 file_size: 1024,
+                origin: "youtube".to_string(),
             })
             .expect("insert track");
 
@@ -337,6 +342,7 @@ mod tests {
                 liked: None,
                 is_missing: false,
                 file_size: 2048,
+                origin: "youtube".to_string(),
             })
             .expect("insert second track");
 
@@ -361,6 +367,7 @@ mod tests {
         let _ = fs::remove_dir_all(&ws_dir);
     }
 
+
     #[test]
     fn test_dynamic_playlist_covers_lifecycle() {
         let ws_dir = temp_workspace_dir("playlist-covers");
@@ -379,6 +386,7 @@ mod tests {
                 liked: None,
                 is_missing: false,
                 file_size: 1000,
+                origin: "youtube".to_string(),
             })
             .expect("insert t1");
 
@@ -395,6 +403,7 @@ mod tests {
                 liked: None,
                 is_missing: false,
                 file_size: 2000,
+                origin: "youtube".to_string(),
             })
             .expect("insert t2");
 
@@ -451,6 +460,112 @@ mod tests {
             .expect("get pl details")
             .playlist;
         assert_eq!(pl_empty.cover_path, None);
+
+        let _ = fs::remove_dir_all(&ws_dir);
+    }
+
+    #[test]
+    fn test_origin_discrimination_and_likes_sync_exclusion() {
+        use std::sync::Mutex;
+        use crate::application::download_sync_usecases;
+        use crate::domain::entities::{HealthStatusDto, LikeSyncResponseDto, MicroserviceDownloadRequest, MicroserviceDownloadResponse, OAuthStatusDto, PlaylistPreviewDto};
+        use crate::domain::errors::DomainResult;
+        use crate::domain::ports::MicroserviceClientPort;
+
+        struct MockLikesClient {
+            sent_ids: Mutex<Vec<String>>,
+        }
+
+        impl MicroserviceClientPort for MockLikesClient {
+            fn trigger_download(&self, _: &MicroserviceDownloadRequest) -> DomainResult<MicroserviceDownloadResponse> {
+                unimplemented!()
+            }
+            fn sync_likes(&self, ids: &[String], _: Option<&str>) -> DomainResult<LikeSyncResponseDto> {
+                let mut guard = self.sent_ids.lock().unwrap();
+                guard.extend(ids.iter().cloned());
+                Ok(LikeSyncResponseDto {
+                    results: ids.iter().map(|id| LikeSyncItemDto {
+                        youtube_id: id.clone(),
+                        liked: true,
+                        synced: true,
+                        synced_at: "2026-11-20T00:00:00Z".to_string(),
+                    }).collect(),
+                    total_processed: ids.len(),
+                    synced_count: ids.len(),
+                })
+            }
+            fn check_health(&self) -> DomainResult<HealthStatusDto> { unimplemented!() }
+            fn get_oauth_status(&self) -> DomainResult<OAuthStatusDto> { unimplemented!() }
+            fn logout_oauth(&self) -> DomainResult<()> { unimplemented!() }
+            fn rate_video(&self, _: &str, _: &str) -> DomainResult<()> { unimplemented!() }
+            fn preview_url(&self, _: &str) -> DomainResult<PlaylistPreviewDto> { unimplemented!() }
+        }
+
+        let ws_dir = temp_workspace_dir("origin-test");
+        let store = SqliteWorkspaceStore::open_in_memory(&ws_dir).expect("open sqlite");
+
+        // 1. Insertar track proveniente de YouTube
+        let yt_track = store
+            .upsert_track(&NewTrack {
+                youtube_id: "dQw4w9WgXcQ".to_string(),
+                title: "YouTube Video".to_string(),
+                artist: "Rick Astley".to_string(),
+                duration: 213,
+                published_at: None,
+                file_extension: "mp3".to_string(),
+                thumbnail_path: None,
+                synced: false,
+                liked: None,
+                is_missing: false,
+                file_size: 1000,
+                origin: "youtube".to_string(),
+            })
+            .expect("insert youtube track");
+        assert_eq!(yt_track.origin, "youtube");
+
+        // 2. Insertar track local
+        let local_track = store
+            .upsert_track(&NewTrack {
+                youtube_id: "my_local_track_file".to_string(),
+                title: "Local Track".to_string(),
+                artist: "Local Artist".to_string(),
+                duration: 150,
+                published_at: None,
+                file_extension: "mp3".to_string(),
+                thumbnail_path: None,
+                synced: false,
+                liked: None,
+                is_missing: false,
+                file_size: 2000,
+                origin: "local".to_string(),
+            })
+            .expect("insert local track");
+        assert_eq!(local_track.origin, "local");
+
+        // 3. Ejecutar sincronización de likes
+        let mock_client = MockLikesClient {
+            sent_ids: Mutex::new(Vec::new()),
+        };
+        let sync_resp = download_sync_usecases::sync_likes_with_youtube(
+            None,
+            Some("fake_token".to_string()),
+            &store,
+            &mock_client,
+        )
+        .expect("sync likes");
+
+        // 4. Comprobar que únicamente se envió el identificador de YouTube al microservicio
+        let sent = mock_client.sent_ids.lock().unwrap().clone();
+        assert_eq!(sent, vec!["dQw4w9WgXcQ"]);
+        assert_eq!(sync_resp.total_processed, 1);
+
+        // 5. Comprobar que el track local no fue alterado por la sincronización de YouTube
+        let fetched_local = store
+            .get_track_by_youtube_id("my_local_track_file")
+            .expect("get local")
+            .expect("exists");
+        assert_eq!(fetched_local.liked, None);
+        assert!(!fetched_local.synced);
 
         let _ = fs::remove_dir_all(&ws_dir);
     }

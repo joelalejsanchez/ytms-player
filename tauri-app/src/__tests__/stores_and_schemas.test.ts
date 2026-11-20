@@ -4,6 +4,7 @@ import { fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { formatBytes, formatDuration, formatHumanDuration } from "@/lib/utils";
 import { PersistentPlayer } from "@/components/PersistentPlayer";
 import { HomeView } from "@/features/home/HomeView";
+import { TrackRow } from "@/features/library/TrackRow";
 import { PlaylistsView } from "@/features/playlists/PlaylistsView";
 import { NowPlayingView } from "@/features/visualizer/components/NowPlayingView";
 import { useLibraryStore } from "@/stores/useLibraryStore";
@@ -966,6 +967,73 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       expect(screen.getByText(/Cola de Reproducción/i)).toBeInTheDocument();
       fireEvent.keyDown(window, { key: "Escape" });
       expect(screen.queryByText(/Cola de Reproducción/i)).toBeNull();
+    });
+  });
+
+  describe("Track Origin Discrimination & Local Tracks Likes Handling (TrackRow & useLibraryStore)", () => {
+    it("renders local tracks with 'Local' badge and local favorite tooltip without YouTube watch link", () => {
+      const localTrack: Track = {
+        ...sampleTrack,
+        id: 99,
+        youtube_id: "local_rec_01",
+        title: "Audio Grabación Local",
+        artist: "Artista Local",
+        origin: "local",
+        liked: true,
+        synced: false,
+      };
+
+      render(
+        React.createElement(TrackRow, {
+          track: localTrack,
+          isCurrent: false,
+          isPlaying: false,
+          playlists: [],
+          onPlay: vi.fn(),
+          onEnqueue: vi.fn(),
+          onToggleLike: vi.fn(),
+          onDelete: vi.fn(),
+          onTogglePlaylist: vi.fn(),
+        }),
+      );
+
+      expect(screen.getByText("Local")).toBeInTheDocument();
+      expect(screen.getByTitle("Me gusta (Archivo local)")).toBeInTheDocument();
+    });
+
+    it("manages local track likes optimistically in useLibraryStore without YouTube error toast", async () => {
+      const localTrack: Track = {
+        ...sampleTrack,
+        id: 100,
+        youtube_id: "my_local_track_02",
+        title: "Mi pista local",
+        artist: "Desconocido",
+        origin: "local",
+        liked: false,
+        synced: false,
+      };
+
+      useLibraryStore.setState({
+        tracks: [localTrack],
+        syncStatusByTrack: {},
+      });
+
+      // Simular respuesta de tauriApi.toggleTrackLike para pista local
+      vi.spyOn(tauriApi, "toggleTrackLike").mockResolvedValueOnce({
+        ...localTrack,
+        liked: true,
+        synced: false,
+      });
+
+      await useLibraryStore.getState().toggleLike("my_local_track_02", true);
+
+      const updated = useLibraryStore
+        .getState()
+        .tracks.find((t) => t.youtube_id === "my_local_track_02");
+      expect(updated?.liked).toBe(true);
+      expect(
+        useLibraryStore.getState().syncStatusByTrack["my_local_track_02"]?.status,
+      ).toBe("local");
     });
   });
 });

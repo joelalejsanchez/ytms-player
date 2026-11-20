@@ -42,13 +42,23 @@ func (uc *SyncLikesUseCase) Execute(ctx context.Context, req domain.LikeSyncRequ
 	uniqueIDs := make([]string, 0, len(req.YouTubeIDs))
 
 	for _, id := range req.YouTubeIDs {
+		// Resiliencia: si un ID individual no cumple con el formato de YouTube (ej. archivo local),
+		// se omite de forma tolerante sin hacer fallar el lote completo
 		if err := domain.ValidateYouTubeID(id); err != nil {
-			return domain.LikeSyncResponse{}, err
+			continue
 		}
 		if _, exists := seen[id]; !exists {
 			seen[id] = struct{}{}
 			uniqueIDs = append(uniqueIDs, id)
 		}
+	}
+
+	if len(uniqueIDs) == 0 {
+		return domain.LikeSyncResponse{
+			Results:        []domain.LikeSyncItem{},
+			TotalProcessed: 0,
+			SyncedCount:    0,
+		}, nil
 	}
 
 	allResults := make([]domain.LikeSyncItem, 0, len(uniqueIDs))

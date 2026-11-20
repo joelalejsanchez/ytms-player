@@ -11,7 +11,20 @@ pub fn register_or_update_track(
     workspace_manager: &dyn WorkspaceManagerPort,
     track_repo: &dyn TrackRepository,
 ) -> DomainResult<Track> {
-    validate_youtube_id(&input.youtube_id)?;
+    if input.origin == "local" {
+        if input.youtube_id.trim().is_empty()
+            || input.youtube_id.contains('/')
+            || input.youtube_id.contains('\\')
+            || input.youtube_id.contains('\0')
+            || input.youtube_id.contains("..")
+        {
+            return Err(DomainError::ValidationError(
+                "Invalid local track identifier".to_string(),
+            ));
+        }
+    } else {
+        validate_youtube_id(&input.youtube_id)?;
+    }
 
     if input.title.trim().is_empty() {
         input.title = input.youtube_id.clone();

@@ -113,6 +113,7 @@ pub fn persist_single_downloaded_item(
         liked: None,
         is_missing: false,
         file_size: item.file_size,
+        origin: "youtube".to_string(),
     };
 
     let saved_track =
@@ -260,13 +261,19 @@ pub fn sync_likes_with_youtube(
     track_repo: &dyn TrackRepository,
     microservice: &dyn MicroserviceClientPort,
 ) -> DomainResult<LikeSyncResponseDto> {
+    let all_tracks = track_repo.get_all_tracks()?;
+    let youtube_set: std::collections::HashSet<String> = all_tracks
+        .into_iter()
+        .filter(|t| t.origin == "youtube")
+        .map(|t| t.youtube_id)
+        .collect();
+
     let target_ids: Vec<String> = match youtube_ids {
-        Some(ids) if !ids.is_empty() => ids,
-        _ => track_repo
-            .get_all_tracks()?
+        Some(ids) if !ids.is_empty() => ids
             .into_iter()
-            .map(|t| t.youtube_id)
+            .filter(|id| youtube_set.contains(id))
             .collect(),
+        _ => youtube_set.into_iter().collect(),
     };
 
     if target_ids.is_empty() {

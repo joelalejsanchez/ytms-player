@@ -182,6 +182,15 @@ pub async fn toggle_track_like(
     let store = ctx.store.clone();
 
     tokio::task::spawn_blocking(move || {
+        let existing = store
+            .get_track_by_youtube_id(&youtube_id)?
+            .ok_or_else(|| DomainError::TrackNotFound(youtube_id.clone()))?;
+
+        if existing.origin == "local" {
+            // Para pistas locales, gestionar su estado de favorito puramente en SQLite sin llamar a YouTube
+            return store.set_track_liked(&youtube_id, liked, false);
+        }
+
         validate_youtube_id(&youtube_id)?;
 
         let mut is_synced = false;
@@ -620,6 +629,12 @@ pub async fn adopt_orphan_file(
             }
         }
 
+        let is_yt = youtube_id.trim().len() == 11
+            && youtube_id
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_');
+        let origin = if is_yt { "youtube" } else { "local" };
+
         let new_track = NewTrack {
             youtube_id: youtube_id.clone(),
             title: final_title,
@@ -632,6 +647,7 @@ pub async fn adopt_orphan_file(
             liked: final_liked,
             is_missing: false,
             file_size: size,
+            origin: origin.to_string(),
         };
 
         track_usecases::register_or_update_track(&root_path, new_track, &manager, store.as_ref())
@@ -663,6 +679,12 @@ pub async fn refresh_track_metadata(
             .get_track_by_youtube_id(&youtube_id)?
             .ok_or_else(|| DomainError::TrackNotFound(youtube_id.clone()))?;
 
+        if existing.origin == "local" {
+            return Err(DomainError::ValidationError(
+                "Cannot refresh metadata from YouTube for local track".to_string(),
+            ));
+        }
+
         let updated = NewTrack {
             youtube_id: existing.youtube_id,
             title: if !item.title.trim().is_empty() {
@@ -687,6 +709,7 @@ pub async fn refresh_track_metadata(
             liked: existing.liked,
             is_missing: existing.is_missing,
             file_size: existing.file_size,
+            origin: existing.origin,
         };
 
         track_usecases::register_or_update_track(&root_path, updated, &manager, store.as_ref())

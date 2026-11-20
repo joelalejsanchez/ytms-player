@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS tracks (
     liked BOOLEAN NULL,
     is_missing BOOLEAN DEFAULT 0,
     file_size INTEGER DEFAULT 0,
+    origin TEXT NOT NULL DEFAULT 'youtube',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -100,6 +101,7 @@ impl SqliteWorkspaceStore {
 
         // Migración retrocompatible para bases de datos existentes
         let _ = conn.execute("ALTER TABLE playlists ADD COLUMN cover_path TEXT NULL", []);
+        let _ = conn.execute("ALTER TABLE tracks ADD COLUMN origin TEXT NOT NULL DEFAULT 'youtube'", []);
 
         Ok(Self {
             workspace_root,
@@ -117,6 +119,8 @@ impl SqliteWorkspaceStore {
             .to_string_lossy()
             .to_string();
 
+        let origin: String = row.get(13).unwrap_or_else(|_| "youtube".to_string());
+
         Ok(Track {
             id: row.get(0)?,
             youtube_id,
@@ -132,6 +136,7 @@ impl SqliteWorkspaceStore {
             is_missing: row.get(10)?,
             file_size: row.get(11)?,
             created_at: row.get(12)?,
+            origin,
         })
     }
 }
@@ -151,8 +156,8 @@ impl TrackRepository for SqliteWorkspaceStore {
             r"
             INSERT INTO tracks (
                 youtube_id, title, artist, duration, published_at,
-                file_extension, thumbnail_path, synced, liked, is_missing, file_size
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+                file_extension, thumbnail_path, synced, liked, is_missing, file_size, origin
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
             ON CONFLICT(youtube_id) DO UPDATE SET
                 title = excluded.title,
                 artist = excluded.artist,
@@ -161,7 +166,8 @@ impl TrackRepository for SqliteWorkspaceStore {
                 file_extension = excluded.file_extension,
                 thumbnail_path = COALESCE(excluded.thumbnail_path, tracks.thumbnail_path),
                 is_missing = excluded.is_missing,
-                file_size = CASE WHEN excluded.file_size > 0 THEN excluded.file_size ELSE tracks.file_size END
+                file_size = CASE WHEN excluded.file_size > 0 THEN excluded.file_size ELSE tracks.file_size END,
+                origin = COALESCE(NULLIF(excluded.origin, ''), tracks.origin)
             ",
             params![
                 track.youtube_id,
@@ -175,6 +181,11 @@ impl TrackRepository for SqliteWorkspaceStore {
                 track.liked,
                 track.is_missing,
                 track.file_size,
+                if track.origin.trim().is_empty() {
+                    "youtube"
+                } else {
+                    &track.origin
+                },
             ],
         )
         .map_err(|e| DomainError::PersistenceError(format!("Failed to upsert track: {e}")))?;
@@ -199,7 +210,7 @@ impl TrackRepository for SqliteWorkspaceStore {
                 r"
                 SELECT id, youtube_id, title, artist, duration, published_at,
                        file_extension, thumbnail_path, synced, liked, is_missing,
-                       file_size, created_at
+                       file_size, created_at, origin
                 FROM tracks
                 ORDER BY created_at DESC, id DESC
                 ",
@@ -230,7 +241,7 @@ impl TrackRepository for SqliteWorkspaceStore {
                 r"
                 SELECT id, youtube_id, title, artist, duration, published_at,
                        file_extension, thumbnail_path, synced, liked, is_missing,
-                       file_size, created_at
+                       file_size, created_at, origin
                 FROM tracks
                 WHERE youtube_id = ?1
                 ",
@@ -253,7 +264,7 @@ impl TrackRepository for SqliteWorkspaceStore {
                 r"
                 SELECT id, youtube_id, title, artist, duration, published_at,
                        file_extension, thumbnail_path, synced, liked, is_missing,
-                       file_size, created_at
+                       file_size, created_at, origin
                 FROM tracks
                 WHERE is_missing = 1
                 ORDER BY created_at DESC, id DESC
@@ -771,7 +782,7 @@ impl PlaylistRepository for SqliteWorkspaceStore {
                 r"
                 SELECT t.id, t.youtube_id, t.title, t.artist, t.duration, t.published_at,
                        t.file_extension, t.thumbnail_path, t.synced, t.liked, t.is_missing,
-                       t.file_size, t.created_at
+                       t.file_size, t.created_at, t.origin
                 FROM tracks t
                 INNER JOIN playlist_tracks pt ON pt.track_id = t.id
                 WHERE pt.playlist_id = ?1

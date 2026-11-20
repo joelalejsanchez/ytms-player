@@ -1,5 +1,9 @@
 use serde::{Deserialize, Serialize};
 
+fn default_origin() -> String {
+    "youtube".to_string()
+}
+
 /// Entidad principal de un contenido multimedia local (SDD 4.1 Tabla `tracks`).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Track {
@@ -17,6 +21,8 @@ pub struct Track {
     pub is_missing: bool,
     pub file_size: i64,
     pub created_at: String,
+    #[serde(default = "default_origin")]
+    pub origin: String,
 }
 
 /// Datos requeridos para registrar o actualizar un Track en SQLite.
@@ -33,6 +39,8 @@ pub struct NewTrack {
     pub liked: Option<bool>,
     pub is_missing: bool,
     pub file_size: i64,
+    #[serde(default = "default_origin")]
+    pub origin: String,
 }
 
 /// Entidad de Playlist creada o importada por el usuario (SDD 4.2 Tabla `playlists`).

@@ -310,18 +310,22 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
   toggleLike: async (youtubeId, liked) => {
     // 1. Actualización optimista inmediata en memoria para respuesta instantánea de la UI
     const prevTrack = get().tracks.find((t) => t.youtube_id === youtubeId);
+    const isLocal = prevTrack?.origin === "local";
+
     if (prevTrack) {
       get().upsertTrackLocal({ ...prevTrack, liked });
     } else {
       usePlayerStore.getState().updateTrackMetadata({ youtube_id: youtubeId, liked });
     }
 
-    set((state) => ({
-      syncStatusByTrack: {
-        ...state.syncStatusByTrack,
-        [youtubeId]: { status: "loading" },
-      },
-    }));
+    if (!isLocal) {
+      set((state) => ({
+        syncStatusByTrack: {
+          ...state.syncStatusByTrack,
+          [youtubeId]: { status: "loading" },
+        },
+      }));
+    }
 
     try {
       const updated = await tauriApi.toggleTrackLike(youtubeId, liked);
@@ -330,11 +334,25 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
         syncStatusByTrack: {
           ...state.syncStatusByTrack,
           [youtubeId]: {
-            status: updated.synced ? "synced" : "local",
+            status:
+              isLocal || updated.origin === "local"
+                ? "local"
+                : updated.synced
+                  ? "synced"
+                  : "local",
           },
         },
       }));
     } catch (err) {
+      if (isLocal) {
+        const message = extractErrorMessage(
+          err,
+          "No se pudo actualizar el favorito local",
+        );
+        set({ error: message });
+        return;
+      }
+
       const message = extractErrorMessage(
         err,
         "No se pudo sincronizar el estado de like con YouTube",

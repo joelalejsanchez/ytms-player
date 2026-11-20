@@ -1,5 +1,7 @@
 export type AudioFormat = "mp3" | "m4a" | "opus";
 
+export type TrackOrigin = "youtube" | "local";
+
 export type DownloadStatus =
   "queued" | "downloading" | "processing" | "completed" | "skipped" | "failed";
 
@@ -21,6 +23,7 @@ export interface Track {
   is_missing: boolean;
   file_size: number;
   created_at: string;
+  origin?: TrackOrigin;
 }
 
 export interface NewTrack {
@@ -35,6 +38,7 @@ export interface NewTrack {
   liked: boolean | null;
   is_missing: boolean;
   file_size: number;
+  origin?: TrackOrigin;
 }
 
 export interface Playlist {

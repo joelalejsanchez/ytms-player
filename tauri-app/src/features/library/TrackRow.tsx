@@ -58,30 +58,39 @@ export const TrackRow = React.memo(
     onTogglePlaylist,
   }: TrackRowProps) => {
     const thumbUrl = toAssetUrl(track.thumbnail_path);
-    const isSyncingLike = syncStatus?.status === "loading";
-    const isSynced = track.synced || syncStatus?.status === "synced";
+    const isLocal = track.origin === "local";
+    const isSyncingLike = !isLocal && syncStatus?.status === "loading";
+    const isSynced = !isLocal && (track.synced || syncStatus?.status === "synced");
     const isCorrupted = usePlayerStore((s) =>
       s.corruptedTrackIds.includes(track.youtube_id),
     );
 
     // Unificación de estado de Like y Sincronización en el botón de corazón
-    const likeButtonTitle = isSyncingLike
-      ? "Sincronizando con YouTube..."
+    const likeButtonTitle = isLocal
+      ? track.liked
+        ? "Me gusta (Archivo local)"
+        : "Marcar como favorita (Archivo local)"
+      : isSyncingLike
+        ? "Sincronizando con YouTube..."
+        : track.liked
+          ? isSynced
+            ? "Me gusta (Sincronizado con YouTube)"
+            : "Me gusta (Guardado local / No sincronizado)"
+          : isSynced
+            ? "Sin Me gusta (Sincronizado con YouTube)"
+            : "Sin Me gusta (Guardado local)";
+
+    const heartIconClass = isLocal
+      ? track.liked
+        ? "fill-rose-500 text-rose-500"
+        : "text-muted-foreground/60 hover:text-rose-500 hover:fill-rose-500/20"
       : track.liked
         ? isSynced
-          ? "Me gusta (Sincronizado con YouTube)"
-          : "Me gusta (Guardado local / No sincronizado)"
+          ? "fill-rose-500 text-rose-500" // Rojo si está con like y sincronizado
+          : "fill-amber-500 text-amber-500" // Naranja/Ámbar si está con like pero solo local
         : isSynced
-          ? "Sin Me gusta (Sincronizado con YouTube)"
-          : "Sin Me gusta (Guardado local)";
-
-    const heartIconClass = track.liked
-      ? isSynced
-        ? "fill-rose-500 text-rose-500" // Rojo si está con like y sincronizado
-        : "fill-amber-500 text-amber-500" // Naranja/Ámbar si está con like pero solo local
-      : isSynced
-        ? "text-emerald-500 hover:text-rose-500 hover:fill-rose-500/20" // Borde verde para estado sincronizado ante like nulo
-        : "text-muted-foreground/60 hover:text-rose-500 hover:fill-rose-500/20"; // Borde gris atenuado ante like nulo no sincronizado
+          ? "text-emerald-500 hover:text-rose-500 hover:fill-rose-500/20" // Borde verde para estado sincronizado ante like nulo
+          : "text-muted-foreground/60 hover:text-rose-500 hover:fill-rose-500/20"; // Borde gris atenuado ante like nulo no sincronizado
 
     return (
       <div
@@ -131,6 +140,11 @@ export const TrackRow = React.memo(
               >
                 {track.title}
               </p>
+              {isLocal && (
+                <Badge tone="default" className="text-[10px] px-1.5 py-0 font-normal">
+                  Local
+                </Badge>
+              )}
               {track.is_missing && (
                 <Badge tone="warning" className="text-[10px]">
                   <AlertCircle className="h-3 w-3" />
@@ -198,19 +212,26 @@ export const TrackRow = React.memo(
             isLoading={isDeleting}
             title="Opciones de la canción"
             items={[
-              {
-                label: "Copiar enlace",
-                icon: <Link className="h-3.5 w-3.5" />,
-                onClick: async () => {
-                  try {
-                    await navigator.clipboard.writeText(
-                      `https://www.youtube.com/watch?v=${track.youtube_id}`,
-                    );
-                  } catch (err) {
-                    console.error("No se pudo copiar el enlace al portapapeles:", err);
-                  }
-                },
-              },
+              ...(!isLocal
+                ? [
+                    {
+                      label: "Copiar enlace",
+                      icon: <Link className="h-3.5 w-3.5" />,
+                      onClick: async () => {
+                        try {
+                          await navigator.clipboard.writeText(
+                            `https://www.youtube.com/watch?v=${track.youtube_id}`,
+                          );
+                        } catch (err) {
+                          console.error(
+                            "No se pudo copiar el enlace al portapapeles:",
+                            err,
+                          );
+                        }
+                      },
+                    },
+                  ]
+                : []),
               {
                 label: "Eliminar canción",
                 icon: <Trash2 className="h-3.5 w-3.5" />,
