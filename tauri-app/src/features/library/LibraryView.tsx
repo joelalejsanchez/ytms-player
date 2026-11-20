@@ -310,6 +310,8 @@ export const LibraryView = React.memo(() => {
             onChange={setFormatFilter}
             options={FORMAT_OPTIONS}
             ariaLabel="Filtrar por formato"
+            className="w-40 shrink-0"
+            triggerClassName="w-full bg-card"
           />
 
           <CustomSelect
@@ -317,6 +319,8 @@ export const LibraryView = React.memo(() => {
             onChange={(v) => setSortField(v as SortField)}
             options={SORT_OPTIONS}
             ariaLabel="Ordenar por"
+            className="w-44 shrink-0"
+            triggerClassName="w-full bg-card"
           />
 
           <Button
@@ -324,9 +328,9 @@ export const LibraryView = React.memo(() => {
             size="sm"
             onClick={() => setSortAsc((prev) => !prev)}
             title={`Orden: ${sortAsc ? "Ascendente" : "Descendente"}`}
-            className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground border border-border bg-card"
+            className="h-8 w-[72px] shrink-0 justify-center px-2 text-xs text-muted-foreground hover:text-foreground border border-border bg-card"
           >
-            <ArrowUpDown className="h-3.5 w-3.5" />
+            <ArrowUpDown className="h-3.5 w-3.5 shrink-0" />
             <span>{sortAsc ? "ASC" : "DESC"}</span>
           </Button>
         </div>

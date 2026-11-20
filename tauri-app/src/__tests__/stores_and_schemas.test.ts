@@ -7,6 +7,7 @@ import { DownloadsView } from "@/features/downloads/DownloadsView";
 import { PlaylistImportModal } from "@/features/downloads/PlaylistImportModal";
 import { HomeView } from "@/features/home/HomeView";
 import { TrackRow } from "@/features/library/TrackRow";
+import { LibraryView } from "@/features/library/LibraryView";
 import { PlaylistsView } from "@/features/playlists/PlaylistsView";
 import { Sidebar } from "@/components/Sidebar";
 import { WorkspaceSettingsView } from "@/features/workspace/WorkspaceSettingsView";
@@ -2728,6 +2729,41 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       expect(
         getByRole("button", { name: /Contraer barra lateral/i }),
       ).toBeInTheDocument();
+    });
+  });
+
+  describe("LibraryView Select Widths Stabilization", () => {
+    it("renders format and sort filters with stabilized fixed widths and fixed ASC/DESC button", () => {
+      const { getByRole } = render(React.createElement(LibraryView));
+
+      // Combobox de formato
+      const formatTrigger = getByRole("combobox", { name: /Filtrar por formato/i });
+      expect(formatTrigger).toBeInTheDocument();
+      expect(formatTrigger.classList.contains("w-full")).toBe(true);
+      const formatContainer = formatTrigger.parentElement;
+      expect(formatContainer?.classList.contains("w-40")).toBe(true);
+      expect(formatContainer?.classList.contains("shrink-0")).toBe(true);
+
+      // Combobox de ordenamiento
+      const sortTrigger = getByRole("combobox", { name: /Ordenar por/i });
+      expect(sortTrigger).toBeInTheDocument();
+      expect(sortTrigger.classList.contains("w-full")).toBe(true);
+      const sortContainer = sortTrigger.parentElement;
+      expect(sortContainer?.classList.contains("w-44")).toBe(true);
+      expect(sortContainer?.classList.contains("shrink-0")).toBe(true);
+
+      // Botón de alternancia ASC/DESC
+      const sortOrderBtn = getByRole("button", { name: /^DESC$/i });
+      expect(sortOrderBtn).toBeInTheDocument();
+      expect(sortOrderBtn.title).toContain("Orden: Descendente");
+      expect(sortOrderBtn.classList.contains("w-[72px]")).toBe(true);
+      expect(sortOrderBtn.classList.contains("shrink-0")).toBe(true);
+      expect(sortOrderBtn.textContent).toContain("DESC");
+
+      // Alternar a ASC
+      fireEvent.click(sortOrderBtn);
+      expect(sortOrderBtn.title).toContain("Orden: Ascendente");
+      expect(sortOrderBtn.textContent).toContain("ASC");
     });
   });
 });

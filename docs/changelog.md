@@ -6,6 +6,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.24] - 2026-11-20
+
+### Añadido
+
+#### Estabilización de Ancho y Prevención de Saltos de Layout en Selects (`LibraryView.tsx`)
+- **Estabilización Visual de Controles en Biblioteca**:
+  - Asignación de dimensiones fijas calibradas a los contenedores y triggers de los desplegables `CustomSelect`: `w-40 shrink-0` para el filtro de formato de audio y `w-44 shrink-0` para el selector de criterio de ordenación.
+  - Asignación de ancho fijo calibrado (`w-[72px] shrink-0`) y centrado al botón de alternancia de dirección de ordenamiento (*ASC* / *DESC*).
+  - Prevención absoluta de desplazamientos horizontales y saltos abruptos de layout al alternar entre opciones de texto corto y largo (ej. *"Todos los formatos"* vs *"MP3"* o *"Fecha de registro"* vs *"Título"*).
+
+---
+
 ## [1.9.23] - 2026-11-20
 
 ### Añadido
