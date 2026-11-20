@@ -12,6 +12,11 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
+- [ ] **Sorteo aleatorio integral al iniciar reproducción de Playlist en modo Shuffle (`usePlayerStore` / `HomeView` / `PlaylistsView`):**
+  - **Diagnóstico del comportamiento actual:** Al pulsar "Reproducir Playlist" o el botón de Quick Play con el modo aleatorio activo (`isShuffle === true`), la aplicación selecciona por defecto la primera pista disponible (`playlistTracks[0]`) y luego ejecuta `shuffleTracksWithFirst(tracks, firstTrack)`, forzando que la reproducción siempre comience de manera predecible por la primera canción del álbum o playlist en lugar de un orden 100% azaroso.
+  - **Sorteo integral previo al arranque:** Cuando la acción implique reproducir una playlist completa (y no un clic intencional sobre una pista particular) y el modo aleatorio se encuentre habilitado, realizar un sorteo completo mediante Fisher-Yates sobre la totalidad de las canciones reproducibles antes de fijar la cola e iniciar la pista ganadora en el índice 0.
+  - **Preservación de selección directa:** Si el usuario selecciona explícitamente una pista concreta dentro de la lista de canciones de la playlist, mantener el comportamiento de arrancar por dicha pista elegida y barajar de forma aleatoria el resto de la cola detrás de ella.
+
 - [ ] **Acción interactiva primaria y callbacks en notificaciones Toast (`ToastItem` / `ToastContainer`):**
   - **Extensión del contrato de datos (`ToastItem`):** Incorporar propiedades opcionales `action?: { label: string; onClick: () => void }` y `onDismissCallback?: () => void` en la interfaz `ToastItem` y en las funciones auxiliares de `toast.*`.
   - **Renderizado de botón de acción contextual:** En toasts con acción definida (ej. alerta de descarga completa con *"Ver en biblioteca"*, fallo recuperable con *"Reintentar"*, o playlist importada con *"Reproducir ahora"*), desplegar un botón primario compacto (`size="sm"`) junto al mensaje.
