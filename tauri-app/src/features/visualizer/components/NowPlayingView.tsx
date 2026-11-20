@@ -48,6 +48,8 @@ export const NowPlayingView: React.FC = () => {
   const repeatMode = usePlayerStore((s) => s.repeatMode);
   const isShuffle = usePlayerStore((s) => s.isShuffle);
   const isLoadingTrack = usePlayerStore((s) => s.isLoadingTrack);
+  const queue = usePlayerStore((s) => s.queue);
+  const currentIndex = usePlayerStore((s) => s.currentIndex);
 
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
   const seekTo = usePlayerStore((s) => s.seekTo);
@@ -62,6 +64,14 @@ export const NowPlayingView: React.FC = () => {
   const syncStatusByTrack = useLibraryStore((s) => s.syncStatusByTrack);
 
   const activeVisualizerId = useVisualizerStore((s) => s.activeVisualizerId);
+
+  // Bloqueo condicional de controles de navegación según estado de cola y modo bucle
+  const isNextDisabled =
+    !currentTrack ||
+    (repeatMode === "off" && (currentIndex >= queue.length - 1 || queue.length <= 1));
+
+  const isPreviousDisabled =
+    !currentTrack || (repeatMode === "off" && currentIndex <= 0 && currentTime <= 3);
 
   // Estado local para scrubbing de tiempo fluido a 60 FPS
   const [isSeekingLocally, setIsSeekingLocally] = useState(false);
@@ -372,7 +382,7 @@ export const NowPlayingView: React.FC = () => {
                 variant="ghost"
                 size="icon"
                 onClick={playPrevious}
-                disabled={!currentTrack}
+                disabled={isPreviousDisabled}
                 title="Pista anterior"
                 className="h-10 w-10 text-foreground"
               >
@@ -398,7 +408,7 @@ export const NowPlayingView: React.FC = () => {
                 variant="ghost"
                 size="icon"
                 onClick={playNext}
-                disabled={!currentTrack}
+                disabled={isNextDisabled}
                 title="Pista siguiente"
                 className="h-10 w-10 text-foreground"
               >

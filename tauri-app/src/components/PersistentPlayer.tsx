@@ -85,6 +85,7 @@ export const PersistentPlayer = React.memo(() => {
   const repeatMode = usePlayerStore((s) => s.repeatMode);
   const isShuffle = usePlayerStore((s) => s.isShuffle);
   const isLoadingTrack = usePlayerStore((s) => s.isLoadingTrack);
+  const currentIndex = usePlayerStore((s) => s.currentIndex);
 
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
   const setPlaying = usePlayerStore((s) => s.setPlaying);
@@ -108,6 +109,14 @@ export const PersistentPlayer = React.memo(() => {
   const currentTrackIdRef = useRef<string | null>(null);
   const prevIsPlayingRef = useRef(isPlaying);
   const consecutiveFailuresRef = useRef(0);
+
+  // Bloqueo condicional de controles de navegación según estado de cola y modo bucle
+  const isNextDisabled =
+    !currentTrack ||
+    (repeatMode === "off" && (currentIndex >= queue.length - 1 || queue.length <= 1));
+
+  const isPreviousDisabled =
+    !currentTrack || (repeatMode === "off" && currentIndex <= 0 && currentTime <= 3);
 
   // Referencias para cálculo reactivo de volumen objetivo
   const volumeRef = useRef(volume);
@@ -335,15 +344,25 @@ export const PersistentPlayer = React.memo(() => {
             4000,
           );
 
-          if (consecutiveFailuresRef.current < 4) {
+          const {
+            repeatMode: rMode,
+            currentIndex: cIdx,
+            queue: qList,
+          } = usePlayerStore.getState();
+          const canAdvance = rMode !== "off" || cIdx < qList.length - 1;
+
+          if (consecutiveFailuresRef.current < 4 && canAdvance) {
             playNext();
           } else {
             consecutiveFailuresRef.current = 0;
-            toast.error(
-              "Reproducción detenida",
-              "Múltiples archivos consecutivos no se pudieron reproducir.",
-              4000,
-            );
+            setPlaying(false);
+            if (canAdvance) {
+              toast.error(
+                "Reproducción detenida",
+                "Múltiples archivos consecutivos no se pudieron reproducir.",
+                4000,
+              );
+            }
           }
         }
       } finally {
@@ -465,7 +484,14 @@ export const PersistentPlayer = React.memo(() => {
           4000,
         );
 
-        if (consecutiveFailuresRef.current < 4) {
+        const {
+          repeatMode: rMode,
+          currentIndex: cIdx,
+          queue: qList,
+        } = usePlayerStore.getState();
+        const canAdvance = rMode !== "off" || cIdx < qList.length - 1;
+
+        if (consecutiveFailuresRef.current < 4 && canAdvance) {
           playNext();
         } else {
           consecutiveFailuresRef.current = 0;
@@ -477,16 +503,27 @@ export const PersistentPlayer = React.memo(() => {
   );
 
   const handleEnded = useCallback(() => {
-    const repeat = usePlayerStore.getState().repeatMode;
-    if (repeat === "one") {
+    const {
+      repeatMode: rMode,
+      currentIndex: cIdx,
+      queue: qList,
+    } = usePlayerStore.getState();
+    if (rMode === "one") {
       if (audioRef.current) {
         audioRef.current.currentTime = 0;
         void audioRef.current.play();
       }
-    } else {
+    } else if (rMode === "all" || cIdx < qList.length - 1) {
       playNext();
+    } else {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+      }
+      setPlaying(false);
+      setCurrentTime(0);
+      clearSeekTarget();
     }
-  }, [playNext]);
+  }, [playNext, setPlaying, setCurrentTime, clearSeekTarget]);
 
   const handleSeekChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -783,7 +820,7 @@ export const PersistentPlayer = React.memo(() => {
               variant="ghost"
               size="icon"
               onClick={playPrevious}
-              disabled={!currentTrack}
+              disabled={isPreviousDisabled}
               title="Anterior"
             >
               <SkipBack className="h-4 w-4" />
@@ -803,7 +840,7 @@ export const PersistentPlayer = React.memo(() => {
               variant="ghost"
               size="icon"
               onClick={playNext}
-              disabled={!currentTrack}
+              disabled={isNextDisabled}
               title="Siguiente"
             >
               <SkipForward className="h-4 w-4" />
@@ -1011,7 +1048,7 @@ export const PersistentPlayer = React.memo(() => {
               variant="ghost"
               size="icon"
               onClick={playPrevious}
-              disabled={!currentTrack}
+              disabled={isPreviousDisabled}
               title="Anterior"
             >
               <SkipBack className="h-4 w-4" />
@@ -1031,7 +1068,7 @@ export const PersistentPlayer = React.memo(() => {
               variant="ghost"
               size="icon"
               onClick={playNext}
-              disabled={!currentTrack}
+              disabled={isNextDisabled}
               title="Siguiente"
             >
               <SkipForward className="h-4 w-4" />

@@ -6,16 +6,33 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 1. Prioridad Alta (Bugs y Core UX)
 
-- [ ] **Bloqueo condicional de controles de salto de pista y prevención de congelamiento en selector de tiempo (`PersistentPlayer` / `usePlayerStore`):**
-  - **Diagnóstico del problema:** Al reproducir una cola con una sola pista (`queue.length === 1`) o alcanzar el final de la lista con el modo de repetición inactivo (`repeatMode === "off"`), presionar el botón de salto a la siguiente canción (`playNext`) apaga la reproducción (`isPlaying: false, currentTime: 0`) desincronizando el motor de audio y provocando que el selector de tiempo (seek bar) se bloquee o quede congelado.
-  - **Bloqueo condicional de navegación hacia adelante:** Deshabilitar visual y funcionalmente el botón de salto siguiente (`disabled` en `SkipForward`) cuando no existan pistas posteriores en la cola (`currentIndex >= queue.length - 1` o `queue.length <= 1`) siempre que `repeatMode === "off"`.
-  - **Bloqueo condicional de navegación hacia atrás:** Deshabilitar el botón de salto anterior (`SkipBack`) cuando el usuario se encuentre en la primera pista (`currentIndex === 0` y `currentTime <= 3s`) sin repetición activa.
-  - **Permisión en modo bucle:** Habilitar incondicionalmente ambos botones de salto cuando el modo de repetición esté activo (`repeatMode === "all"` o `repeatMode === "one"`), permitiendo reiniciar la pista o volver al inicio de la cola sin interrupciones.
-  - **Blindaje en `usePlayerStore`:** Validar los límites dentro de las acciones `playNext` y `playPrevious` para evitar mutaciones de estado inválidas que interrumpan el pipeline de actualización de tiempo o bloqueen los controles interactivos del reproductor.
+_Actualmente no hay incidencias críticas ni bugs de alta prioridad pendientes._
 
 ---
 
 ## 2. Prioridad Media (Roadmap v1.x)
+
+- [ ] **Integración y sincronización con MediaSession API nativa (`navigator.mediaSession` / `PersistentPlayer`):**
+  - **Exposición de metadatos del reproductor:** Publicar en `navigator.mediaSession.metadata` la información completa de la pista activa (`title`, `artist`, `album` y carátula en alta resolución `artwork`) para que el sistema operativo y dispositivos externos reconozcan la pista en reproducción.
+  - **Handlers de control multimedia nativos:** Conectar los manejadores de eventos estándar de la MediaSession API: `play`, `pause`, `previoustrack`, `nexttrack`, `seekto` y `stop` directamente hacia las acciones de `usePlayerStore`.
+  - **Sincronización con periféricos y centro de control del SO:** Permitir que las teclas de control multimedia de teclados físicos, mandos y auriculares Bluetooth, así como los controles del centro de notificaciones nativo de Linux (MPRIS / widget multimedia) y Windows (System Media Transport Controls) gobiernen la reproducción respetando de forma íntegra las políticas de bloqueo condicional de navegación hacia adelante y hacia atrás.
+  - **Sincronización de estado de reproducción y posición:** Actualizar reactivamente `playbackState` (`"playing"` o `"paused"`) y `setPositionState` (`duration`, `playbackRate: 1`, `position`) ante eventos de cambio de tiempo para que la barra de progreso del sistema operativo refleje fielmente el scrubbing y la posición en curso.
+
+- [ ] **Sistema configurable de atajos de teclado y gestor de Hotkeys (`useHotkeyStore` / `WorkspaceSettingsView`):**
+  - **Arquitectura de atajos desacoplada y centralizada (`useHotkeyStore`):** Diseñar un store Zustand específico con persistencia en `localStorage` que gestione el mapeo de combinaciones de teclas hacia acciones del reproductor y navegación de la aplicación (ej. `togglePlayPause`, `playNext`, `playPrevious`, `volumeUp`, `volumeDown`, `toggleMute`, `toggleShuffle`, `cycleRepeat`, `toggleNowPlayingExpanded`, `focusSearch`).
+  - **Mapeos predeterminados intuitivos:** Configuración por defecto con teclas multimedia estándar y combinaciones comunes: `Espacio` (reproducir / pausar), `Alt + Flecha Derecha` (pista siguiente), `Alt + Flecha Izquierda` (pista anterior), `Flecha Arriba` / `Flecha Abajo` (subir/bajar volumen en saltos del 5%), `M` (silenciar/reactivar), `S` (modo aleatorio), `R` (modo repetición) y `F` / `Escape` (expandir/cerrar vista Now Playing).
+  - **Aislamiento contextual de foco:** Detector inteligente de pulsaciones a nivel global en `window` con guardia estricta para ignorar disparos cuando el foco activo del usuario resida en elementos de entrada editables (`HTMLInputElement`, `HTMLTextAreaElement`, selectores desplegables o elementos con atributo `contenteditable`).
+  - **Panel de configuración y reasignación interactiva en Ajustes (`WorkspaceSettingsView`):**
+    - Interfaz visual dentro de la sección de Configuración para visualizar todos los atajos registrados, su acción asignada y su combinación de teclas actual.
+    - Modo de captura interactiva (*Record Hotkey*): botón para reasignar un atajo haciendo clic y pulsando la combinación deseada (soportando modificadores `Ctrl`, `Alt`, `Shift`, `Meta` + Tecla).
+    - Detección de colisiones y duplicados: advertencia visual inmediata si una combinación asignada entra en conflicto con otro atajo existente.
+    - Botón de restauración de atajos predeterminados (*Reset to Defaults*).
+
+- [ ] **Tooltips contextuales dinámicos según estado de bloqueo en controles de reproducción (`PersistentPlayer` / `NowPlayingView`):**
+  - **Retroalimentación explícita de bloqueo:** Sustituir los textos fijos de tooltip (*"Siguiente"* y *"Anterior"*) por etiquetas dinámicas y explicativas cuando los controles se encuentren deshabilitados.
+  - **Mensajes de navegación hacia adelante:** Mostrar *"Siguiente"* cuando la navegación esté permitida, y conmutar a *"Fin de la cola"* cuando no existan más temas y el modo bucle esté apagado (`repeatMode === "off"`), o *"Cola vacía"* si no hay pistas en cola.
+  - **Mensajes de navegación hacia atrás:** Mostrar *"Reiniciar canción"* cuando `currentTime > 3s`, *"Anterior"* cuando sea posible saltar a la pista previa, y conmutar a *"Inicio de la cola"* cuando se encuentre bloqueado en la primera pista (`currentIndex === 0` y `currentTime <= 3s`) con repetición inactiva.
+  - **Claridad cognitiva UX:** Garantizar que los usuarios comprendan inmediatamente el motivo por el cual un botón no responde o se encuentra atenuado sin generar frustración ni ambigüedad.
 
 - [ ] **Rediseño de Toasts de notificación: Apilado de hojas (Stacked Cards) y temporizador perimetral animado (`ToastContainer`):**
   - **Presentación apilada estilo hojas superpuestas:** Reemplazar la lista vertical de alertas por una pila de tarjetas superpuestas (estilo *Sonner* / *stacked sheets*). El último mensaje recibido se ubica al frente con legibilidad completa, mientras los anteriores se resguardan sutilmente detrás con escala reducida y ligero desplazamiento vertical, reduciendo la saturación visual.

@@ -102,44 +102,40 @@ StaticDiscVisualizer.displayName = "StaticDiscVisualizer";
 /**
  * Previsualización compacta para Ajustes -> Personalización.
  */
-export const StaticDiscPreview: React.FC<VisualizerProps> = React.memo(
-  ({ track }) => {
-    const thumbnailSrc = track?.thumbnail_path
-      ? toAssetUrl(track.thumbnail_path)
-      : null;
+export const StaticDiscPreview: React.FC<VisualizerProps> = React.memo(({ track }) => {
+  const thumbnailSrc = track?.thumbnail_path ? toAssetUrl(track.thumbnail_path) : null;
 
-    return (
-      <div className="group relative flex h-28 w-28 items-center justify-center rounded-2xl border border-border bg-card p-2 shadow-inner">
-        {/* Mini disco estático */}
+  return (
+    <div className="group relative flex h-28 w-28 items-center justify-center rounded-2xl border border-border bg-card p-2 shadow-inner">
+      {/* Mini disco estático */}
+      <div
+        className="relative flex h-20 w-20 items-center justify-center rounded-full shadow-md transition-transform duration-300 group-hover:scale-105"
+        style={{
+          background:
+            "radial-gradient(circle, #1c1c20 0%, #0e0e12 40%, #050507 70%, #0c0c10 100%)",
+        }}
+      >
+        {/* Surcos miniatura */}
         <div
-          className="relative flex h-20 w-20 items-center justify-center rounded-full shadow-md transition-transform duration-300 group-hover:scale-105"
+          className="absolute inset-0 rounded-full opacity-30"
           style={{
-            background:
-              "radial-gradient(circle, #1c1c20 0%, #0e0e12 40%, #050507 70%, #0c0c10 100%)",
+            backgroundImage:
+              "repeating-radial-gradient(circle, transparent, transparent 2px, rgba(255, 255, 255, 0.08) 3px)",
           }}
-        >
-          {/* Surcos miniatura */}
-          <div
-            className="absolute inset-0 rounded-full opacity-30"
-            style={{
-              backgroundImage:
-                "repeating-radial-gradient(circle, transparent, transparent 2px, rgba(255, 255, 255, 0.08) 3px)",
-            }}
-          />
+        />
 
-          {/* Centro */}
-          <div className="relative z-10 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-neutral-900 bg-neutral-950">
-            {thumbnailSrc ? (
-              <img src={thumbnailSrc} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <Music2 className="h-3.5 w-3.5 text-primary" />
-            )}
-            <div className="absolute h-1.5 w-1.5 rounded-full bg-neutral-900 border border-neutral-400" />
-          </div>
+        {/* Centro */}
+        <div className="relative z-10 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-neutral-900 bg-neutral-950">
+          {thumbnailSrc ? (
+            <img src={thumbnailSrc} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <Music2 className="h-3.5 w-3.5 text-primary" />
+          )}
+          <div className="absolute h-1.5 w-1.5 rounded-full bg-neutral-900 border border-neutral-400" />
         </div>
       </div>
-    );
-  },
-);
+    </div>
+  );
+});
 
 StaticDiscPreview.displayName = "StaticDiscPreview";

@@ -277,26 +277,28 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   playNext: () => {
     const { queue, currentIndex, repeatMode, currentTrack, isShuffle } = get();
-    if (queue.length === 0) {
+    if (queue.length === 0 || !currentTrack) {
       set({ isPlaying: false, isLoadingTrack: false });
       return;
     }
 
-    if (repeatMode === "one" && currentTrack) {
-      set({ currentTime: 0, seekTarget: 0, isPlaying: true, isLoadingTrack: true });
+    if (repeatMode === "one") {
+      set({ currentTime: 0, seekTarget: 0, isPlaying: true });
       return;
     }
 
     const nextIndex = currentIndex + 1;
     if (nextIndex < queue.length) {
       const nextTrack = queue[nextIndex];
+      const isSameTrack = currentTrack.youtube_id === nextTrack.youtube_id;
       set({
         currentTrack: nextTrack,
         currentIndex: nextIndex,
         currentTime: 0,
+        seekTarget: 0,
         duration: nextTrack.duration || 0,
         isPlaying: true,
-        isLoadingTrack: true,
+        isLoadingTrack: !isSameTrack,
       });
       return;
     }
@@ -305,35 +307,41 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       if (isShuffle && queue.length > 1) {
         const reshuffled = shuffleTracksWithFirst(queue);
         const firstTrack = reshuffled[0];
+        const isSameTrack = currentTrack.youtube_id === firstTrack.youtube_id;
         set({
           currentTrack: firstTrack,
           queue: reshuffled,
           currentIndex: 0,
           currentTime: 0,
+          seekTarget: 0,
           duration: firstTrack.duration || 0,
           isPlaying: true,
-          isLoadingTrack: true,
+          isLoadingTrack: !isSameTrack,
         });
         return;
       }
       const firstTrack = queue[0];
+      const isSameTrack = currentTrack.youtube_id === firstTrack.youtube_id;
       set({
         currentTrack: firstTrack,
         currentIndex: 0,
         currentTime: 0,
+        seekTarget: 0,
         duration: firstTrack.duration || 0,
         isPlaying: true,
-        isLoadingTrack: true,
+        isLoadingTrack: !isSameTrack,
       });
       return;
     }
 
-    set({ isPlaying: false, currentTime: 0, isLoadingTrack: false });
+    // Si repeatMode === "off" y se alcanzó el final de la lista,
+    // validar los límites y proteger el estado sin desincronizar el reproductor ni congelar la UI
+    return;
   },
 
   playPrevious: () => {
-    const { queue, currentIndex, currentTime } = get();
-    if (queue.length === 0) {
+    const { queue, currentIndex, currentTime, repeatMode, currentTrack } = get();
+    if (queue.length === 0 || !currentTrack) {
       return;
     }
 
@@ -342,18 +350,50 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       return;
     }
 
-    const prevIndex = currentIndex > 0 ? currentIndex - 1 : 0;
-    const prevTrack = queue[prevIndex];
-    if (prevTrack) {
-      set({
-        currentTrack: prevTrack,
-        currentIndex: prevIndex,
-        currentTime: 0,
-        duration: prevTrack.duration || 0,
-        isPlaying: true,
-        isLoadingTrack: true,
-      });
+    if (currentIndex > 0) {
+      const prevIndex = currentIndex - 1;
+      const prevTrack = queue[prevIndex];
+      if (prevTrack) {
+        const isSameTrack = currentTrack.youtube_id === prevTrack.youtube_id;
+        set({
+          currentTrack: prevTrack,
+          currentIndex: prevIndex,
+          currentTime: 0,
+          seekTarget: 0,
+          duration: prevTrack.duration || 0,
+          isPlaying: true,
+          isLoadingTrack: !isSameTrack,
+        });
+      }
+      return;
     }
+
+    // currentIndex === 0 y currentTime <= 3
+    if (repeatMode === "all" && queue.length > 0) {
+      const lastIndex = queue.length - 1;
+      const lastTrack = queue[lastIndex];
+      if (lastTrack) {
+        const isSameTrack = currentTrack.youtube_id === lastTrack.youtube_id;
+        set({
+          currentTrack: lastTrack,
+          currentIndex: lastIndex,
+          currentTime: 0,
+          seekTarget: 0,
+          duration: lastTrack.duration || 0,
+          isPlaying: true,
+          isLoadingTrack: !isSameTrack,
+        });
+      }
+      return;
+    }
+
+    if (repeatMode === "one") {
+      set({ currentTime: 0, seekTarget: 0, isPlaying: true });
+      return;
+    }
+
+    // repeatMode === "off" y al inicio de la lista: proteger límites
+    return;
   },
 
   enqueueTrack: (track) => {

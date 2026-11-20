@@ -517,6 +517,74 @@ describe("usePlayerStore - queue preservation and corrupted tracks", () => {
     expect(usePlayerStore.getState().currentTrack?.liked).toBe(false);
     expect(usePlayerStore.getState().queue[0].liked).toBe(false);
   });
+
+  it("protects boundaries and avoids freezing isLoadingTrack on playNext", () => {
+    const store = usePlayerStore.getState();
+    usePlayerStore.setState({ repeatMode: "off" });
+    store.playTrack(sampleTrack, [sampleTrack]);
+    store.setIsLoadingTrack(false);
+    store.setCurrentTime(45);
+
+    // 1. Con repeatMode "off" y cola de 1 pista, playNext debe ser no-op y no desincronizar
+    expect(usePlayerStore.getState().repeatMode).toBe("off");
+    store.playNext();
+    expect(usePlayerStore.getState().isPlaying).toBe(true);
+    expect(usePlayerStore.getState().currentTime).toBe(45);
+    expect(usePlayerStore.getState().isLoadingTrack).toBe(false);
+
+    // 2. Con repeatMode "one", playNext debe reiniciar a tiempo 0 sin dejar isLoadingTrack en true
+    usePlayerStore.setState({ repeatMode: "one" });
+    store.playNext();
+    expect(usePlayerStore.getState().currentTime).toBe(0);
+    expect(usePlayerStore.getState().seekTarget).toBe(0);
+    expect(usePlayerStore.getState().isLoadingTrack).toBe(false);
+
+    // 3. Con cola de varias pistas en repeatMode "all", playNext al final de la cola debe envolver al inicio
+    usePlayerStore.setState({ repeatMode: "all" });
+    store.playTrack(trackC, [trackA, trackB, trackC]);
+    store.setIsLoadingTrack(false);
+    expect(usePlayerStore.getState().currentIndex).toBe(2);
+
+    store.playNext();
+    expect(usePlayerStore.getState().currentIndex).toBe(0);
+    expect(usePlayerStore.getState().currentTrack?.youtube_id).toBe("track_A");
+    expect(usePlayerStore.getState().isLoadingTrack).toBe(true); // Nueva pista distinta
+  });
+
+  it("protects boundaries, rewinds when currentTime > 3s, and wraps on repeatMode all in playPrevious", () => {
+    const store = usePlayerStore.getState();
+    store.playTrack(trackA, [trackA, trackB, trackC]);
+    store.setIsLoadingTrack(false);
+    usePlayerStore.setState({ repeatMode: "off" });
+
+    // 1. En la primera pista con tiempo <= 3s y repeatMode "off", playPrevious debe ser no-op
+    store.setCurrentTime(2);
+    store.playPrevious();
+    expect(usePlayerStore.getState().currentIndex).toBe(0);
+    expect(usePlayerStore.getState().currentTime).toBe(2);
+    expect(usePlayerStore.getState().isLoadingTrack).toBe(false);
+
+    // 2. En la primera pista con tiempo > 3s, playPrevious debe reiniciar a 0 sin cambiar índice ni congelar
+    store.setCurrentTime(15);
+    store.playPrevious();
+    expect(usePlayerStore.getState().currentIndex).toBe(0);
+    expect(usePlayerStore.getState().currentTime).toBe(0);
+    expect(usePlayerStore.getState().seekTarget).toBe(0);
+    expect(usePlayerStore.getState().isLoadingTrack).toBe(false);
+
+    // 3. En la primera pista con repeatMode "all" y tiempo <= 3s, playPrevious envuelve a la última pista
+    usePlayerStore.setState({ repeatMode: "all" });
+    store.setCurrentTime(1);
+    store.playPrevious();
+    expect(usePlayerStore.getState().currentIndex).toBe(2);
+    expect(usePlayerStore.getState().currentTrack?.youtube_id).toBe("track_C");
+    expect(usePlayerStore.getState().isLoadingTrack).toBe(true);
+
+    // 4. En pista intermedia, playPrevious retrocede a la anterior
+    store.playPrevious();
+    expect(usePlayerStore.getState().currentIndex).toBe(1);
+    expect(usePlayerStore.getState().currentTrack?.youtube_id).toBe("track_B");
+  });
 });
 
 describe("Visualizer API and Registry", () => {
@@ -977,6 +1045,45 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       expect(screen.getByText(/Cola de Reproducción/i)).toBeInTheDocument();
       fireEvent.keyDown(window, { key: "Escape" });
       expect(screen.queryByText(/Cola de Reproducción/i)).toBeNull();
+    });
+
+    it("disables SkipForward and SkipBack conditionally based on queue position and repeatMode", () => {
+      // 1. Cola de 1 sola pista, repeatMode off, currentTime <= 3s -> ambos deshabilitados
+      usePlayerStore.getState().playTrack(sampleTrack, [sampleTrack]);
+      usePlayerStore.setState({ repeatMode: "off", currentTime: 0 });
+      const { rerender } = render(React.createElement(PersistentPlayer));
+
+      const nextBtns = screen.getAllByTitle("Siguiente");
+      const prevBtns = screen.getAllByTitle("Anterior");
+
+      for (const btn of nextBtns) {
+        expect(btn).toBeDisabled();
+      }
+      for (const btn of prevBtns) {
+        expect(btn).toBeDisabled();
+      }
+
+      // 2. Misma pista pero currentTime > 3s -> SkipBack habilitado para reiniciar pista, SkipForward deshabilitado
+      usePlayerStore.setState({ currentTime: 10 });
+      rerender(React.createElement(PersistentPlayer));
+
+      for (const btn of screen.getAllByTitle("Siguiente")) {
+        expect(btn).toBeDisabled();
+      }
+      for (const btn of screen.getAllByTitle("Anterior")) {
+        expect(btn).not.toBeDisabled();
+      }
+
+      // 3. Activar repeatMode "all" -> ambos habilitados
+      usePlayerStore.setState({ repeatMode: "all", currentTime: 0 });
+      rerender(React.createElement(PersistentPlayer));
+
+      for (const btn of screen.getAllByTitle("Siguiente")) {
+        expect(btn).not.toBeDisabled();
+      }
+      for (const btn of screen.getAllByTitle("Anterior")) {
+        expect(btn).not.toBeDisabled();
+      }
     });
   });
 

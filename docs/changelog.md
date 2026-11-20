@@ -6,6 +6,22 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.4] - 2026-11-20
+
+### Corregido
+
+#### Bloqueo Condicional de Navegación y Blindaje de Controles de Reproducción (`PersistentPlayer`, `NowPlayingView` y `usePlayerStore`)
+- **Bloqueo condicional reactivo en controles de pista**:
+  - Deshabilitación visual y funcional del botón de siguiente pista (`SkipForward`) cuando la cola no tiene elementos posteriores (`currentIndex >= queue.length - 1` o `queue.length <= 1`) con modo de repetición inactivo (`repeatMode === "off"`), tanto en la barra inferior (escritorio y móvil de `PersistentPlayer`) como en la vista expandida `NowPlayingView`.
+  - Deshabilitación reactiva del botón de pista anterior (`SkipBack`) al encontrarse en la primera posición de la cola (`currentIndex === 0` y `currentTime <= 3s`) sin repetición activa.
+  - Habilitación irrestricta de controles de navegación en modos de bucle (`repeatMode === "all"` o `repeatMode === "one"`), facilitando reiniciar la pista o ciclar la cola de reproducción.
+- **Prevención de congelamiento del selector de tiempo (Seek Bar) y desincronización**:
+  - Eliminación de la mutación errónea de `isLoadingTrack: true` al reiniciar la misma canción o avanzar en bucle individual (`repeatMode === "one"`), evitando que el selector de tiempo quede congelado o bloqueado.
+  - Blindaje de límites en las acciones `playNext` y `playPrevious` de `usePlayerStore` para evitar mutaciones de estado inválidas o detenciones prematuras si se invocan fuera de rango.
+  - Sincronización limpia en el evento `handleEnded` de `PersistentPlayer`: reinicio transparente a la posición `0:00` y detención segura del motor de audio cuando una cola finaliza sin repetición activa.
+
+---
+
 ## [1.9.3] - 2026-11-20
 
 ### Añadido
