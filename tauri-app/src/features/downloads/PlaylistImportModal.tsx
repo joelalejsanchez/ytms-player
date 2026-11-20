@@ -9,7 +9,7 @@ import {
   Loader2,
   X,
 } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import {
   Badge,
@@ -18,6 +18,7 @@ import {
   Input,
   RadioButton,
 } from "@/components/ui/Primitives";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { cn, formatDuration } from "@/lib/utils";
 import { tauriApi } from "@/services/tauriIpc";
 import { useDownloadStore } from "@/stores/useDownloadStore";
@@ -57,6 +58,14 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
   const [unlinkRemoved, setUnlinkRemoved] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedTrackIds, setSelectedTrackIds] = useState<Set<string>>(new Set());
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useModalA11y({
+    isOpen,
+    onClose,
+    containerRef: modalRef,
+    closeOnEscape: !isSubmitting,
+  });
 
   // Set de IDs ya descargados para consulta O(1)
   const existingTrackIds = useMemo(() => {
@@ -312,14 +321,31 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-      <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-150"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isSubmitting) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="playlist-import-modal-title"
+        tabIndex={-1}
+        className="relative flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-border bg-card text-card-foreground shadow-2xl focus:outline-none"
+      >
         {/* Encabezado */}
         <header className="flex items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-2.5">
             <ListMusic className="h-5 w-5 text-primary" />
             <div>
-              <h3 className="text-base font-semibold text-foreground">
+              <h3
+                id="playlist-import-modal-title"
+                className="text-base font-semibold text-foreground"
+              >
                 Previsualización e Importación de Lista
               </h3>
               <p className="text-xs text-muted-foreground">

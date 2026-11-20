@@ -8,8 +8,9 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { Button, Checkbox, Input } from "@/components/ui/Primitives";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { formatDuration } from "@/lib/utils";
 import { tauriApi } from "@/services/tauriIpc";
 import { useLibraryStore } from "@/stores/useLibraryStore";
@@ -33,6 +34,14 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
   const [processedCount, setProcessedCount] = useState(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useModalA11y({
+    isOpen,
+    onClose,
+    containerRef: modalRef,
+    closeOnEscape: !isProcessing,
+  });
 
   // Filtrar pistas
   const filtered = useMemo(() => {
@@ -100,13 +109,30 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-      <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-150"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isProcessing) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="metadata-sync-modal-title"
+        tabIndex={-1}
+        className="relative flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-border bg-card text-card-foreground shadow-2xl focus:outline-none"
+      >
         <header className="flex items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-2.5">
             <Sparkles className="h-5 w-5 text-amber-500" />
             <div>
-              <h3 className="text-base font-semibold text-foreground">
+              <h3
+                id="metadata-sync-modal-title"
+                className="text-base font-semibold text-foreground"
+              >
                 Actualizar información de canciones
               </h3>
               <p className="text-xs text-muted-foreground">

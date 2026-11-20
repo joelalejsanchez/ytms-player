@@ -11,8 +11,9 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { Badge, Button, Input } from "@/components/ui/Primitives";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { cn } from "@/lib/utils";
 import { type LogEntry, useLogStore } from "@/stores/useLogStore";
 
@@ -30,20 +31,13 @@ export const ErrorLogsModal: React.FC = React.memo(() => {
 
   const [copiedAll, setCopiedAll] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
-  // Cerrar con Escape
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setOpenModal(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, setOpenModal]);
+  useModalA11y({
+    isOpen,
+    onClose: () => setOpenModal(false),
+    containerRef: modalRef,
+  });
 
   const handleCopyAll = useCallback(() => {
     const text = exportLogsAsText();
@@ -104,8 +98,11 @@ export const ErrorLogsModal: React.FC = React.memo(() => {
       }}
     >
       <div
+        ref={modalRef}
+        tabIndex={-1}
+        aria-labelledby="error-logs-modal-title"
         style={{ backgroundColor: "var(--card)" }}
-        className="w-full max-w-3xl flex flex-col max-h-[85vh] rounded-2xl border border-border bg-card text-card-foreground shadow-2xl overflow-hidden"
+        className="w-full max-w-3xl flex flex-col max-h-[85vh] rounded-2xl border border-border bg-card text-card-foreground shadow-2xl overflow-hidden focus:outline-none"
       >
         {/* Encabezado del Modal */}
         <header className="flex items-center justify-between border-b border-border px-6 py-4 bg-muted/20">
@@ -115,7 +112,10 @@ export const ErrorLogsModal: React.FC = React.memo(() => {
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-semibold text-foreground truncate">
+                <h3
+                  id="error-logs-modal-title"
+                  className="text-base font-semibold text-foreground truncate"
+                >
                   Registro de Errores y Diagnóstico
                 </h3>
                 {errorCount > 0 && <Badge tone="danger">{errorCount} errores</Badge>}

@@ -36,6 +36,8 @@ export const ActionMenu: React.FC<ActionMenuProps> = React.memo(
   }) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     const toggleOpen = useCallback(
       (e: React.MouseEvent) => {
@@ -48,21 +50,46 @@ export const ActionMenu: React.FC<ActionMenuProps> = React.memo(
 
     const closeMenu = useCallback(() => {
       setIsOpen(false);
+      triggerRef.current?.focus();
     }, []);
 
-    // Cerrar al hacer clic fuera del componente o presionar Escape
+    // Manejo accesible de teclado: Escape, flechas arriba/abajo y click fuera
     useEffect(() => {
       if (!isOpen) return;
 
       const handleClickOutside = (e: MouseEvent | TouchEvent) => {
         if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-          closeMenu();
+          setIsOpen(false);
         }
       };
 
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Escape") {
+          e.stopPropagation();
           closeMenu();
+          return;
+        }
+
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          e.preventDefault();
+          if (!menuRef.current) return;
+          const buttons = Array.from(
+            menuRef.current.querySelectorAll<HTMLButtonElement>(
+              "button:not([disabled])",
+            ),
+          );
+          if (buttons.length === 0) return;
+
+          const currentIndex = buttons.indexOf(
+            document.activeElement as HTMLButtonElement,
+          );
+          if (e.key === "ArrowDown") {
+            const next = currentIndex < buttons.length - 1 ? currentIndex + 1 : 0;
+            buttons[next]?.focus();
+          } else {
+            const prev = currentIndex > 0 ? currentIndex - 1 : buttons.length - 1;
+            buttons[prev]?.focus();
+          }
         }
       };
 
@@ -70,7 +97,16 @@ export const ActionMenu: React.FC<ActionMenuProps> = React.memo(
       document.addEventListener("touchstart", handleClickOutside);
       document.addEventListener("keydown", handleKeyDown);
 
+      // Enfocar automáticamente el primer elemento del menú
+      const timer = setTimeout(() => {
+        const firstBtn = menuRef.current?.querySelector<HTMLButtonElement>(
+          "button:not([disabled])",
+        );
+        firstBtn?.focus();
+      }, 30);
+
       return () => {
+        clearTimeout(timer);
         document.removeEventListener("mousedown", handleClickOutside);
         document.removeEventListener("touchstart", handleClickOutside);
         document.removeEventListener("keydown", handleKeyDown);
@@ -84,10 +120,12 @@ export const ActionMenu: React.FC<ActionMenuProps> = React.memo(
         onClick={(e) => e.stopPropagation()}
       >
         <button
+          ref={triggerRef}
           type="button"
           onClick={toggleOpen}
           disabled={isLoading}
           aria-label={ariaLabel}
+          aria-haspopup="menu"
           aria-expanded={isOpen}
           title={title}
           className={cn(
@@ -105,6 +143,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = React.memo(
 
         {isOpen && (
           <div
+            ref={menuRef}
             role="menu"
             aria-orientation="vertical"
             className={cn(

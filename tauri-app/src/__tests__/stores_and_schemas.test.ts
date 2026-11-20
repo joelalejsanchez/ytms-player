@@ -21,6 +21,8 @@ import { usePlayerStore } from "@/stores/usePlayerStore";
 import { useThemeStore } from "@/stores/useThemeStore";
 import { sortToastsByPriority, toast, useToastStore } from "@/stores/useToastStore";
 import { ToastContainer } from "@/components/ui/ToastContainer";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
+import { ActionMenu } from "@/components/ui/ActionMenu";
 import { useMediaSession } from "@/hooks/useMediaSession";
 import { usePlayerControlTooltips } from "@/hooks/usePlayerControlTooltips";
 import {
@@ -1866,6 +1868,89 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       });
       const { result: rAll } = renderHook(() => usePlayerControlTooltips());
       expect(rAll.current.repeatTooltip).toBe("Modo repetición: Todas");
+    });
+  });
+
+  describe("Modal and Dialog A11y & Focus Management (useModalA11y & ConfirmationModal)", () => {
+    it("locks body scroll and provides complete WAI-ARIA alertdialog semantics", () => {
+      let cancelled = false;
+      let confirmed = false;
+
+      const { unmount, getByRole, getByText } = render(
+        React.createElement(ConfirmationModal, {
+          isOpen: true,
+          title: "Eliminar lista",
+          description: "¿Deseas eliminar permanentemente esta playlist?",
+          confirmLabel: "Eliminar",
+          cancelLabel: "Cancelar",
+          tone: "danger",
+          onConfirm: () => {
+            confirmed = true;
+          },
+          onCancel: () => {
+            cancelled = true;
+          },
+        }),
+      );
+
+      // 1. Bloqueo de scroll activo en body
+      expect(document.body.style.overflow).toBe("hidden");
+
+      // 2. Semántica ARIA
+      const dialog = getByRole("alertdialog");
+      expect(dialog).toBeInTheDocument();
+      expect(dialog.getAttribute("aria-modal")).toBe("true");
+      expect(dialog.getAttribute("aria-labelledby")).toBe("confirmation-modal-title");
+      expect(dialog.getAttribute("aria-describedby")).toBe(
+        "confirmation-modal-description",
+      );
+      expect(getByText("Eliminar lista")).toHaveAttribute(
+        "id",
+        "confirmation-modal-title",
+      );
+      expect(
+        getByText("¿Deseas eliminar permanentemente esta playlist?"),
+      ).toHaveAttribute("id", "confirmation-modal-description");
+
+      // 3. Descarte por tecla Escape
+      fireEvent.keyDown(window, { key: "Escape" });
+      expect(cancelled).toBe(true);
+      expect(confirmed).toBe(false);
+
+      // 4. Liberación de scroll al desmontar
+      unmount();
+      expect(document.body.style.overflow).toBe("");
+    });
+
+    it("ActionMenu renders with semantic menu roles and closes on Escape", () => {
+      let optionClicked = false;
+      const { getByRole, queryByRole } = render(
+        React.createElement(ActionMenu, {
+          items: [
+            {
+              label: "Opción 1",
+              onClick: () => {
+                optionClicked = true;
+              },
+            },
+          ],
+        }),
+      );
+
+      const triggerBtn = getByRole("button");
+      expect(triggerBtn.getAttribute("aria-haspopup")).toBe("menu");
+      expect(triggerBtn.getAttribute("aria-expanded")).toBe("false");
+
+      // Abrir menú
+      fireEvent.click(triggerBtn);
+      expect(triggerBtn.getAttribute("aria-expanded")).toBe("true");
+      const menu = getByRole("menu");
+      expect(menu).toBeInTheDocument();
+
+      // Cerrar con Escape
+      fireEvent.keyDown(document, { key: "Escape" });
+      expect(queryByRole("menu")).toBeNull();
+      expect(optionClicked).toBe(false);
     });
   });
 });

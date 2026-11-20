@@ -1,6 +1,7 @@
 import { AlertCircle, AlertTriangle, HelpCircle, Loader2 } from "lucide-react";
-import React from "react";
+import React, { useRef } from "react";
 import { Button } from "@/components/ui/Primitives";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 export interface ConfirmationModalProps {
   isOpen: boolean;
@@ -26,6 +27,17 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = React.memo(
     onConfirm,
     onCancel,
   }) => {
+    const modalRef = useRef<HTMLDivElement>(null);
+    const confirmBtnRef = useRef<HTMLButtonElement>(null);
+
+    useModalA11y({
+      isOpen,
+      onClose: onCancel,
+      containerRef: modalRef,
+      initialFocusRef: confirmBtnRef,
+      closeOnEscape: !isLoading,
+    });
+
     if (!isOpen) return null;
 
     return (
@@ -37,7 +49,15 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = React.memo(
           }
         }}
       >
-        <div className="w-full max-w-md space-y-4 rounded-2xl border border-border bg-card text-card-foreground p-6 shadow-2xl">
+        <div
+          ref={modalRef}
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="confirmation-modal-title"
+          aria-describedby="confirmation-modal-description"
+          tabIndex={-1}
+          className="w-full max-w-md space-y-4 rounded-2xl border border-border bg-card text-card-foreground p-6 shadow-2xl focus:outline-none"
+        >
           <div className="flex items-start gap-3.5">
             <div
               className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
@@ -58,8 +78,16 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = React.memo(
             </div>
 
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-semibold text-foreground">{title}</h3>
-              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              <h3
+                id="confirmation-modal-title"
+                className="text-base font-semibold text-foreground"
+              >
+                {title}
+              </h3>
+              <p
+                id="confirmation-modal-description"
+                className="mt-1.5 text-xs leading-relaxed text-muted-foreground"
+              >
                 {description}
               </p>
             </div>
@@ -76,6 +104,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = React.memo(
               {cancelLabel}
             </Button>
             <Button
+              ref={confirmBtnRef}
               type="button"
               variant={tone === "danger" ? "danger" : "primary"}
               size="sm"

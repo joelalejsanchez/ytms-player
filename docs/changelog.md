@@ -6,6 +6,26 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.13] - 2026-11-20
+
+### Añadido
+
+#### Accesibilidad WAI-ARIA, Bloqueo de Scroll Anti-Shift y Trampa de Foco en Modales (`useModalA11y`, `ConfirmationModal`, `PlaylistImportModal`, `MetadataSyncModal`, `ErrorLogsModal`, `ActionMenu`)
+- **Hook unificado `useModalA11y` (`src/hooks/useModalA11y.ts`)**:
+  - Encapsula de forma centralizada y reutilizable las pautas de accesibilidad para diálogos modales (WAI-ARIA Dialog / Alertdialog).
+- **Bloqueo de Scroll con Compensación de Scrollbar (Anti Layout Shift)**:
+  - Inmoviliza el desplazamiento de fondo (`overflow: hidden`) e inyecta dinámicamente la compensación de anchura de barra (`paddingRight`) para prevenir saltos bruscos de diseño visual al abrir y cerrar modales.
+  - Soporte de conteo concurrente (`activeModalCount`) para gestionar con seguridad modales anidados o aperturas secuenciales.
+- **Trampa de Foco (Focus Trap) y Restauración Automática**:
+  - Confinamiento estricto de navegación por teclado mediante ciclo `Tab` y `Shift+Tab` dentro del contenedor del modal.
+  - Auto-enfoque automático al montar en el botón de acción principal y restauración garantizada del foco al control detonante previo al desmontar.
+- **Descarte por Tecla Escape e Interacción de Fondo**:
+  - Cierre consistente e inmediato al presionar la tecla `Escape` (con guardia condicional en procesos activos) y descarte accesible al pulsar sobre el telón de fondo.
+- **Atributos Semánticos WAI-ARIA Completos**:
+  - Integrados `role="dialog"` / `role="alertdialog"`, `aria-modal="true"`, `aria-labelledby` y `aria-describedby` en `ConfirmationModal`, `PlaylistImportModal`, `MetadataSyncModal`, `ErrorLogsModal` y `ActionMenu`.
+
+---
+
 ## [1.9.12] - 2026-11-20
 
 ### Añadido
