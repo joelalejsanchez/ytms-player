@@ -6,6 +6,21 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.14] - 2026-11-20
+
+### Mejorado
+
+#### Modernización de Controles, Switch de Segmento y Limpieza Rápida en la Vista de Descargas (`DownloadsView`)
+- **Switch selector de 2 estados (Pill Segmented Control) para Mixes de YouTube**:
+  - Sustituida la interfaz previa por un selector segmentado accesible (`role="radiogroup"`) de dos opciones balanceadas: *"Solo la canción"* (a la izquierda con icono `Music2`, eliminando la coletilla redundante de "Recomendado") y *"Mix completo / Lista completa"* (a la derecha con icono `ListMusic`).
+  - Resaltado visual activo con contraste y sombras sutiles según la opción elegida.
+- **Botón directo de acción rápida para Limpiar Historial**:
+  - Reemplazado el menú contextual de 3 puntos por un botón primario directo con icono `Trash2` y etiqueta *"Limpiar historial"*, manteniendo la confirmación de seguridad en `ConfirmationModal`.
+- **Eliminación de la opción obsoleta de Forzar Re-descarga (`force_overwrite`)**:
+  - Retirado el checkbox y el estado innecesario del formulario, simplificando la interfaz y enviando `force_overwrite: false` de manera segura hacia el pipeline de descargas.
+
+---
+
 ## [1.9.13] - 2026-11-20
 
 ### Añadido

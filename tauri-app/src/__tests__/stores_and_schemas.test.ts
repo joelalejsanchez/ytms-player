@@ -3,6 +3,7 @@ import React from "react";
 import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { formatBytes, formatDuration, formatHumanDuration } from "@/lib/utils";
 import { PersistentPlayer } from "@/components/PersistentPlayer";
+import { DownloadsView } from "@/features/downloads/DownloadsView";
 import { HomeView } from "@/features/home/HomeView";
 import { TrackRow } from "@/features/library/TrackRow";
 import { PlaylistsView } from "@/features/playlists/PlaylistsView";
@@ -1951,6 +1952,64 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       fireEvent.keyDown(document, { key: "Escape" });
       expect(queryByRole("menu")).toBeNull();
       expect(optionClicked).toBe(false);
+    });
+  });
+
+  describe("DownloadsView Modernization & Controls", () => {
+    it("renders 2-state pill toggle for YouTube Mix URLs, suppresses obsolete force_overwrite checkbox and provides direct clean history button", async () => {
+      useLibraryStore.setState({
+        downloadHistory: [
+          {
+            id: 1,
+            task_id: "task_1",
+            url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            youtube_id: "dQw4w9WgXcQ",
+            title: "Test Track",
+            status: "completed",
+            audio_format: "mp3",
+            created_at: "2026-11-20T00:00:00Z",
+          },
+        ],
+      });
+
+      const { getByPlaceholderText, getByRole, getByText, queryByText } = render(
+        React.createElement(DownloadsView),
+      );
+
+      // 1. Verificar que el checkbox obsoleto de 'Forzar re-descarga' ya no existe en el DOM
+      expect(
+        queryByText("Forzar re-descarga si el archivo ya existe en el Workspace"),
+      ).toBeNull();
+
+      // 2. Botón directo de limpiar historial
+      const clearBtn = getByText("Limpiar historial");
+      expect(clearBtn).toBeInTheDocument();
+      expect(clearBtn.tagName).toBe("SPAN"); // Está dentro del Button
+
+      // 3. Introducir URL de YouTube Mix
+      const input = getByPlaceholderText(
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ o URL de playlist...",
+      );
+      fireEvent.change(input, {
+        target: {
+          value: "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ",
+        },
+      });
+
+      // Debe aparecer el selector segmentado de 2 estados
+      const soloBtn = getByRole("radio", { name: /Solo la canción/i });
+      const mixBtn = getByRole("radio", { name: /Mix completo \/ Lista completa/i });
+      expect(soloBtn).toBeInTheDocument();
+      expect(mixBtn).toBeInTheDocument();
+
+      // Por defecto 'Solo la canción' está seleccionado
+      expect(soloBtn.getAttribute("aria-checked")).toBe("true");
+      expect(mixBtn.getAttribute("aria-checked")).toBe("false");
+
+      // Alternar al estado Mix completo
+      fireEvent.click(mixBtn);
+      expect(mixBtn.getAttribute("aria-checked")).toBe("true");
+      expect(soloBtn.getAttribute("aria-checked")).toBe("false");
     });
   });
 });

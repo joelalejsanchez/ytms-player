@@ -30,7 +30,7 @@ export interface PlaylistImportModalProps {
   onClose: () => void;
   url: string;
   audioFormat: AudioFormat;
-  forceOverwrite: boolean;
+  forceOverwrite?: boolean;
   onSuccess: () => Promise<void>;
 }
 
@@ -39,7 +39,7 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
   onClose,
   url,
   audioFormat,
-  forceOverwrite,
+  forceOverwrite = false,
   onSuccess,
 }) => {
   const playlists = useLibraryStore((s) => s.playlists);

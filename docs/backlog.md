@@ -12,11 +12,6 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
-- [ ] **Modernización y controles en la vista de Descargas (`DownloadsView`):**
-  - **Switch selector para Mix/Playlist vs Solo canción:** Al detectar una URL de lista o mix de YouTube, sustituir los radio buttons por un switch toggle moderno de 2 estados. A la izquierda: _"Solo la canción"_ (removiendo el texto "Recomendado"); a la derecha: _"Mix completo / Lista completa"_. Destacar visualmente con tipografía y color la opción activa seleccionada.
-  - **Acción rápida para limpiar historial:** Simplificar la limpieza de descargas sustituyendo el menú contextual de tres puntos actual por un botón directo de _"Limpiar historial"_ con icono de escoba (`Broom` / `Eraser` / `Trash`).
-  - **Eliminación de opción obsoleta:** Remover el checkbox de _"Forzar redescarga"_ (`force_overwrite`), dado que está deprecado por el nuevo flujo de sincronización y validación de descargas.
-
 - [ ] **Buscador integrado de canciones con descarga asistida (`DownloadsView`):**
   - Incorporar en la vista de Descargas un campo de búsqueda interactiva por texto (título, artista o palabras clave), eliminando la fricción de tener que buscar en un navegador y copiar enlaces manualmente.
   - **Backend (Microservicio Go y `yt-dlp`):** Exponer un endpoint de búsqueda rápida (ej. `GET /api/search?q={query}`) que ejecute `yt-dlp --dump-json "ytsearch4:{query}"` para obtener metadatos ligeros de las 3 a 5 mejores coincidencias sin descargar streams de audio.

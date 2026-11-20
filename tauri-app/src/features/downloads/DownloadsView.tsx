@@ -4,26 +4,18 @@ import {
   ChevronUp,
   Download,
   History,
-  List,
   ListMusic,
   Loader2,
   Music2,
   RotateCcw,
-  Settings,
   Trash2,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { CustomSelect, type SelectOption } from "@/components/ui/CustomSelect";
-import {
-  Badge,
-  Button,
-  Checkbox,
-  Input,
-  ProgressBar,
-} from "@/components/ui/Primitives";
-import { toAssetUrl } from "@/lib/utils";
+import { Badge, Button, Input, ProgressBar } from "@/components/ui/Primitives";
+import { cn, toAssetUrl } from "@/lib/utils";
 import { downloadFormSchema } from "@/schemas/validation";
 import { useDownloadStore } from "@/stores/useDownloadStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
@@ -119,7 +111,6 @@ export const DownloadsView = React.memo(() => {
 
   const [url, setUrl] = useState("");
   const [audioFormat, setAudioFormat] = useState<AudioFormat>(initialFormat);
-  const [forceOverwrite, setForceOverwrite] = useState(false);
   const [asyncMode] = useState(true);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [mixOption, setMixOption] = useState<"track" | "mix">("track");
@@ -349,7 +340,6 @@ export const DownloadsView = React.memo(() => {
       const parsed = downloadFormSchema.safeParse({
         url: finalUrl,
         audioFormat,
-        forceOverwrite,
         asyncMode,
       });
 
@@ -364,7 +354,7 @@ export const DownloadsView = React.memo(() => {
         await startDownloadTask({
           url: parsed.data.url,
           audio_format: parsed.data.audioFormat,
-          force_overwrite: parsed.data.forceOverwrite,
+          force_overwrite: false,
           async_mode: parsed.data.asyncMode,
         });
         setUrl("");
@@ -383,7 +373,6 @@ export const DownloadsView = React.memo(() => {
       isMixUrl,
       mixOption,
       audioFormat,
-      forceOverwrite,
       asyncMode,
       startDownloadTask,
       refreshTracks,
@@ -444,52 +433,53 @@ export const DownloadsView = React.memo(() => {
 
         {/* Alerta y Selector inteligente si se pega un Mix de YouTube (list=RD...) */}
         {isMixUrl && (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-500">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-500">
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-amber-500" />
+              <AlertCircle className="h-4 w-4 shrink-0 text-amber-500" />
               <span>
                 Detectamos un Mix autogenerado de YouTube en la URL. ¿Qué deseas
                 descargar?
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            {/* Switch selector moderno de 2 estados */}
+            <div
+              role="radiogroup"
+              aria-label="Opción de descarga para Mix de YouTube"
+              className="inline-flex items-center rounded-xl border border-border/60 bg-muted/70 p-1 shadow-inner gap-1"
+            >
               <button
                 type="button"
+                role="radio"
+                aria-checked={mixOption === "track"}
                 onClick={() => setMixOption("track")}
-                className={`rounded px-2.5 py-1 text-xs font-semibold ${
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer select-none",
                   mixOption === "track"
-                    ? "bg-amber-500 text-black font-semibold"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
+                    ? "bg-background text-foreground shadow-xs font-semibold ring-1 ring-border/50"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
               >
-                <Music2 className="mr-1 inline h-3 w-3" />
-                Solo esta canción (Recomendado)
+                <Music2 className="h-3.5 w-3.5" />
+                <span>Solo la canción</span>
               </button>
               <button
                 type="button"
+                role="radio"
+                aria-checked={mixOption === "mix"}
                 onClick={() => setMixOption("mix")}
-                className={`rounded px-2.5 py-1 text-xs font-semibold ${
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer select-none",
                   mixOption === "mix"
-                    ? "bg-amber-500 text-black font-semibold"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
+                    ? "bg-background text-foreground shadow-xs font-semibold ring-1 ring-border/50"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
               >
-                <List className="mr-1 inline h-3 w-3" />
-                Mix completo
+                <ListMusic className="h-3.5 w-3.5" />
+                <span>Mix completo / Lista completa</span>
               </button>
             </div>
           </div>
         )}
-
-        <div className="flex flex-wrap items-center justify-between gap-4 text-xs text-muted-foreground">
-          <label className="flex cursor-pointer items-center gap-2">
-            <Checkbox
-              checked={forceOverwrite}
-              onChange={(e) => setForceOverwrite(e.target.checked)}
-            />
-            <span>Forzar re-descarga si el archivo ya existe en el Workspace</span>
-          </label>
-        </div>
 
         {(validationError || lastError) && (
           <div className="rounded-lg border border-destructive/30 bg-destructive/15 px-3 py-2 text-xs text-destructive">
@@ -799,19 +789,17 @@ export const DownloadsView = React.memo(() => {
             </div>
 
             {downloadHistory.length > 0 && (
-              <ActionMenu
-                title="Opciones del historial"
-                triggerIcon={<Settings className="h-4 w-4" />}
-                triggerClassName="h-7 w-7 rounded-lg border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground shadow-xs flex items-center justify-center ml-auto"
-                items={[
-                  {
-                    label: "Limpiar historial de descargas",
-                    icon: <Trash2 className="h-3.5 w-3.5" />,
-                    variant: "danger",
-                    onClick: () => setIsClearHistoryModalOpen(true),
-                  },
-                ]}
-              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsClearHistoryModalOpen(true)}
+                title="Limpiar historial de descargas"
+                className="ml-auto text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors gap-1.5 h-8 px-2.5"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Limpiar historial</span>
+              </Button>
             )}
           </div>
 
@@ -919,7 +907,6 @@ export const DownloadsView = React.memo(() => {
         onClose={() => setIsPlaylistModalOpen(false)}
         url={url}
         audioFormat={audioFormat}
-        forceOverwrite={forceOverwrite}
         onSuccess={async () => {
           setUrl("");
           await Promise.all([
