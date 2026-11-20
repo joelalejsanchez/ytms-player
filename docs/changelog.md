@@ -6,6 +6,27 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.21] - 2026-11-20
+
+### Añadido
+
+#### Mejoras Integrales en Vista de Descargas y Perfeccionamiento UX en Playlists (`DownloadsView`, `HomeView` & `PlaylistsView`)
+- **Mejoras Integrales en la Vista de Descargas (`DownloadsView`)**:
+  - **Selector de lista en Búsqueda Asistida:** Selector integrado para definir a qué playlist se agregan las canciones buscadas, con diálogo interactivo para crear una nueva playlist al instante. Si la canción ya existe en la biblioteca local, permite agregarla a la playlist elegida sin re-descarga innecesaria mediante botón interactivo *"Agregar"*.
+  - **Selector de formato compacto y fijo:** Opciones limpias mostrando únicamente la extensión (`MP3`, `M4A`, `OPUS`) con anchura fija calibrada (`w-24`) para evitar deformaciones en la interfaz.
+  - **Placeholder simplificado:** Texto conciso y directo: `URL de Video/Playlist/Mix`.
+  - **Botón de descarga minimalista:** Botón de acción con solo el icono, deshabilitado hasta contar con una URL y opción de destino válida.
+  - **Selectores de objetivo siempre visibles con detección inteligente y estilos info:**
+    - Dos selectores presentes siempre: *Descargar solo una canción* y *Descargar lista completa*.
+    - Si la URL está vacía, ambos permanecen desactivados.
+    - Si la URL es un video individual, solo se activa el primero y se autoselecciona.
+    - Si la URL es una playlist o mix, ambos se activan con temática `info` (azul/celeste) sin preselección forzada, requiriendo elección explícita del usuario sin transmitir sensación de alerta o peligro.
+- **Perfeccionamiento UX en Tarjetas de Playlists (`HomeView` & `PlaylistsView`)**:
+  - Indicador visual de reproducción activa: borde `border-primary` en la tarjeta completa cuando está en reproducción, suprimiendo anillos blancos en el botón flotante.
+  - Aislamiento de navegación: hacer clic en el botón de reproducción o en el menú contextual de 3 puntos ejecuta la acción sin redirigir a la vista de detalles.
+
+---
+
 ## [1.9.20] - 2026-11-20
 
 ### Añadido

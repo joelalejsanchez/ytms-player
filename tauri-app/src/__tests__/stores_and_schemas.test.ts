@@ -2040,26 +2040,29 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       expect(clearBtn.tagName).toBe("SPAN"); // Está dentro del Button
 
       // 3. Introducir URL de YouTube Mix
-      const input = getByPlaceholderText(
-        "https://www.youtube.com/watch?v=dQw4w9WgXcQ o URL de playlist...",
-      );
+      const input = getByPlaceholderText("URL de Video/Playlist/Mix");
       fireEvent.change(input, {
         target: {
           value: "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ",
         },
       });
 
-      // Debe aparecer el selector segmentado de 2 estados
-      const soloBtn = getByRole("radio", { name: /Solo la canción/i });
-      const mixBtn = getByRole("radio", { name: /Mix completo \/ Lista completa/i });
+      // Debe aparecer el selector segmentado de 2 estados con estilos info
+      const soloBtn = getByRole("radio", { name: /Descargar solo una canción/i });
+      const mixBtn = getByRole("radio", { name: /Descargar lista completa/i });
       expect(soloBtn).toBeInTheDocument();
       expect(mixBtn).toBeInTheDocument();
 
-      // Por defecto 'Solo la canción' está seleccionado
+      // En playlists y mixes ninguno está preseleccionado por defecto
+      expect(soloBtn.getAttribute("aria-checked")).toBe("false");
+      expect(mixBtn.getAttribute("aria-checked")).toBe("false");
+
+      // Seleccionar solo una canción
+      fireEvent.click(soloBtn);
       expect(soloBtn.getAttribute("aria-checked")).toBe("true");
       expect(mixBtn.getAttribute("aria-checked")).toBe("false");
 
-      // Alternar al estado Mix completo
+      // Alternar al estado lista completa
       fireEvent.click(mixBtn);
       expect(mixBtn.getAttribute("aria-checked")).toBe("true");
       expect(soloBtn.getAttribute("aria-checked")).toBe("false");
@@ -2506,7 +2509,7 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
 
       // El input de URL en DownloadsView debe tener la URL precargada
       const input = screen.getByPlaceholderText(
-        /https:\/\/www\.youtube\.com\/watch\?v=dQw4w9WgXcQ o URL de playlist\.\.\./i,
+        /URL de Video\/Playlist\/Mix/i,
       ) as HTMLInputElement;
       expect(input.value).toBe("https://www.youtube.com/playlist?list=PL1234567890");
 
@@ -2514,6 +2517,131 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       expect(
         screen.getByText("Previsualización e Importación de Lista"),
       ).toBeInTheDocument();
+    });
+  });
+
+  describe("Downloads UI Enhancements & Playlist Card States", () => {
+    beforeEach(() => {
+      useLibraryStore.setState({
+        playlists: [
+          {
+            id: 1,
+            title: "Rock Hits",
+            youtube_playlist_id: null,
+            cover_path: null,
+            track_count: 1,
+            created_at: "2026-11-20T00:00:00Z",
+          },
+        ],
+        tracks: [sampleTrack],
+        playlistTrackMap: { [sampleTrack.id]: [1] },
+        activePlaylist: null,
+      });
+      usePlayerStore.getState().clearQueue();
+    });
+
+    it("URL form disables download button when empty, auto-selects single song for video URL, and requires explicit option for playlist", () => {
+      const { getByPlaceholderText, getByRole } = render(
+        React.createElement(DownloadsView),
+      );
+
+      const input = getByPlaceholderText("URL de Video/Playlist/Mix");
+      const downloadBtn = getByRole("button", { name: /Descargar/i });
+      const soloBtn = getByRole("radio", { name: /Descargar solo una canción/i });
+      const listBtn = getByRole("radio", { name: /Descargar lista completa/i });
+
+      // 1. Estado inicial vacío: ambos desactivados y botón deshabilitado
+      expect(downloadBtn).toBeDisabled();
+      expect(soloBtn).toBeDisabled();
+      expect(listBtn).toBeDisabled();
+
+      // 2. Video individual: solo la canción se activa y autoselecciona, lista queda desactivada, botón habilitado
+      fireEvent.change(input, {
+        target: { value: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+      });
+      expect(soloBtn).not.toBeDisabled();
+      expect(soloBtn.getAttribute("aria-checked")).toBe("true");
+      expect(listBtn).toBeDisabled();
+      expect(downloadBtn).not.toBeDisabled();
+
+      // 3. Playlist URL: ambos se activan, ninguno preseleccionado, botón deshabilitado hasta elegir
+      fireEvent.change(input, {
+        target: { value: "https://www.youtube.com/playlist?list=PL1234567890" },
+      });
+      expect(soloBtn).not.toBeDisabled();
+      expect(listBtn).not.not.toBeDisabled();
+      expect(soloBtn.getAttribute("aria-checked")).toBe("false");
+      expect(listBtn.getAttribute("aria-checked")).toBe("false");
+      expect(downloadBtn).toBeDisabled();
+
+      // Seleccionar lista completa habilita el botón y cambia a icono/título Importar Playlist
+      fireEvent.click(listBtn);
+      expect(listBtn.getAttribute("aria-checked")).toBe("true");
+      expect(downloadBtn).not.toBeDisabled();
+    });
+
+    it("assisted search allows selecting destination playlist and creating a new one", async () => {
+      const { getByRole, getByText, findByText } = render(
+        React.createElement(DownloadsView),
+      );
+
+      // Cambiar a pestaña Búsqueda Asistida
+      const searchTab = getByRole("tab", { name: /Búsqueda Asistida/i });
+      fireEvent.click(searchTab);
+
+      // El selector de destino de playlist debe estar presente con 'Solo a Biblioteca' por defecto
+      expect(getByText("Solo a Biblioteca (sin lista)")).toBeInTheDocument();
+
+      // Abrir selector de destino y elegir '+ Crear nueva playlist...'
+      fireEvent.click(getByText("Solo a Biblioteca (sin lista)"));
+      const newOption = await findByText("+ Crear nueva playlist...");
+      fireEvent.click(newOption);
+
+      // Debe abrirse el modal para crear nueva playlist
+      expect(getByText("Crear nueva playlist")).toBeInTheDocument();
+    });
+
+    it("applies border-primary to playlist card when currently playing and does not navigate to detail view on play click", async () => {
+      const getDetailsSpy = vi.spyOn(tauriApi, "getPlaylistDetails").mockResolvedValue({
+        playlist: {
+          id: 1,
+          title: "Rock Hits",
+          youtube_playlist_id: null,
+          cover_path: null,
+          track_count: 1,
+          created_at: "2026-11-20T00:00:00Z",
+        },
+        tracks: [sampleTrack],
+      });
+
+      const { getByTitle } = render(React.createElement(PlaylistsView));
+
+      // Buscar tarjeta
+      const titleEl = getByTitle("Rock Hits");
+      const card = titleEl.closest(".group");
+      expect(card).not.toBeNull();
+
+      // Al no estar reproduciendo, tiene border-border y no la clase exacta border-primary
+      expect(card?.classList.contains("border-primary")).toBe(false);
+      expect(card?.classList.contains("border-border")).toBe(true);
+
+      // Clic en el botón Quick Play de la tarjeta
+      const playBtn = getByTitle('Reproducir "Rock Hits"');
+      fireEvent.click(playBtn);
+
+      // Debe haber solicitado detalles para reproducir
+      expect(getDetailsSpy).toHaveBeenCalledWith(1);
+
+      // NO debe haber mutado activePlaylist en el store (no navega a vista de detalles)
+      expect(useLibraryStore.getState().activePlaylist).toBeNull();
+
+      // Al activarse la reproducción de esta playlist, la card adquiere la clase border-primary
+      act(() => {
+        usePlayerStore.setState({ activePlaylistId: 1, isPlaying: true });
+      });
+      expect(card?.classList.contains("border-primary")).toBe(true);
+
+      getDetailsSpy.mockRestore();
     });
   });
 });

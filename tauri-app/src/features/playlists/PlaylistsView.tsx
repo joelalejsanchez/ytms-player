@@ -29,6 +29,7 @@ import {
   toAssetUrl,
 } from "@/lib/utils";
 import { playlistFormSchema } from "@/schemas/validation";
+import { tauriApi } from "@/services/tauriIpc";
 import { useDownloadStore } from "@/stores/useDownloadStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
@@ -63,7 +64,12 @@ const PlaylistCard = React.memo(
     return (
       <div
         onClick={() => onSelect(playlist.id)}
-        className="group relative flex cursor-pointer flex-col rounded-xl border border-border bg-card p-3 shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md"
+        className={cn(
+          "group relative flex cursor-pointer flex-col rounded-xl border bg-card p-3 shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md",
+          isCurrentlyPlaying
+            ? "border-primary shadow-xs ring-1 ring-primary/40"
+            : "border-border",
+        )}
       >
         {/* Contenedor de Portada */}
         <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-lg bg-muted shadow-inner">
@@ -99,7 +105,7 @@ const PlaylistCard = React.memo(
               className={cn(
                 "absolute right-2 bottom-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-200 hover:scale-110 active:scale-95",
                 isCurrentlyPlaying
-                  ? "opacity-100 ring-2 ring-primary-foreground"
+                  ? "opacity-100"
                   : "opacity-0 group-hover:opacity-100",
               )}
             >
@@ -224,7 +230,12 @@ const PlaylistRow = React.memo(
     return (
       <div
         onClick={() => onSelect(playlist.id)}
-        className="group flex cursor-pointer select-none items-center justify-between gap-4 rounded-xl border border-border bg-card p-3 shadow-2xs transition-all duration-150 hover:border-primary/40 hover:bg-muted/60"
+        className={cn(
+          "group flex cursor-pointer select-none items-center justify-between gap-4 rounded-xl border bg-card p-3 shadow-2xs transition-all duration-150 hover:border-primary/40 hover:bg-muted/60",
+          isCurrentlyPlaying
+            ? "border-primary shadow-xs ring-1 ring-primary/40"
+            : "border-border",
+        )}
       >
         <div className="flex min-w-0 flex-1 items-center gap-3.5">
           {/* Botón de reproducción rápida */}
@@ -686,13 +697,15 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = React.memo(
     // Reproducción rápida por ID desde la vista de lista/cuadrícula con verificación de cola
     const handlePlayPlaylistById = useCallback(
       async (playlistId: number) => {
-        await selectPlaylist(playlistId);
-        const currentActive = useLibraryStore.getState().activePlaylist;
-        const tracksToPlay =
-          currentActive?.playlist.id === playlistId ? currentActive.tracks : [];
-        playPlaylist(tracksToPlay, playlistId);
+        try {
+          const details = await tauriApi.getPlaylistDetails(playlistId);
+          playPlaylist(details.tracks, playlistId);
+        } catch (err) {
+          console.error("Error al reproducir playlist:", err);
+          toast.error("Error", "No se pudieron cargar las canciones de la playlist");
+        }
       },
-      [playPlaylist, selectPlaylist],
+      [playPlaylist],
     );
 
     // Navegación de retorno hacia la vista general de todas las playlists

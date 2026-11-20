@@ -1,14 +1,15 @@
 import {
-  AlertCircle,
   Check,
   ChevronDown,
   ChevronUp,
   Download,
   History,
+  Info,
   Link as LinkIcon,
   ListMusic,
   Loader2,
   Music2,
+  Plus,
   RotateCcw,
   Search,
   Trash2,
@@ -33,9 +34,9 @@ import type {
 import { PlaylistImportModal } from "./PlaylistImportModal";
 
 const AUDIO_FORMAT_OPTIONS: SelectOption<AudioFormat>[] = [
-  { value: "mp3", label: "MP3 (ID3v2 + Carátula)" },
-  { value: "m4a", label: "M4A (AAC + Átomos iTunes)" },
-  { value: "opus", label: "OPUS (Vorbis Comments)" },
+  { value: "mp3", label: "MP3" },
+  { value: "m4a", label: "M4A" },
+  { value: "opus", label: "OPUS" },
 ];
 
 function parseIsoDate(raw: string): Date {
@@ -112,6 +113,8 @@ export const DownloadsView = React.memo(() => {
   const setPreferredFormat = useLibraryStore((s) => s.setPreferredFormat);
   const downloadHistory = useLibraryStore((s) => s.downloadHistory);
   const tracks = useLibraryStore((s) => s.tracks);
+  const playlists = useLibraryStore((s) => s.playlists);
+  const createPlaylist = useLibraryStore((s) => s.createPlaylist);
   const refreshDownloadHistory = useLibraryStore((s) => s.refreshDownloadHistory);
   const clearDownloadHistory = useLibraryStore((s) => s.clearDownloadHistory);
   const refreshTracks = useLibraryStore((s) => s.refreshTracks);
@@ -120,10 +123,12 @@ export const DownloadsView = React.memo(() => {
   const initialFormat = (appSettings?.preferred_audio_format as AudioFormat) || "mp3";
 
   const [url, setUrl] = useState("");
+  const [downloadTarget, setDownloadTarget] = useState<"track" | "playlist" | null>(
+    null,
+  );
   const [audioFormat, setAudioFormat] = useState<AudioFormat>(initialFormat);
   const [asyncMode] = useState(true);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [mixOption, setMixOption] = useState<"track" | "mix">("track");
   const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
   const [isClearHistoryModalOpen, setIsClearHistoryModalOpen] = useState(false);
   const [isClearingHistory, setIsClearingHistory] = useState(false);
@@ -136,6 +141,12 @@ export const DownloadsView = React.memo(() => {
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+
+  // Selector y creación de playlist destino para búsquedas asistidas
+  const [searchPlaylistId, setSearchPlaylistId] = useState<string>("none");
+  const [isNewPlaylistModalOpen, setIsNewPlaylistModalOpen] = useState(false);
+  const [newPlaylistTitle, setNewPlaylistTitle] = useState("");
+  const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
 
   const tasks = useDownloadStore((s) => s.tasks);
   const isSubmitting = useDownloadStore((s) => s.isSubmitting);
@@ -153,6 +164,7 @@ export const DownloadsView = React.memo(() => {
     if (pendingPlaylistUrl) {
       setUrl(pendingPlaylistUrl);
       setDownloadMode("url");
+      setDownloadTarget("playlist");
       setIsPlaylistModalOpen(true);
       setPendingPlaylistUrl(null);
     }
@@ -218,9 +230,83 @@ export const DownloadsView = React.memo(() => {
     return () => clearTimeout(timer);
   }, [searchQuery, downloadMode, performSearch]);
 
+  // Opciones de selector de playlist para búsquedas asistidas
+  const searchPlaylistOptions: SelectOption<string>[] = useMemo(() => {
+    return [
+      { value: "none", label: "Solo a Biblioteca (sin lista)" },
+      ...playlists.map((p) => ({
+        value: String(p.id),
+        label: `Lista: ${p.title}`,
+      })),
+      { value: "__new__", label: "+ Crear nueva playlist..." },
+    ];
+  }, [playlists]);
+
+  const handleSearchPlaylistChange = useCallback((val: string) => {
+    if (val === "__new__") {
+      setIsNewPlaylistModalOpen(true);
+      return;
+    }
+    setSearchPlaylistId(val);
+  }, []);
+
+  const handleCreateNewPlaylistFromSearch = useCallback(async () => {
+    const trimmed = newPlaylistTitle.trim();
+    if (!trimmed) return;
+    setIsCreatingPlaylist(true);
+    try {
+      const created = await createPlaylist(trimmed);
+      setSearchPlaylistId(String(created.id));
+      setIsNewPlaylistModalOpen(false);
+      setNewPlaylistTitle("");
+      toast.success("Playlist creada", `Se creó la playlist "${created.title}".`);
+    } catch (err) {
+      console.error("Error al crear playlist:", err);
+      toast.error("Error", "No se pudo crear la playlist");
+    } finally {
+      setIsCreatingPlaylist(false);
+    }
+  }, [newPlaylistTitle, createPlaylist]);
+
+  const isItemInLibrary = useCallback(
+    (youtubeId: string) => tracks.some((t) => t.youtube_id === youtubeId),
+    [tracks],
+  );
+
   const handleDownloadSearchResult = useCallback(
     async (item: SearchResultItem) => {
       const targetUrl = `https://www.youtube.com/watch?v=${item.youtube_id}`;
+      const targetPlaylistId =
+        searchPlaylistId !== "none" ? Number(searchPlaylistId) : null;
+      const targetPlaylist = playlists.find((p) => p.id === targetPlaylistId);
+
+      // Si ya está en la biblioteca y se seleccionó una lista:
+      if (isItemInLibrary(item.youtube_id)) {
+        if (targetPlaylistId !== null) {
+          try {
+            await tauriApi.syncPlaylistTracks(
+              targetPlaylistId,
+              [item.youtube_id],
+              false,
+            );
+            await refreshPlaylists();
+            toast.success(
+              "Canción agregada",
+              `"${item.title}" se agregó a la playlist "${targetPlaylist?.title || "Playlist"}".`,
+            );
+          } catch (err) {
+            console.error("Error al vincular canción a playlist:", err);
+            toast.error("Error", "No se pudo agregar la canción a la playlist");
+          }
+        } else {
+          toast.info(
+            "Ya en biblioteca",
+            `"${item.title}" ya existe en tu biblioteca local.`,
+          );
+        }
+        return;
+      }
+
       toast.info(`Iniciando descarga: ${item.title}`);
       try {
         await startDownloadTask({
@@ -228,17 +314,22 @@ export const DownloadsView = React.memo(() => {
           audio_format: audioFormat,
           force_overwrite: false,
           async_mode: asyncMode,
+          target_playlist_id: targetPlaylistId,
+          skip_playlist: targetPlaylistId === null,
         });
       } catch (err) {
         console.error("Error iniciando descarga desde búsqueda:", err);
       }
     },
-    [audioFormat, asyncMode, startDownloadTask],
-  );
-
-  const isItemInLibrary = useCallback(
-    (youtubeId: string) => tracks.some((t) => t.youtube_id === youtubeId),
-    [tracks],
+    [
+      searchPlaylistId,
+      playlists,
+      isItemInLibrary,
+      audioFormat,
+      asyncMode,
+      startDownloadTask,
+      refreshPlaylists,
+    ],
   );
 
   const getItemActiveTask = useCallback(
@@ -263,20 +354,31 @@ export const DownloadsView = React.memo(() => {
     return map;
   }, [tracks]);
 
-  // Detección automática de Mix / Radio de YouTube (list=RD...)
-  const isMixUrl = useMemo(() => {
-    return url.includes("list=RD") || url.includes("list=UL");
-  }, [url]);
-
-  const isPlaylistUrl = useMemo(() => {
-    return (
-      url.includes("list=") && !url.includes("list=RD") && !url.includes("list=UL")
+  // Detección de playlist o mix en URL
+  const isListUrl = useMemo(() => {
+    const trimmed = url.trim();
+    return Boolean(
+      trimmed && (trimmed.includes("list=") || trimmed.includes("/playlist")),
     );
   }, [url]);
 
-  const shouldOpenPlaylistModal = useMemo(() => {
-    return isPlaylistUrl || (isMixUrl && mixOption === "mix");
-  }, [isPlaylistUrl, isMixUrl, mixOption]);
+  // Sincronización automática de selectores según el tipo de URL
+  useEffect(() => {
+    const trimmed = url.trim();
+    if (!trimmed) {
+      setDownloadTarget(null);
+      return;
+    }
+
+    const isList = trimmed.includes("list=") || trimmed.includes("/playlist");
+    if (isList) {
+      // Si es playlist/mix, ambos selectores se activan pero ninguno se preselecciona
+      setDownloadTarget(null);
+    } else {
+      // Si es video individual, solo se activa el primero y se autoselecciona
+      setDownloadTarget("track");
+    }
+  }, [url]);
 
   const taskEntries = useMemo(() => Object.entries(tasks).reverse(), [tasks]);
 
@@ -425,15 +527,20 @@ export const DownloadsView = React.memo(() => {
       e.preventDefault();
       setValidationError(null);
 
-      // Si es una playlist o un mix completo, abrir el modal de previsualización y destino
-      if (shouldOpenPlaylistModal) {
+      if (!downloadTarget) {
+        setValidationError("Por favor, selecciona una opción de descarga válida.");
+        return;
+      }
+
+      // Si seleccionó descargar la lista completa, abrir el modal de previsualización y destino
+      if (downloadTarget === "playlist") {
         setIsPlaylistModalOpen(true);
         return;
       }
 
-      // Si es un mix y el usuario eligió solo la canción, limpiar el parámetro list
+      // Si eligió descargar solo una canción y la URL contiene un video junto con lista, extraer videoId
       let finalUrl = url.trim();
-      if (isMixUrl && mixOption === "track") {
+      if (isListUrl) {
         try {
           const parsedUrl = new URL(finalUrl);
           const videoId = parsedUrl.searchParams.get("v");
@@ -466,6 +573,7 @@ export const DownloadsView = React.memo(() => {
           async_mode: parsed.data.asyncMode,
         });
         setUrl("");
+        setDownloadTarget(null);
         await Promise.all([
           refreshTracks(),
           refreshPlaylists(),
@@ -477,9 +585,8 @@ export const DownloadsView = React.memo(() => {
     },
     [
       url,
-      shouldOpenPlaylistModal,
-      isMixUrl,
-      mixOption,
+      downloadTarget,
+      isListUrl,
       audioFormat,
       asyncMode,
       startDownloadTask,
@@ -552,7 +659,7 @@ export const DownloadsView = React.memo(() => {
               <Input
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ o URL de playlist..."
+                placeholder="URL de Video/Playlist/Mix"
                 aria-label="URL de YouTube"
               />
             </div>
@@ -562,67 +669,122 @@ export const DownloadsView = React.memo(() => {
               onChange={(val) => handleFormatChange(val as AudioFormat)}
               options={AUDIO_FORMAT_OPTIONS}
               ariaLabel="Formato de audio"
-              className="w-full sm:w-auto"
-              triggerClassName="h-9 px-3 text-sm min-w-0 w-full sm:min-w-[220px]"
+              className="w-auto shrink-0"
+              triggerClassName="h-9 px-3 text-sm w-24 shrink-0"
             />
 
-            <Button type="submit" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              disabled={isSubmitting || downloadTarget === null || !url.trim()}
+              size="icon"
+              title={downloadTarget === "playlist" ? "Importar Playlist" : "Descargar"}
+              aria-label={
+                downloadTarget === "playlist" ? "Importar Playlist" : "Descargar"
+              }
+              className="h-9 w-9 shrink-0"
+            >
               {isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
-              ) : shouldOpenPlaylistModal ? (
+              ) : downloadTarget === "playlist" ? (
                 <ListMusic className="h-4 w-4" />
               ) : (
                 <Download className="h-4 w-4" />
               )}
-              {shouldOpenPlaylistModal ? "Importar Playlist" : "Descargar"}
             </Button>
           </div>
 
-          {/* Alerta y Selector inteligente si se pega un Mix de YouTube (list=RD...) */}
-          {isMixUrl && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-500">
+          {/* Selector de objetivo de descarga: Siempre visible, desactivado según disponibilidad */}
+          {isListUrl ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-500/30 bg-sky-500/10 p-3 text-xs text-sky-400">
               <div className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 shrink-0 text-amber-500" />
-                <span>
-                  Detectamos un Mix autogenerado de YouTube en la URL. ¿Qué deseas
-                  descargar?
+                <Info className="h-4 w-4 shrink-0 text-sky-400" />
+                <span className="text-foreground">
+                  Detectamos una lista de reproducción o mix en el enlace. Elige qué
+                  deseas descargar:
                 </span>
               </div>
-              {/* Switch selector moderno de 2 estados */}
               <div
                 role="radiogroup"
-                aria-label="Opción de descarga para Mix de YouTube"
+                aria-label="Opciones de descarga para lista o mix"
                 className="inline-flex items-center rounded-xl border border-border/60 bg-muted/70 p-1 shadow-inner gap-1"
               >
                 <button
                   type="button"
                   role="radio"
-                  aria-checked={mixOption === "track"}
-                  onClick={() => setMixOption("track")}
+                  aria-checked={downloadTarget === "track"}
+                  disabled={!url.trim()}
+                  onClick={() => setDownloadTarget("track")}
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer select-none",
-                    mixOption === "track"
+                    downloadTarget === "track"
                       ? "bg-background text-foreground shadow-xs font-semibold ring-1 ring-border/50"
                       : "text-muted-foreground hover:text-foreground",
+                    !url.trim() &&
+                      "opacity-50 cursor-not-allowed hover:text-muted-foreground",
                   )}
                 >
                   <Music2 className="h-3.5 w-3.5" />
-                  <span>Solo la canción</span>
+                  <span>Descargar solo una canción</span>
                 </button>
                 <button
                   type="button"
                   role="radio"
-                  aria-checked={mixOption === "mix"}
-                  onClick={() => setMixOption("mix")}
+                  aria-checked={downloadTarget === "playlist"}
+                  disabled={!isListUrl}
+                  onClick={() => setDownloadTarget("playlist")}
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer select-none",
-                    mixOption === "mix"
+                    downloadTarget === "playlist"
                       ? "bg-background text-foreground shadow-xs font-semibold ring-1 ring-border/50"
                       : "text-muted-foreground hover:text-foreground",
+                    !isListUrl &&
+                      "opacity-50 cursor-not-allowed hover:text-muted-foreground",
                   )}
                 >
                   <ListMusic className="h-3.5 w-3.5" />
-                  <span>Mix completo / Lista completa</span>
+                  <span>Descargar lista completa</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/40 p-2.5 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  Opciones de descarga:
+                </span>
+              </div>
+              <div
+                role="radiogroup"
+                aria-label="Opciones de descarga"
+                className="inline-flex items-center rounded-xl border border-border/60 bg-muted/70 p-1 shadow-inner gap-1"
+              >
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={downloadTarget === "track"}
+                  disabled={!url.trim()}
+                  onClick={() => setDownloadTarget("track")}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer select-none",
+                    downloadTarget === "track"
+                      ? "bg-background text-foreground shadow-xs font-semibold ring-1 ring-border/50"
+                      : "text-muted-foreground hover:text-foreground",
+                    !url.trim() &&
+                      "opacity-50 cursor-not-allowed hover:text-muted-foreground",
+                  )}
+                >
+                  <Music2 className="h-3.5 w-3.5" />
+                  <span>Descargar solo una canción</span>
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={false}
+                  disabled={true}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground opacity-50 cursor-not-allowed"
+                >
+                  <ListMusic className="h-3.5 w-3.5" />
+                  <span>Descargar lista completa</span>
                 </button>
               </div>
             </div>
@@ -638,7 +800,7 @@ export const DownloadsView = React.memo(() => {
         /* Panel de Búsqueda Asistida */
         <div className="space-y-4 rounded-xl border border-border bg-card p-4">
           <div className="flex flex-wrap items-center gap-3">
-            <div className="relative min-w-0 w-full sm:w-auto sm:min-w-[260px] flex-1">
+            <div className="relative min-w-0 w-full sm:w-auto sm:min-w-[220px] flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={searchQuery}
@@ -669,13 +831,24 @@ export const DownloadsView = React.memo(() => {
               )}
             </div>
 
+            {/* Selector de lista destino para búsquedas */}
+            <CustomSelect
+              value={searchPlaylistId}
+              onChange={handleSearchPlaylistChange}
+              options={searchPlaylistOptions}
+              ariaLabel="Destino de playlist para búsquedas"
+              className="w-auto shrink-0"
+              triggerClassName="h-9 px-3 text-xs w-[190px] shrink-0"
+            />
+
+            {/* Selector de formato de descarga con tamaño fijo */}
             <CustomSelect
               value={audioFormat}
               onChange={(val) => handleFormatChange(val as AudioFormat)}
               options={AUDIO_FORMAT_OPTIONS}
               ariaLabel="Formato de audio para descarga"
-              className="w-full sm:w-auto"
-              triggerClassName="h-9 px-3 text-sm min-w-0 w-full sm:min-w-[220px]"
+              className="w-auto shrink-0"
+              triggerClassName="h-9 px-3 text-sm w-24 shrink-0"
             />
 
             <Button
@@ -762,7 +935,7 @@ export const DownloadsView = React.memo(() => {
                     </div>
 
                     <div className="shrink-0">
-                      {inLibrary ? (
+                      {inLibrary && searchPlaylistId === "none" ? (
                         <Badge
                           tone="success"
                           className="gap-1 border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
@@ -785,12 +958,21 @@ export const DownloadsView = React.memo(() => {
                       ) : (
                         <Button
                           size="sm"
-                          variant="outline"
+                          variant={inLibrary ? "secondary" : "outline"}
                           className="h-8 gap-1.5 px-3 text-xs font-medium cursor-pointer"
                           onClick={() => void handleDownloadSearchResult(item)}
                         >
-                          <Download className="h-3.5 w-3.5" />
-                          <span>Descargar</span>
+                          {inLibrary ? (
+                            <>
+                              <Plus className="h-3.5 w-3.5" />
+                              <span>Agregar</span>
+                            </>
+                          ) : (
+                            <>
+                              <Download className="h-3.5 w-3.5" />
+                              <span>Descargar</span>
+                            </>
+                          )}
                         </Button>
                       )}
                     </div>
@@ -1242,6 +1424,60 @@ export const DownloadsView = React.memo(() => {
         onConfirm={handleConfirmClearHistory}
         onCancel={() => setIsClearHistoryModalOpen(false)}
       />
+
+      {/* Modal para crear nueva playlist desde búsquedas asistidas */}
+      {isNewPlaylistModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-sm rounded-xl border border-border bg-card p-5 shadow-xl animate-in fade-in zoom-in-95">
+            <div className="flex items-center gap-2 mb-3">
+              <ListMusic className="h-5 w-5 text-primary" />
+              <h3 className="text-sm font-semibold text-foreground">
+                Crear nueva playlist
+              </h3>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              Ingresa el nombre para la playlist donde se agregarán las canciones
+              descargadas desde la búsqueda asistida.
+            </p>
+            <Input
+              autoFocus
+              value={newPlaylistTitle}
+              onChange={(e) => setNewPlaylistTitle(e.target.value)}
+              placeholder="Nombre de la playlist..."
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void handleCreateNewPlaylistFromSearch();
+                if (e.key === "Escape") setIsNewPlaylistModalOpen(false);
+              }}
+              className="mb-4"
+            />
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIsNewPlaylistModalOpen(false);
+                  setNewPlaylistTitle("");
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={!newPlaylistTitle.trim() || isCreatingPlaylist}
+                onClick={() => void handleCreateNewPlaylistFromSearch()}
+              >
+                {isCreatingPlaylist ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Plus className="h-3.5 w-3.5" />
+                )}
+                Crear y seleccionar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 });

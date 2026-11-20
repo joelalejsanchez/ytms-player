@@ -332,7 +332,12 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
                 <div
                   key={playlist.id}
                   onClick={() => void handleOpenPlaylist(playlist.id)}
-                  className="group relative flex cursor-pointer flex-col rounded-xl border border-border bg-card p-3 shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md"
+                  className={cn(
+                    "group relative flex cursor-pointer flex-col rounded-xl border bg-card p-3 shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md",
+                    playlist.isCurrentlyPlaying
+                      ? "border-primary shadow-xs ring-1 ring-primary/40"
+                      : "border-border",
+                  )}
                 >
                   {/* Contenedor de Portada */}
                   <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-lg bg-muted shadow-inner">
@@ -364,7 +369,7 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
                         className={cn(
                           "absolute right-2 bottom-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-200 hover:scale-110 active:scale-95",
                           playlist.isCurrentlyPlaying
-                            ? "opacity-100 ring-2 ring-primary-foreground"
+                            ? "opacity-100"
                             : "opacity-0 group-hover:opacity-100",
                         )}
                       >
