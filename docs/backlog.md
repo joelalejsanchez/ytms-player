@@ -12,6 +12,27 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
+- [ ] **Unificación del selector de volumen flotante vertical en vista completa (`PersistentPlayer`):**
+  - **Contexto y paridad de interfaz:** Actualmente, al estrechar la ventana de la aplicación o en modo compacto, el control de volumen se transforma en un selector vertical flotante (popover vertical emergente al interactuar con el icono de altavoz), liberando espacio horizontal. Sin embargo, en la vista completa/escritorio se mantiene un slider horizontal fijo que ocupa espacio continuo en la barra inferior.
+  - **Comportamiento unificado:** Aplicar la misma funcionalidad del selector flotante vertical al modo de vista completa estándar. Al interactuar con el icono de altavoz o sobrevolarlo, desplegar el popover vertical con el porcentaje, slider vertical de volumen y botón de silenciar, manteniendo la barra inferior despejada y consistente en todas las resoluciones.
+
+- [ ] **Carga progresiva y paginación en previsualización de Playlists y Mixes (`PlaylistImportModal` / `DownloadsView`):**
+  - **Problema de rendimiento:** Al previsualizar listas de reproducción o mixes extensos de YouTube (que pueden contener cientos de canciones), renderizar todos los elementos de golpe provoca saturación del DOM, latencia en la apertura del modal y lentitud en el scroll.
+  - **Paginación progresiva de 50 en 50:** Limitar la visualización inicial de la lista a las primeras 50 canciones.
+  - **Botón de carga incremental:** Incluir al final de la lista un botón interactivo *"Cargar 50 más"* (o mostrar el recuento de temas restantes) que agregue el siguiente bloque de 50 canciones de manera fluida hasta completar la totalidad de la lista previsualizada, optimizando el rendimiento y la memoria.
+
+- [ ] **Flujo de importación de Playlist en 2 pasos con navegación visual e iconos (`PlaylistImportModal` / `DownloadsView`):**
+  - **Separación modular del flujo (Wizard Stepper):** Para facilitar la revisión de las canciones y evitar sobrecargar el modal con selectores de destino simultáneos, dividir la decisión en un asistente de 2 pasos:
+    1. **Paso 1 (Selección y revisión de pistas):** Vista dedicada a revisar canciones previsualizadas, seleccionar/deseleccionar pistas en lote y verificar canciones ya descargadas.
+       - Botón **Cancelar:** Estilo *outline* con icono de cancelación (`X` / `Ban`).
+       - Botón **Atrás:** Estilo *outline* con icono de retroceso (`ArrowLeft` / `ChevronLeft`), deshabilitado en este paso.
+       - Botón **Siguiente:** Estilo *primary* con icono de avance (`ArrowRight` / `ChevronRight`), activo cuando existan pistas seleccionadas.
+    2. **Paso 2 (Destino de guardado y confirmación):** Vista dedicada a elegir el destino (crear nueva playlist, agregar a playlist existente o solo importar a biblioteca) y opciones de sincronización.
+       - Botón **Cancelar:** Estilo *outline* con icono de cancelación (`X` / `Ban`).
+       - Botón **Atrás:** Estilo *outline* con icono de retroceso (`ArrowLeft` / `ChevronLeft`), permite retornar al Paso 1 conservando la selección intacta.
+       - Botón **Descargar:** Estilo *primary* destacado con icono de descarga (`Download`), que ejecuta la importación y sincronización.
+  - **Diferenciación visual:** Aplicar estilos *outline* claros a los botones secundarios (Cancelar y Atrás) para evitar confusión visual con la acción principal (*primary*), e incorporar iconos descriptivos en cada acción como guía visual inmediata.
+
 - [ ] **Buscador integrado de canciones con descarga asistida (`DownloadsView`):**
   - Incorporar en la vista de Descargas un campo de búsqueda interactiva por texto (título, artista o palabras clave), eliminando la fricción de tener que buscar en un navegador y copiar enlaces manualmente.
   - **Backend (Microservicio Go y `yt-dlp`):** Exponer un endpoint de búsqueda rápida (ej. `GET /api/search?q={query}`) que ejecute `yt-dlp --dump-json "ytsearch4:{query}"` para obtener metadatos ligeros de las 3 a 5 mejores coincidencias sin descargar streams de audio.
