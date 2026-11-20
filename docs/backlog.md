@@ -17,6 +17,13 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
+- [ ] **Accesibilidad, bloqueo de scroll y trampa de foco en componentes emergentes y modales (`UI / A11y`):**
+  - **Diagnóstico del problema:** Los modales y diálogos emergentes actuales (`ConfirmationModal`, `PlaylistImportModal`, `MetadataSyncModal`, `ErrorLogsModal`, `ActionMenu`) permiten que la rueda del ratón o gestos táctiles continúen desplazando el fondo de la pantalla (*scroll leak*), no capturan totalmente las interacciones de puntero y carecen de confinamiento de teclado. Al presionar `Tab`, el foco salta a controles invisibles o situados detrás del modal, violando las pautas de accesibilidad WAI-ARIA Dialog.
+  - **Bloqueo de scroll (Scroll Lock estilo shadcn/Radix):** Inmovilizar el desplazamiento de fondo (`overflow: hidden` o bloqueo en contenedor raíz) al abrir cualquier diálogo o modal, compensando dinámicamente el ancho de la barra de desplazamiento para evitar saltos visuales de interfaz (*layout shift*).
+  - **Trampa de foco (Focus Trap) y navegación accesible:** Confinar el ciclo de teclado (`Tab` / `Shift+Tab`) estrictamente dentro del contenedor emergente. Enfocar automáticamente el primer elemento interactivo o de confirmación al montar y restaurar el foco al elemento detonante (*trigger*) al desmontar.
+  - **Descarte por teclado e interacciones:** Implementar cierre consistente mediante la tecla `Escape` y bloqueo estricto de eventos de puntero en el fondo (`inert` o backdrop con bloqueo de clics/taps).
+  - **Atributos semánticos ARIA:** Garantizar `role="dialog"` o `role="alertdialog"`, `aria-modal="true"`, `aria-labelledby` y `aria-describedby` en todos los componentes modales y menús contextuales.
+
 - [ ] **Alineación de metadatos en cards de Playlists (`HomeView`):**
   - En las tarjetas de playlist de la pantalla de inicio, ubicar en la misma fila horizontal el título de la playlist y su duración acumulada.
   - Ubicar el conteo de canciones justo debajo de ambos elementos en una segunda línea para mayor legibilidad y orden visual.
