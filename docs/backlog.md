@@ -12,8 +12,6 @@ _(No hay tareas pendientes en esta categoría actualmente)._
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
-- [ ] **Empaquetado y distribución nativa para Windows (`.msi` / `.exe`):**
-  - Configurar pipeline de empaquetado Tauri con WebView2 Runtime y validación de paths en PowerShell.
 - [ ] **Normalización de volumen de audio (ReplayGain / EBU R128):**
   - Medición y ajuste de sonoridad automática en el reproductor para evitar saltos bruscos de volumen entre diferentes canciones.
 - [ ] **Exportación de biblioteca y playlists en formato `.m3u8`:**
