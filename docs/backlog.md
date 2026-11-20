@@ -6,7 +6,12 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 1. Prioridad Alta (Bugs y Core UX)
 
-*(Actualmente no hay incidencias ni tareas de prioridad alta pendientes; la discriminación de origen de pista y exclusión de archivos locales en la sincronización de Likes fue integrada en la versión 1.9.1).*
+- [ ] **Bloqueo condicional de controles de salto de pista y prevención de congelamiento en selector de tiempo (`PersistentPlayer` / `usePlayerStore`):**
+  - **Diagnóstico del problema:** Al reproducir una cola con una sola pista (`queue.length === 1`) o alcanzar el final de la lista con el modo de repetición inactivo (`repeatMode === "off"`), presionar el botón de salto a la siguiente canción (`playNext`) apaga la reproducción (`isPlaying: false, currentTime: 0`) desincronizando el motor de audio y provocando que el selector de tiempo (seek bar) se bloquee o quede congelado.
+  - **Bloqueo condicional de navegación hacia adelante:** Deshabilitar visual y funcionalmente el botón de salto siguiente (`disabled` en `SkipForward`) cuando no existan pistas posteriores en la cola (`currentIndex >= queue.length - 1` o `queue.length <= 1`) siempre que `repeatMode === "off"`.
+  - **Bloqueo condicional de navegación hacia atrás:** Deshabilitar el botón de salto anterior (`SkipBack`) cuando el usuario se encuentre en la primera pista (`currentIndex === 0` y `currentTime <= 3s`) sin repetición activa.
+  - **Permisión en modo bucle:** Habilitar incondicionalmente ambos botones de salto cuando el modo de repetición esté activo (`repeatMode === "all"` o `repeatMode === "one"`), permitiendo reiniciar la pista o volver al inicio de la cola sin interrupciones.
+  - **Blindaje en `usePlayerStore`:** Validar los límites dentro de las acciones `playNext` y `playPrevious` para evitar mutaciones de estado inválidas que interrumpan el pipeline de actualización de tiempo o bloqueen los controles interactivos del reproductor.
 
 ---
 
