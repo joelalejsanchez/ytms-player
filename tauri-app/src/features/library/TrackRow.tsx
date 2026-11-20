@@ -91,16 +91,34 @@ export const TrackRow = React.memo(
         ? "fill-muted-foreground text-muted-foreground" // Rellenado gris (local)
         : "text-muted-foreground/60 hover:text-muted-foreground hover:fill-muted-foreground/20"; // Borde gris (local)
 
+    // Manejo de reproducción instantánea con doble clic protegiendo controles interactivos
+    const handleDoubleClick = React.useCallback(
+      (e: React.MouseEvent<HTMLDivElement>) => {
+        if (track.is_missing) return;
+        const target = e.target as HTMLElement | null;
+        if (
+          target?.closest(
+            "button, [role='button'], [role='menuitem'], a, input, select, textarea",
+          )
+        ) {
+          return;
+        }
+        onPlay(track);
+      },
+      [track, onPlay],
+    );
+
     return (
       <div
+        onDoubleClick={handleDoubleClick}
         className={`group flex h-[60px] max-h-[60px] box-border select-none items-center justify-between gap-4 rounded-xl border px-4 py-2 transition-colors hover:z-30 focus-within:z-40 ${
           track.is_missing
-            ? "border-amber-500/50 bg-amber-500/10"
+            ? "border-amber-500/50 bg-amber-500/10 cursor-not-allowed"
             : isCorrupted
-              ? "border-destructive/50 bg-destructive/10"
+              ? "border-destructive/50 bg-destructive/10 cursor-pointer"
               : isCurrent
-                ? "border-primary bg-card"
-                : "border-border bg-card hover:border-primary/30 hover:bg-muted/60"
+                ? "border-primary bg-card cursor-pointer"
+                : "border-border bg-card hover:border-primary/30 hover:bg-muted/60 cursor-pointer"
         }`}
       >
         {/* Miniatura + Título + Artista */}
@@ -122,6 +140,7 @@ export const TrackRow = React.memo(
               <button
                 type="button"
                 onClick={() => onPlay(track)}
+                onDoubleClick={(e) => e.stopPropagation()}
                 aria-label={`Reproducir ${track.title}`}
                 className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity duration-150 transform-gpu will-change-opacity group-hover:opacity-100"
               >
@@ -171,7 +190,10 @@ export const TrackRow = React.memo(
         </div>
 
         {/* Acciones */}
-        <div className="flex items-center gap-1.5">
+        <div
+          className="flex items-center gap-1.5"
+          onDoubleClick={(e) => e.stopPropagation()}
+        >
           <Button
             variant="ghost"
             size="icon"

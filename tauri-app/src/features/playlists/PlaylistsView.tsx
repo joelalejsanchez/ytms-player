@@ -321,14 +321,31 @@ const PlaylistTrackRow = React.memo(
       }
     }, [track.youtube_id]);
 
+    const handleDoubleClick = useCallback(
+      (e: React.MouseEvent<HTMLDivElement>) => {
+        if (track.is_missing) return;
+        const target = e.target as HTMLElement | null;
+        if (
+          target?.closest(
+            "button, [role='button'], [role='menuitem'], a, input, select, textarea",
+          )
+        ) {
+          return;
+        }
+        onPlay(track);
+      },
+      [track, onPlay],
+    );
+
     return (
       <div
-        className={`group flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 transition-colors ${
+        onDoubleClick={handleDoubleClick}
+        className={`group flex select-none items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 transition-colors ${
           track.is_missing
-            ? "border-amber-500/50 bg-amber-500/10"
+            ? "border-amber-500/50 bg-amber-500/10 cursor-not-allowed"
             : isCurrent
-              ? "border-primary bg-primary/5 shadow-2xs"
-              : "border-border bg-card hover:border-primary/30 hover:bg-muted/60"
+              ? "border-primary bg-primary/5 shadow-2xs cursor-pointer"
+              : "border-border bg-card hover:border-primary/30 hover:bg-muted/60 cursor-pointer"
         }`}
       >
         <div className="flex min-w-0 flex-1 items-center gap-3.5">
@@ -339,6 +356,7 @@ const PlaylistTrackRow = React.memo(
           <button
             type="button"
             onClick={() => onPlay(track)}
+            onDoubleClick={(e) => e.stopPropagation()}
             aria-label={`Reproducir ${track.title}`}
             disabled={track.is_missing}
             className="hidden h-5 w-5 items-center justify-center text-primary group-hover:flex disabled:opacity-40"
@@ -377,7 +395,10 @@ const PlaylistTrackRow = React.memo(
         </div>
 
         {/* Duración y Badges */}
-        <div className="flex items-center gap-3">
+        <div
+          className="flex items-center gap-3"
+          onDoubleClick={(e) => e.stopPropagation()}
+        >
           {track.is_missing && (
             <Badge tone="warning" className="text-[10px]">
               No disponible

@@ -6,6 +6,20 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.2] - 2026-11-20
+
+### Añadido
+
+#### Reproducción Instantánea Mediante Doble Clic en Filas de Canciones (`TrackRow` y `PlaylistTrackRow`)
+- **Detonación de reproducción directa con doble clic**:
+  - Incorporación del evento `onDoubleClick` en el contenedor de las filas de pista de la biblioteca (`TrackRow`) y de las playlists (`PlaylistTrackRow`), reproduciendo de inmediato la pista seleccionada y actualizando la cola de reproducción con la lista activa y su contexto.
+  - Indicador de cursor intuitivo (`cursor-pointer` en filas reproducibles y `cursor-not-allowed` si la pista está extraviada/faltante) junto con `select-none` para evitar selección involuntaria de texto al hacer doble clic rápido.
+- **Aislamiento y protección estricta de controles interactivos**:
+  - Discriminación y filtrado inteligente del objetivo del evento (`target.closest("button, [role='button'], [role='menuitem'], a, input, select, textarea")`) en el manejador del doble clic.
+  - Control de propagación explícito (`onDoubleClick={(e) => e.stopPropagation()}`) en el botón de reproducción sobre la carátula y en el contenedor de acciones (botón de me gusta / corazón, botón de encolar, menú desplegable de asignación a playlists y menú contextual de tres puntos `ActionMenu`), garantizando que interactuar repetidamente con estos botones jamás dispare una reproducción accidental.
+
+---
+
 ## [1.9.1] - 2026-11-20
 
 ### Añadido

@@ -1090,4 +1090,94 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       ).toBe("local");
     });
   });
+
+  describe("Instant Playback on Track Double Click (TrackRow & PlaylistsView)", () => {
+    it("triggers onPlay when double clicking on the row container or title", () => {
+      const onPlay = vi.fn();
+      const { container } = render(
+        React.createElement(TrackRow, {
+          track: sampleTrack,
+          isCurrent: false,
+          isPlaying: false,
+          playlists: [],
+          onPlay,
+          onEnqueue: vi.fn(),
+          onToggleLike: vi.fn(),
+          onDelete: vi.fn(),
+          onTogglePlaylist: vi.fn(),
+        }),
+      );
+
+      const titleElement = screen.getByText(sampleTrack.title);
+      fireEvent.doubleClick(titleElement);
+      expect(onPlay).toHaveBeenCalledTimes(1);
+      expect(onPlay).toHaveBeenCalledWith(sampleTrack);
+
+      const rowContainer = container.firstElementChild as HTMLElement;
+      fireEvent.doubleClick(rowContainer);
+      expect(onPlay).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not trigger onPlay when double clicking interactive action controls (like, enqueue, playlist menu, action menu)", () => {
+      const onPlay = vi.fn();
+      const onToggleLike = vi.fn();
+      const onEnqueue = vi.fn();
+
+      render(
+        React.createElement(TrackRow, {
+          track: sampleTrack,
+          isCurrent: false,
+          isPlaying: false,
+          playlists: [],
+          onPlay,
+          onEnqueue,
+          onToggleLike,
+          onDelete: vi.fn(),
+          onTogglePlaylist: vi.fn(),
+        }),
+      );
+
+      const likeBtn = screen.getByTitle("Me gusta (Sincronizado con YouTube)");
+      fireEvent.doubleClick(likeBtn);
+      expect(onPlay).not.toHaveBeenCalled();
+
+      const enqueueBtn = screen.getByTitle("Añadir a la cola");
+      fireEvent.doubleClick(enqueueBtn);
+      expect(onPlay).not.toHaveBeenCalled();
+
+      const bookmarkBtn = screen.getByTitle("Añadir a playlist");
+      fireEvent.doubleClick(bookmarkBtn);
+      expect(onPlay).not.toHaveBeenCalled();
+
+      const actionMenuBtn = screen.getByTitle("Opciones de la canción");
+      fireEvent.doubleClick(actionMenuBtn);
+      expect(onPlay).not.toHaveBeenCalled();
+    });
+
+    it("does not trigger onPlay on double click when track is missing", () => {
+      const onPlay = vi.fn();
+      const missingTrack: Track = {
+        ...sampleTrack,
+        is_missing: true,
+      };
+
+      render(
+        React.createElement(TrackRow, {
+          track: missingTrack,
+          isCurrent: false,
+          isPlaying: false,
+          playlists: [],
+          onPlay,
+          onEnqueue: vi.fn(),
+          onToggleLike: vi.fn(),
+          onDelete: vi.fn(),
+          onTogglePlaylist: vi.fn(),
+        }),
+      );
+
+      const titleElement = screen.getByText(missingTrack.title);
+      fireEvent.doubleClick(titleElement);
+      expect(onPlay).not.toHaveBeenCalled();
+    });
+  });
 });
