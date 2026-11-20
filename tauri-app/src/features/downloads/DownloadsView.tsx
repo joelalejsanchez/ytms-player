@@ -145,6 +145,18 @@ export const DownloadsView = React.memo(() => {
   const removePlaylistGroup = useDownloadStore((s) => s.removePlaylistGroup);
   const clearCompletedTasks = useDownloadStore((s) => s.clearCompletedTasks);
   const clearAllTasks = useDownloadStore((s) => s.clearAllTasks);
+  const pendingPlaylistUrl = useDownloadStore((s) => s.pendingPlaylistUrl);
+  const setPendingPlaylistUrl = useDownloadStore((s) => s.setPendingPlaylistUrl);
+
+  // Activación asistida y precarga de URL de playlist cuando se solicita redescarga desde Playlists
+  useEffect(() => {
+    if (pendingPlaylistUrl) {
+      setUrl(pendingPlaylistUrl);
+      setDownloadMode("url");
+      setIsPlaylistModalOpen(true);
+      setPendingPlaylistUrl(null);
+    }
+  }, [pendingPlaylistUrl, setPendingPlaylistUrl]);
 
   // Sincronizar formato con preferencia persistente
   useEffect(() => {

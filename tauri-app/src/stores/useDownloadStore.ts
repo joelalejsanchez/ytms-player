@@ -18,9 +18,11 @@ export interface DownloadStoreState {
   >;
   isSubmitting: boolean;
   lastError: string | null;
+  pendingPlaylistUrl: string | null;
 
   setMicroserviceUrl: (url: string) => Promise<void>;
   setConnectionState: (state: SseConnectionState) => void;
+  setPendingPlaylistUrl: (url: string | null) => void;
   upsertProgressEvent: (event: DownloadProgressEvent) => void;
   startDownloadTask: (
     input: DownloadCommandInput,
@@ -43,6 +45,9 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
   taskDestinations: {},
   isSubmitting: false,
   lastError: null,
+  pendingPlaylistUrl: null,
+
+  setPendingPlaylistUrl: (pendingPlaylistUrl) => set({ pendingPlaylistUrl }),
 
   setMicroserviceUrl: async (url) => {
     const clean = url.trim().replace(/\/+$/, "");

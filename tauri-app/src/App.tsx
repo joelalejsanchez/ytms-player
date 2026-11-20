@@ -104,7 +104,9 @@ export const App: React.FC = () => {
           <div className="flex-1 overflow-hidden">
             {activeTab === "home" && <HomeView onNavigate={handleSelectTab} />}
             {activeTab === "library" && <LibraryView />}
-            {activeTab === "playlists" && <PlaylistsView />}
+            {activeTab === "playlists" && (
+              <PlaylistsView onNavigate={handleSelectTab} />
+            )}
             {activeTab === "downloads" && <DownloadsView />}
             {activeTab === "recovery" && <MissingFilesView />}
             {activeTab === "workspace" && <WorkspaceSettingsView />}

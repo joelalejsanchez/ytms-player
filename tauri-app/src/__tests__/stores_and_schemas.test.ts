@@ -2405,4 +2405,115 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       expect(vizTrigger).toHaveAttribute("aria-expanded", "true");
     });
   });
+
+  describe("Playlist Quick Sync and 3-Row Card Layout (HomeView, PlaylistsView, DownloadsView)", () => {
+    const linkedPlaylist = {
+      id: 10,
+      title: "YouTube Pop Hits",
+      youtube_playlist_id: "PL1234567890",
+      cover_path: null,
+      track_count: 2,
+      created_at: "2026-11-20T10:00:00Z",
+    };
+    const localPlaylist = {
+      id: 20,
+      title: "My Local Mixtape",
+      youtube_playlist_id: null,
+      cover_path: null,
+      track_count: 1,
+      created_at: "2026-11-20T10:00:00Z",
+    };
+
+    beforeEach(() => {
+      useLibraryStore.setState({
+        playlists: [linkedPlaylist, localPlaylist],
+        tracks: [sampleTrack],
+        playlistTrackMap: { [sampleTrack.id]: [10, 20] },
+      });
+      useDownloadStore.setState({
+        pendingPlaylistUrl: null,
+        tasks: {},
+      });
+    });
+
+    it("renders HomeView cards with 3-row layout: Row 1 origin badge & ActionMenu, Row 2 title & duration, Row 3 track count", () => {
+      const onNavigate = vi.fn();
+      render(React.createElement(HomeView, { onNavigate }));
+
+      // Verificar insignia de origen YouTube y Local
+      expect(screen.getByTitle("Sincronizada con YouTube")).toBeInTheDocument();
+      expect(screen.getByTitle("Playlist local")).toBeInTheDocument();
+
+      // Verificar que el menú de opciones permita sincronizar la vinculada
+      const titleEl = screen.getByTitle("YouTube Pop Hits");
+      const card = titleEl.closest(".group");
+      expect(card).not.toBeNull();
+
+      // Abrir ActionMenu dentro de la card vinculada
+      const actionMenuBtn = card?.querySelector("button[title='Opciones de playlist']");
+      expect(actionMenuBtn).not.toBeNull();
+      fireEvent.click(actionMenuBtn!);
+
+      // La opción 'Sincronizar / Redescargar' debe estar presente
+      const syncOption = screen.getByRole("menuitem", {
+        name: /Sincronizar \/ Redescargar/i,
+      });
+      expect(syncOption).toBeInTheDocument();
+
+      // Al hacer clic, debe guardar pendingPlaylistUrl y navegar a downloads
+      fireEvent.click(syncOption);
+      expect(useDownloadStore.getState().pendingPlaylistUrl).toBe(
+        "https://www.youtube.com/playlist?list=PL1234567890",
+      );
+      expect(onNavigate).toHaveBeenCalledWith("downloads");
+    });
+
+    it("renders PlaylistsView cards with 3-row layout and syncs to downloads on demand", () => {
+      const onNavigate = vi.fn();
+      render(React.createElement(PlaylistsView, { onNavigate }));
+
+      // Verificar insignias
+      expect(screen.getByTitle("Sincronizada con YouTube")).toBeInTheDocument();
+      expect(screen.getByTitle("Playlist local")).toBeInTheDocument();
+
+      const titleEl = screen.getByTitle("YouTube Pop Hits");
+      const card = titleEl.closest(".group");
+      const actionMenuBtn = card?.querySelector("button[title='Opciones de playlist']");
+      expect(actionMenuBtn).not.toBeNull();
+      fireEvent.click(actionMenuBtn!);
+
+      const syncOption = screen.getByRole("menuitem", {
+        name: /Sincronizar \/ Redescargar/i,
+      });
+      expect(syncOption).toBeInTheDocument();
+
+      fireEvent.click(syncOption);
+      expect(useDownloadStore.getState().pendingPlaylistUrl).toBe(
+        "https://www.youtube.com/playlist?list=PL1234567890",
+      );
+      expect(onNavigate).toHaveBeenCalledWith("downloads");
+    });
+
+    it("DownloadsView consumes pendingPlaylistUrl and opens PlaylistImportModal with prefilled URL", () => {
+      useDownloadStore.setState({
+        pendingPlaylistUrl: "https://www.youtube.com/playlist?list=PL1234567890",
+      });
+
+      render(React.createElement(DownloadsView));
+
+      // Debe haber consumido pendingPlaylistUrl (puesto a null)
+      expect(useDownloadStore.getState().pendingPlaylistUrl).toBeNull();
+
+      // El input de URL en DownloadsView debe tener la URL precargada
+      const input = screen.getByPlaceholderText(
+        /https:\/\/www\.youtube\.com\/watch\?v=dQw4w9WgXcQ o URL de playlist\.\.\./i,
+      ) as HTMLInputElement;
+      expect(input.value).toBe("https://www.youtube.com/playlist?list=PL1234567890");
+
+      // El modal de importación de playlist debe haberse abierto
+      expect(
+        screen.getByText("Previsualización e Importación de Lista"),
+      ).toBeInTheDocument();
+    });
+  });
 });

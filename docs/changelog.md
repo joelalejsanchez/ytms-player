@@ -6,6 +6,27 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.20] - 2026-11-20
+
+### Añadido
+
+#### Acción Rápida de Sincronización/Redescarga de Playlists Vinculadas y Rediseño de Tarjetas en Cuadrícula (`HomeView` & `PlaylistsView`)
+- **Rediseño Estructurado de Tarjetas de Playlists en 3 Filas**:
+  - Reubicación de la insignia de origen fuera de la carátula hacia el cuerpo descriptivo de la tarjeta:
+    - **Fila 1:** Badge de origen a la izquierda (`YouTube` o `Local`) y botón de menú contextual de 3 puntos (`ActionMenu`) a la derecha con opciones de gestión.
+    - **Fila 2:** Título de la playlist a la izquierda y duración total acumulada a la derecha en la misma línea horizontal con alineación de línea base.
+    - **Fila 3:** Conteo exacto de canciones (`{n} canciones`).
+  - Carátula limpia sin badges flotantes superpuestos para maximizar visibilidad visual de la portada.
+- **Acción Rápida de Sincronización y Redescarga**:
+  - En playlists vinculadas a YouTube (`youtube_playlist_id`), incorporación de la opción *"Sincronizar / Redescargar"* en el menú contextual de tarjetas y filas tanto en `HomeView` como en `PlaylistsView`.
+  - Botón prominente de *"Sincronizar"* en la cabecera de la vista detallada de la playlist (junto a *"Reproducir Playlist"*), acompañado de un indicador visual cuando existan canciones faltantes o corruptas en disco (`is_missing`).
+  - Flujo de sincronización estrictamente aguas abajo (YouTube ➔ Local) y no destructivo: preserva intactos todos los archivos físicos en disco y la biblioteca local; la sincronización desvincula de la playlist las canciones eliminadas en remoto sin borrarlas de la biblioteca.
+- **Separación Limpia de Responsabilidades en Descarga**:
+  - Disparo de sincronización asistida mediante store desacoplado (`useDownloadStore.pendingPlaylistUrl`), redirigiendo inmediatamente a la vista de `Descargas` (`onNavigate("downloads")`).
+  - `DownloadsView` consume automáticamente la URL pendiente, precarga el enlace remoto (`https://www.youtube.com/playlist?list={id}`) y abre el modal wizard `PlaylistImportModal` sin duplicar lógica de red ni alterar el flujo de descargas.
+
+---
+
 ## [1.9.19] - 2026-11-20
 
 ### Añadido

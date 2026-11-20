@@ -11,9 +11,12 @@ import {
   Play,
   Plus,
   Sparkles,
+  Trash2,
   Youtube,
 } from "lucide-react";
-import React, { useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { ActionMenu } from "@/components/ui/ActionMenu";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Badge, Button } from "@/components/ui/Primitives";
 import {
   cn,
@@ -22,10 +25,11 @@ import {
   formatHumanDuration,
   toAssetUrl,
 } from "@/lib/utils";
+import { useDownloadStore } from "@/stores/useDownloadStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { toast } from "@/stores/useToastStore";
-import type { NavigationTab, Track } from "@/types/models";
+import type { NavigationTab, Playlist, Track } from "@/types/models";
 
 interface HomeViewProps {
   onNavigate: (tab: NavigationTab) => void;
@@ -38,7 +42,14 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
   const downloadHistory = useLibraryStore((s) => s.downloadHistory);
   const refreshDownloadHistory = useLibraryStore((s) => s.refreshDownloadHistory);
   const selectPlaylist = useLibraryStore((s) => s.selectPlaylist);
+  const deletePlaylist = useLibraryStore((s) => s.deletePlaylist);
   const toggleLike = useLibraryStore((s) => s.toggleLike);
+
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
+    isOpen: boolean;
+    playlist: Playlist | null;
+  }>({ isOpen: false, playlist: null });
+  const [isDeletingPlaylist, setIsDeletingPlaylist] = useState(false);
 
   const currentTrack = usePlayerStore((s) => s.currentTrack);
   const activePlaylistId = usePlayerStore((s) => s.activePlaylistId);
@@ -128,6 +139,31 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
     await selectPlaylist(playlistId);
     onNavigate("playlists");
   };
+
+  // Manejo de sincronización/redescarga rápida de playlist
+  const handleSyncPlaylist = useCallback(
+    (targetPlaylist: Playlist) => {
+      if (!targetPlaylist.youtube_playlist_id) return;
+      const playlistUrl = `https://www.youtube.com/playlist?list=${targetPlaylist.youtube_playlist_id}`;
+      useDownloadStore.getState().setPendingPlaylistUrl(playlistUrl);
+      onNavigate("downloads");
+    },
+    [onNavigate],
+  );
+
+  // Confirmación de eliminación de playlist
+  const handleConfirmDeletePlaylist = useCallback(async () => {
+    if (!deleteConfirmModal.playlist) return;
+    setIsDeletingPlaylist(true);
+    try {
+      await deletePlaylist(deleteConfirmModal.playlist.id);
+      setDeleteConfirmModal({ isOpen: false, playlist: null });
+    } catch (err) {
+      console.error("Error al eliminar playlist:", err);
+    } finally {
+      setIsDeletingPlaylist(false);
+    }
+  }, [deleteConfirmModal.playlist, deletePlaylist]);
 
   // Reproducir una pista individual reciente
   const handlePlayTrack = (track: Track) => {
@@ -313,17 +349,6 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
                       </div>
                     )}
 
-                    {/* Insignia indicadora de sincronización con YouTube */}
-                    {playlist.youtube_playlist_id && (
-                      <div
-                        className="absolute top-2 left-2 flex items-center gap-1 rounded-md bg-black/60 backdrop-blur-xs px-1.5 py-0.5 text-[10px] font-medium text-red-400 border border-white/10 shadow-xs"
-                        title="Sincronizada con YouTube"
-                      >
-                        <Youtube className="h-3 w-3 fill-current text-red-500" />
-                        <span>YouTube</span>
-                      </div>
-                    )}
-
                     {/* Botón flotante de Quick Play */}
                     {hasTracks ? (
                       <button
@@ -367,7 +392,60 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
                     )}
                   </div>
 
-                  {/* Fila superior: Título de la playlist y Duración acumulada en la misma línea */}
+                  {/* Fila 1: Badge de origen a la izquierda y 3 puntos con opciones a la derecha */}
+                  <div className="flex items-center justify-between gap-1.5 min-w-0 mb-1.5">
+                    {playlist.youtube_playlist_id ? (
+                      <span
+                        className="inline-flex items-center gap-1 rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-500"
+                        title="Sincronizada con YouTube"
+                      >
+                        <Youtube className="h-3 w-3 fill-current text-red-500" />
+                        <span>YouTube</span>
+                      </span>
+                    ) : (
+                      <span
+                        className="inline-flex items-center gap-1 rounded bg-muted/80 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                        title="Playlist local"
+                      >
+                        <HardDrive className="h-3 w-3" />
+                        <span>Local</span>
+                      </span>
+                    )}
+
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="shrink-0 -mr-1"
+                    >
+                      <ActionMenu
+                        title="Opciones de playlist"
+                        items={[
+                          ...(playlist.youtube_playlist_id
+                            ? [
+                                {
+                                  label: "Sincronizar / Redescargar",
+                                  icon: (
+                                    <Download className="h-3.5 w-3.5 text-primary" />
+                                  ),
+                                  onClick: () => handleSyncPlaylist(playlist),
+                                },
+                              ]
+                            : []),
+                          {
+                            label: "Eliminar playlist",
+                            icon: <Trash2 className="h-3.5 w-3.5" />,
+                            variant: "danger" as const,
+                            onClick: () =>
+                              setDeleteConfirmModal({
+                                isOpen: true,
+                                playlist,
+                              }),
+                          },
+                        ]}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Fila 2: Título de la playlist y Duración acumulada en la misma línea */}
                   <div className="flex items-baseline justify-between gap-2 min-w-0">
                     <h3
                       className="truncate text-sm font-semibold text-foreground group-hover:text-primary transition-colors"
@@ -382,7 +460,7 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
                     )}
                   </div>
 
-                  {/* Fila inferior: Conteo de canciones justo debajo */}
+                  {/* Fila 3: Conteo de canciones justo debajo */}
                   <p className="mt-0.5 text-[10px] text-muted-foreground">
                     {playlist.track_count}{" "}
                     {playlist.track_count === 1 ? "canción" : "canciones"}
@@ -609,6 +687,18 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
           )}
         </div>
       </section>
+
+      {/* Modal de confirmación para eliminar playlist */}
+      <ConfirmationModal
+        isOpen={deleteConfirmModal.isOpen}
+        title="¿Eliminar playlist?"
+        description={`¿Estás seguro de que deseas eliminar la playlist "${deleteConfirmModal.playlist?.title}"? Esta acción solo desenlaza la lista, tus canciones descargadas permanecerán seguras en tu biblioteca.`}
+        confirmLabel="Eliminar playlist"
+        tone="danger"
+        isLoading={isDeletingPlaylist}
+        onConfirm={() => void handleConfirmDeletePlaylist()}
+        onCancel={() => setDeleteConfirmModal({ isOpen: false, playlist: null })}
+      />
     </div>
   );
 });

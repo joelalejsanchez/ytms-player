@@ -12,10 +12,6 @@ _(No hay tareas pendientes en esta categoría actualmente)._
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
-- [ ] **Acción rápida para redescarga de Playlists vinculadas:**
-  - Botón directo en la vista de playlist para aquellas que posean un `youtube_playlist_id`.
-  - Redirecciona automáticamente a la vista de Descargas precargando el ID o enlace de la lista para facilitar la re-descarga y recuperación de audios corruptos o faltantes.
-
 - [ ] **Reubicación de la vista de Diagnóstico y Errores (Bugs):**
   - Remover la opción de logs/bugs del sidebar principal para simplificar y limpiar la navegación general.
   - Integrar el visor de logs y diagnóstico exclusivamente dentro de la vista de Configuración.
