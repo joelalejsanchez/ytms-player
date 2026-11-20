@@ -983,7 +983,7 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
         synced: false,
       };
 
-      render(
+      const { container } = render(
         React.createElement(TrackRow, {
           track: localTrack,
           isCurrent: false,
@@ -999,6 +999,60 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
 
       expect(screen.getByText("Local")).toBeInTheDocument();
       expect(screen.getByTitle("Me gusta (Archivo local)")).toBeInTheDocument();
+      const heartIcon = container.querySelector("svg.lucide-heart");
+      expect(heartIcon?.getAttribute("class")).toContain("fill-muted-foreground");
+      expect(heartIcon?.getAttribute("class")).toContain("text-muted-foreground");
+    });
+
+    it("renders synced tracks with red filled heart when liked and red border when not liked", () => {
+      const syncedTrack: Track = {
+        ...sampleTrack,
+        id: 101,
+        youtube_id: "yt_synced_01",
+        origin: "youtube",
+        liked: false,
+        synced: true,
+      };
+
+      const { container, rerender } = render(
+        React.createElement(TrackRow, {
+          track: syncedTrack,
+          isCurrent: false,
+          isPlaying: false,
+          playlists: [],
+          onPlay: vi.fn(),
+          onEnqueue: vi.fn(),
+          onToggleLike: vi.fn(),
+          onDelete: vi.fn(),
+          onTogglePlaylist: vi.fn(),
+        }),
+      );
+
+      // Borde rojo si está sincronizado sin like
+      let heartIcon = container.querySelector("svg.lucide-heart");
+      expect(heartIcon?.getAttribute("class")).toContain("text-rose-500");
+      expect(heartIcon?.getAttribute("class")).not.toContain(
+        "fill-rose-500 text-rose-500",
+      );
+
+      // Rellenado rojo si está sincronizado con like
+      rerender(
+        React.createElement(TrackRow, {
+          track: { ...syncedTrack, liked: true },
+          isCurrent: false,
+          isPlaying: false,
+          playlists: [],
+          onPlay: vi.fn(),
+          onEnqueue: vi.fn(),
+          onToggleLike: vi.fn(),
+          onDelete: vi.fn(),
+          onTogglePlaylist: vi.fn(),
+        }),
+      );
+
+      heartIcon = container.querySelector("svg.lucide-heart");
+      expect(heartIcon?.getAttribute("class")).toContain("fill-rose-500");
+      expect(heartIcon?.getAttribute("class")).toContain("text-rose-500");
     });
 
     it("manages local track likes optimistically in useLibraryStore without YouTube error toast", async () => {

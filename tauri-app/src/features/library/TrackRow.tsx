@@ -69,7 +69,7 @@ export const TrackRow = React.memo(
     const likeButtonTitle = isLocal
       ? track.liked
         ? "Me gusta (Archivo local)"
-        : "Marcar como favorita (Archivo local)"
+        : "Sin Me gusta (Archivo local)"
       : isSyncingLike
         ? "Sincronizando con YouTube..."
         : track.liked
@@ -78,19 +78,18 @@ export const TrackRow = React.memo(
             : "Me gusta (Guardado local / No sincronizado)"
           : isSynced
             ? "Sin Me gusta (Sincronizado con YouTube)"
-            : "Sin Me gusta (Guardado local)";
+            : "Sin Me gusta (Guardado local / No sincronizado)";
 
-    const heartIconClass = isLocal
+    // Estilos de acuerdo al requerimiento:
+    // - borde rojo o rellenado rojo: sincronizado
+    // - borde gris, rellenado gris: local
+    const heartIconClass = isSynced
       ? track.liked
-        ? "fill-rose-500 text-rose-500"
-        : "text-muted-foreground/60 hover:text-rose-500 hover:fill-rose-500/20"
+        ? "fill-rose-500 text-rose-500" // Rellenado rojo (sincronizado)
+        : "text-rose-500 hover:fill-rose-500/20" // Borde rojo (sincronizado)
       : track.liked
-        ? isSynced
-          ? "fill-rose-500 text-rose-500" // Rojo si está con like y sincronizado
-          : "fill-amber-500 text-amber-500" // Naranja/Ámbar si está con like pero solo local
-        : isSynced
-          ? "text-emerald-500 hover:text-rose-500 hover:fill-rose-500/20" // Borde verde para estado sincronizado ante like nulo
-          : "text-muted-foreground/60 hover:text-rose-500 hover:fill-rose-500/20"; // Borde gris atenuado ante like nulo no sincronizado
+        ? "fill-muted-foreground text-muted-foreground" // Rellenado gris (local)
+        : "text-muted-foreground/60 hover:text-muted-foreground hover:fill-muted-foreground/20"; // Borde gris (local)
 
     return (
       <div
@@ -180,7 +179,7 @@ export const TrackRow = React.memo(
             onClick={() => onToggleLike(track.youtube_id, !track.liked)}
             title={likeButtonTitle}
             className={`transition-colors ${
-              !track.liked && isSynced ? "hover:bg-emerald-500/10" : ""
+              isSynced ? "hover:bg-rose-500/10" : "hover:bg-muted"
             }`}
           >
             {isSyncingLike ? (

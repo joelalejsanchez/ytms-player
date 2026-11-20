@@ -511,10 +511,14 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
                       >
                         <Heart
                           className={cn(
-                            "h-3.5 w-3.5",
-                            track.liked
-                              ? "fill-rose-500 text-rose-500"
-                              : "text-muted-foreground/60",
+                            "h-3.5 w-3.5 transition-colors",
+                            track.origin !== "local" && track.synced
+                              ? track.liked
+                                ? "fill-rose-500 text-rose-500"
+                                : "text-rose-500"
+                              : track.liked
+                                ? "fill-muted-foreground text-muted-foreground"
+                                : "text-muted-foreground/60",
                           )}
                         />
                       </button>

@@ -118,30 +118,36 @@ export const NowPlayingView: React.FC = () => {
   const syncStatus = currentTrack
     ? syncStatusByTrack[currentTrack.youtube_id]
     : undefined;
-  const isSyncingLike = syncStatus?.status === "loading";
-  const isSynced = Boolean(currentTrack?.synced || syncStatus?.status === "synced");
+  const isLocal = currentTrack?.origin === "local";
+  const isSyncingLike = !isLocal && syncStatus?.status === "loading";
+  const isSynced =
+    !isLocal && Boolean(currentTrack?.synced || syncStatus?.status === "synced");
 
   const likeButtonTitle = !currentTrack
     ? ""
-    : isSyncingLike
-      ? "Sincronizando con YouTube..."
-      : currentTrack.liked
-        ? isSynced
-          ? "Me gusta (Sincronizado con YouTube)"
-          : "Me gusta (Guardado local / No sincronizado)"
-        : isSynced
-          ? "Sin Me gusta (Sincronizado con YouTube)"
-          : "Sin Me gusta (Guardado local)";
+    : isLocal
+      ? currentTrack.liked
+        ? "Me gusta (Archivo local)"
+        : "Sin Me gusta (Archivo local)"
+      : isSyncingLike
+        ? "Sincronizando con YouTube..."
+        : currentTrack.liked
+          ? isSynced
+            ? "Me gusta (Sincronizado con YouTube)"
+            : "Me gusta (Guardado local / No sincronizado)"
+          : isSynced
+            ? "Sin Me gusta (Sincronizado con YouTube)"
+            : "Sin Me gusta (Guardado local / No sincronizado)";
 
   const heartIconClass = !currentTrack
     ? ""
-    : currentTrack.liked
-      ? isSynced
-        ? "fill-rose-500 text-rose-500" // Rojo si está con like y sincronizado
-        : "fill-amber-500 text-amber-500" // Naranja/Ámbar si está con like pero solo local
-      : isSynced
-        ? "text-emerald-500 hover:text-rose-500 hover:fill-rose-500/20" // Borde verde para estado sincronizado ante like nulo
-        : "text-muted-foreground/60 hover:text-rose-500 hover:fill-rose-500/20"; // Borde gris atenuado ante like nulo no sincronizado
+    : isSynced
+      ? currentTrack.liked
+        ? "fill-rose-500 text-rose-500" // Rellenado rojo (sincronizado)
+        : "text-rose-500 hover:fill-rose-500/20" // Borde rojo (sincronizado)
+      : currentTrack.liked
+        ? "fill-muted-foreground text-muted-foreground" // Rellenado gris (local)
+        : "text-muted-foreground/60 hover:text-muted-foreground hover:fill-muted-foreground/20"; // Borde gris (local)
 
   // Extraer color dominante de la carátula para iluminación ambiental en el fondo del visualizador
   const thumbnailSrc = useMemo(() => {

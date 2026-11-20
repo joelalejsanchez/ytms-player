@@ -18,9 +18,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
   - Exclusión automática de todas las canciones de origen local (`origin == "local"`) antes de consultar al microservicio, enviando exclusivamente identificadores válidos de YouTube y optimizando la cuota de la API.
 - **Resiliencia en Microservicio Go (`SyncLikesUseCase`)**:
   - Validación por lotes tolerante en Go: identificadores no pertenecientes a YouTube o archivos locales no provocan rechazo en bloque (`validation_error 400`), procesando todos los IDs válidos del lote de forma ininterrumpida.
-- **Gestión local de favoritos y feedback UX (`TrackRow` y `useLibraryStore`)**:
+- **Gestión local de favoritos y feedback UX (`TrackRow`, `NowPlayingView`, `HomeView` y `useLibraryStore`)**:
   - Las pistas locales gestionan su estado de `liked` puramente en la base de datos local SQLite sin detonar llamadas a YouTube ni generar falsos toasts de error de sincronización.
-  - Badge visual `Local` en `TrackRow` e icono de favorito calibrado sin indicadores de error de sincronización externa, omitiendo la acción "Copiar enlace de YouTube" en pistas locales.
+  - **Calibración cromática del botón de Like**:
+    - **Sincronizado con YouTube**: Borde rojo (`text-rose-500`) cuando no tiene like, y rellenado rojo (`fill-rose-500 text-rose-500`) al marcarse como favorita.
+    - **Local / No sincronizado**: Borde gris (`text-muted-foreground/60`) cuando no tiene like, y rellenado gris (`fill-muted-foreground text-muted-foreground`) al marcarse como favorita local.
+  - Badge visual `Local` en `TrackRow`, omitiendo la acción "Copiar enlace de YouTube" en pistas locales.
 
 ---
 
