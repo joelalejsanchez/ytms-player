@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Primitives";
+import { usePlayerControlTooltips } from "@/hooks/usePlayerControlTooltips";
 import { formatDuration, toAssetUrl } from "@/lib/utils";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
@@ -48,8 +49,6 @@ export const NowPlayingView: React.FC = () => {
   const repeatMode = usePlayerStore((s) => s.repeatMode);
   const isShuffle = usePlayerStore((s) => s.isShuffle);
   const isLoadingTrack = usePlayerStore((s) => s.isLoadingTrack);
-  const queue = usePlayerStore((s) => s.queue);
-  const currentIndex = usePlayerStore((s) => s.currentIndex);
 
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
   const seekTo = usePlayerStore((s) => s.seekTo);
@@ -65,13 +64,16 @@ export const NowPlayingView: React.FC = () => {
 
   const activeVisualizerId = useVisualizerStore((s) => s.activeVisualizerId);
 
-  // Bloqueo condicional de controles de navegación según estado de cola y modo bucle
-  const isNextDisabled =
-    !currentTrack ||
-    (repeatMode === "off" && (currentIndex >= queue.length - 1 || queue.length <= 1));
-
-  const isPreviousDisabled =
-    !currentTrack || (repeatMode === "off" && currentIndex <= 0 && currentTime <= 3);
+  // Tooltips contextuales dinámicos y estados de bloqueo condicional
+  const {
+    isNextDisabled,
+    isPreviousDisabled,
+    nextTooltip,
+    previousTooltip,
+    playPauseTooltip,
+    repeatTooltip,
+    shuffleTooltip,
+  } = usePlayerControlTooltips();
 
   // Estado local para scrubbing de tiempo fluido a 60 FPS
   const [isSeekingLocally, setIsSeekingLocally] = useState(false);
@@ -366,7 +368,7 @@ export const NowPlayingView: React.FC = () => {
                 variant="ghost"
                 size="icon"
                 onClick={cycleRepeatMode}
-                title={`Repetición: ${repeatMode}`}
+                title={repeatTooltip}
                 className={
                   repeatMode !== "off" ? "text-primary" : "text-muted-foreground"
                 }
@@ -383,7 +385,7 @@ export const NowPlayingView: React.FC = () => {
                 size="icon"
                 onClick={playPrevious}
                 disabled={isPreviousDisabled}
-                title="Pista anterior"
+                title={previousTooltip}
                 className="h-10 w-10 text-foreground"
               >
                 <SkipBack className="h-6 w-6" />
@@ -394,6 +396,7 @@ export const NowPlayingView: React.FC = () => {
                 size="icon"
                 onClick={togglePlayPause}
                 disabled={!currentTrack}
+                title={playPauseTooltip}
                 aria-label={isPlaying ? "Pausar" : "Reproducir"}
                 className="h-14 w-14 rounded-full shadow-lg transition-transform hover:scale-105 active:scale-95"
               >
@@ -409,7 +412,7 @@ export const NowPlayingView: React.FC = () => {
                 size="icon"
                 onClick={playNext}
                 disabled={isNextDisabled}
-                title="Pista siguiente"
+                title={nextTooltip}
                 className="h-10 w-10 text-foreground"
               >
                 <SkipForward className="h-6 w-6" />
@@ -419,7 +422,7 @@ export const NowPlayingView: React.FC = () => {
                 variant="ghost"
                 size="icon"
                 onClick={toggleShuffle}
-                title={`Aleatorio: ${isShuffle ? "Activado" : "Desactivado"}`}
+                title={shuffleTooltip}
                 className={isShuffle ? "text-primary" : "text-muted-foreground"}
               >
                 <Shuffle className="h-5 w-5" />

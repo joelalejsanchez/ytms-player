@@ -12,12 +12,6 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
-- [ ] **Tooltips contextuales dinámicos según estado de bloqueo en controles de reproducción (`PersistentPlayer` / `NowPlayingView`):**
-  - **Retroalimentación explícita de bloqueo:** Sustituir los textos fijos de tooltip (*"Siguiente"* y *"Anterior"*) por etiquetas dinámicas y explicativas cuando los controles se encuentren deshabilitados.
-  - **Mensajes de navegación hacia adelante:** Mostrar *"Siguiente"* cuando la navegación esté permitida, y conmutar a *"Fin de la cola"* cuando no existan más temas y el modo bucle esté apagado (`repeatMode === "off"`), o *"Cola vacía"* si no hay pistas en cola.
-  - **Mensajes de navegación hacia atrás:** Mostrar *"Reiniciar canción"* cuando `currentTime > 3s`, *"Anterior"* cuando sea posible saltar a la pista previa, y conmutar a *"Inicio de la cola"* cuando se encuentre bloqueado en la primera pista (`currentIndex === 0` y `currentTime <= 3s`) con repetición inactiva.
-  - **Claridad cognitiva UX:** Garantizar que los usuarios comprendan inmediatamente el motivo por el cual un botón no responde o se encuentra atenuado sin generar frustración ni ambigüedad.
-
 - [ ] **Acción interactiva primaria y callbacks en notificaciones Toast (`ToastItem` / `ToastContainer`):**
   - **Extensión del contrato de datos (`ToastItem`):** Incorporar propiedades opcionales `action?: { label: string; onClick: () => void }` y `onDismissCallback?: () => void` en la interfaz `ToastItem` y en las funciones auxiliares de `toast.*`.
   - **Renderizado de botón de acción contextual:** En toasts con acción definida (ej. alerta de descarga completa con *"Ver en biblioteca"*, fallo recuperable con *"Reintentar"*, o playlist importada con *"Reproducir ahora"*), desplegar un botón primario compacto (`size="sm"`) junto al mensaje.

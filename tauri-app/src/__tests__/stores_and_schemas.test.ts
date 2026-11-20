@@ -22,6 +22,7 @@ import { useThemeStore } from "@/stores/useThemeStore";
 import { sortToastsByPriority, toast, useToastStore } from "@/stores/useToastStore";
 import { ToastContainer } from "@/components/ui/ToastContainer";
 import { useMediaSession } from "@/hooks/useMediaSession";
+import { usePlayerControlTooltips } from "@/hooks/usePlayerControlTooltips";
 import {
   getAllVisualizers,
   getVisualizer,
@@ -1145,7 +1146,22 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
     });
 
     it("prioritizes essential playback controls and applies responsive visibility to secondary controls", () => {
-      usePlayerStore.getState().playTrack(sampleTrack, [sampleTrack]);
+      const sampleTrack2: Track = {
+        ...sampleTrack,
+        id: 2,
+        youtube_id: "dQw4w9WgXc2",
+        title: "Track 2",
+      };
+      const sampleTrack3: Track = {
+        ...sampleTrack,
+        id: 3,
+        youtube_id: "dQw4w9WgXc3",
+        title: "Track 3",
+      };
+      usePlayerStore
+        .getState()
+        .playTrack(sampleTrack2, [sampleTrack, sampleTrack2, sampleTrack3]);
+      usePlayerStore.setState({ isLoadingTrack: false, isPlaying: true });
       render(React.createElement(PersistentPlayer));
 
       // Controles esenciales: Play/Pause, Anterior, Siguiente siempre presentes en ambos layouts
@@ -1159,7 +1175,7 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
 
       // Controles secundarios (Repeat y Shuffle) en layout compacto tienen clases responsivas para pantallas pequeñas
       const repeatBtns = screen.getAllByTitle(/^Modo repetición:/);
-      const shuffleBtns = screen.getAllByTitle(/^Aleatorio:/);
+      const shuffleBtns = screen.getAllByTitle(/^Modo aleatorio:/);
 
       expect(repeatBtns[0].className).toContain("hidden");
       expect(repeatBtns[0].className).toContain("sm:inline-flex");
@@ -1191,13 +1207,13 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
     });
 
     it("disables SkipForward and SkipBack conditionally based on queue position and repeatMode", () => {
-      // 1. Cola de 1 sola pista, repeatMode off, currentTime <= 3s -> ambos deshabilitados
+      // 1. Cola de 1 sola pista, repeatMode off, currentTime <= 3s -> ambos deshabilitados con tooltips dinámicos explicativos
       usePlayerStore.getState().playTrack(sampleTrack, [sampleTrack]);
       usePlayerStore.setState({ repeatMode: "off", currentTime: 0 });
       const { rerender } = render(React.createElement(PersistentPlayer));
 
-      const nextBtns = screen.getAllByTitle("Siguiente");
-      const prevBtns = screen.getAllByTitle("Anterior");
+      const nextBtns = screen.getAllByTitle("Fin de la cola");
+      const prevBtns = screen.getAllByTitle("Inicio de la cola");
 
       for (const btn of nextBtns) {
         expect(btn).toBeDisabled();
@@ -1210,14 +1226,14 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       usePlayerStore.setState({ currentTime: 10 });
       rerender(React.createElement(PersistentPlayer));
 
-      for (const btn of screen.getAllByTitle("Siguiente")) {
+      for (const btn of screen.getAllByTitle("Fin de la cola")) {
         expect(btn).toBeDisabled();
       }
-      for (const btn of screen.getAllByTitle("Anterior")) {
+      for (const btn of screen.getAllByTitle("Reiniciar canción")) {
         expect(btn).not.toBeDisabled();
       }
 
-      // 3. Activar repeatMode "all" -> ambos habilitados
+      // 3. Activar repeatMode "all" -> ambos habilitados con tooltips estándar
       usePlayerStore.setState({ repeatMode: "all", currentTime: 0 });
       rerender(React.createElement(PersistentPlayer));
 
@@ -1671,6 +1687,74 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       expect(usePlayerStore.getState().currentTrack?.youtube_id).toBe("yt_101");
       expect(usePlayerStore.getState().activePlaylistId).toBe(77);
       expect(usePlayerStore.getState().queue).toHaveLength(3);
+    });
+  });
+
+  describe("usePlayerControlTooltips dynamic tooltips and control states", () => {
+    it("returns empty queue feedback when there is no currentTrack", () => {
+      usePlayerStore.setState({
+        currentTrack: null,
+        queue: [],
+        currentIndex: -1,
+        isPlaying: false,
+        isLoadingTrack: false,
+      });
+
+      const { result } = renderHook(() => usePlayerControlTooltips());
+      expect(result.current.isNextDisabled).toBe(true);
+      expect(result.current.isPreviousDisabled).toBe(true);
+      expect(result.current.nextTooltip).toBe("Cola vacía");
+      expect(result.current.previousTooltip).toBe("Cola vacía");
+      expect(result.current.playPauseTooltip).toBe("Sin canciones en cola");
+    });
+
+    it("displays loading feedback on playPauseTooltip when loading track", () => {
+      usePlayerStore.setState({
+        currentTrack: sampleTrack,
+        isLoadingTrack: true,
+      });
+
+      const { result } = renderHook(() => usePlayerControlTooltips());
+      expect(result.current.playPauseTooltip).toBe("Cargando pista...");
+    });
+
+    it("displays Pausar when playing and Reanudar when paused with currentTime > 0", () => {
+      usePlayerStore.setState({
+        currentTrack: sampleTrack,
+        isLoadingTrack: false,
+        isPlaying: true,
+        currentTime: 42,
+      });
+
+      const { result: playingRes } = renderHook(() => usePlayerControlTooltips());
+      expect(playingRes.current.playPauseTooltip).toBe("Pausar");
+
+      act(() => {
+        usePlayerStore.setState({ isPlaying: false });
+      });
+
+      const { result: pausedRes } = renderHook(() => usePlayerControlTooltips());
+      expect(pausedRes.current.playPauseTooltip).toBe("Reanudar");
+    });
+
+    it("computes accurate tooltips for repeat and shuffle modes", () => {
+      usePlayerStore.setState({ repeatMode: "off", isShuffle: false });
+      const { result: rOff } = renderHook(() => usePlayerControlTooltips());
+      expect(rOff.current.repeatTooltip).toBe("Modo repetición: Desactivado");
+      expect(rOff.current.shuffleTooltip).toBe("Modo aleatorio: Desactivado");
+
+      act(() => {
+        usePlayerStore.setState({ repeatMode: "one", isShuffle: true });
+      });
+      const { result: rOne } = renderHook(() => usePlayerControlTooltips());
+      expect(rOne.current.repeatTooltip).toBe("Modo repetición: Una canción");
+      expect(rOne.current.shuffleTooltip).toBe("Modo aleatorio: Activado");
+
+      act(() => {
+        usePlayerStore.setState({ repeatMode: "all" });
+      });
+      const { result: rAll } = renderHook(() => usePlayerControlTooltips());
+      expect(rAll.current.repeatTooltip).toBe("Modo repetición: Todas");
     });
   });
 });

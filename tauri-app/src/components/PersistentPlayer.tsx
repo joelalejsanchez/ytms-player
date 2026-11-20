@@ -18,6 +18,7 @@ import { ActionMenu } from "@/components/ui/ActionMenu";
 import { Button } from "@/components/ui/Primitives";
 import { ScrollableText } from "@/components/ui/ScrollableText";
 import { useMediaSession } from "@/hooks/useMediaSession";
+import { usePlayerControlTooltips } from "@/hooks/usePlayerControlTooltips";
 import { formatDuration, toAssetUrl } from "@/lib/utils";
 import { tauriApi } from "@/services/tauriIpc";
 import { usePlayerStore } from "@/stores/usePlayerStore";
@@ -87,7 +88,6 @@ export const PersistentPlayer = React.memo(() => {
   const repeatMode = usePlayerStore((s) => s.repeatMode);
   const isShuffle = usePlayerStore((s) => s.isShuffle);
   const isLoadingTrack = usePlayerStore((s) => s.isLoadingTrack);
-  const currentIndex = usePlayerStore((s) => s.currentIndex);
 
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
   const setPlaying = usePlayerStore((s) => s.setPlaying);
@@ -112,13 +112,16 @@ export const PersistentPlayer = React.memo(() => {
   const prevIsPlayingRef = useRef(isPlaying);
   const consecutiveFailuresRef = useRef(0);
 
-  // Bloqueo condicional de controles de navegación según estado de cola y modo bucle
-  const isNextDisabled =
-    !currentTrack ||
-    (repeatMode === "off" && (currentIndex >= queue.length - 1 || queue.length <= 1));
-
-  const isPreviousDisabled =
-    !currentTrack || (repeatMode === "off" && currentIndex <= 0 && currentTime <= 3);
+  // Tooltips dinámicos contextuales y bloqueo de controles de navegación
+  const {
+    isNextDisabled,
+    isPreviousDisabled,
+    nextTooltip,
+    previousTooltip,
+    playPauseTooltip,
+    repeatTooltip,
+    shuffleTooltip,
+  } = usePlayerControlTooltips();
 
   // Referencias para cálculo reactivo de volumen objetivo
   const volumeRef = useRef(volume);
@@ -808,7 +811,7 @@ export const PersistentPlayer = React.memo(() => {
               variant="ghost"
               size="icon"
               onClick={cycleRepeatMode}
-              title={`Modo repetición: ${repeatMode}`}
+              title={repeatTooltip}
               className={`hidden sm:inline-flex ${repeatMode !== "off" ? "text-primary" : ""}`}
             >
               {repeatMode === "one" ? (
@@ -823,7 +826,7 @@ export const PersistentPlayer = React.memo(() => {
               size="icon"
               onClick={playPrevious}
               disabled={isPreviousDisabled}
-              title="Anterior"
+              title={previousTooltip}
             >
               <SkipBack className="h-4 w-4" />
             </Button>
@@ -833,6 +836,7 @@ export const PersistentPlayer = React.memo(() => {
               size="icon"
               onClick={togglePlayPause}
               disabled={!currentTrack}
+              title={playPauseTooltip}
               aria-label={isPlaying ? "Pausar" : "Reproducir"}
             >
               {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
@@ -843,7 +847,7 @@ export const PersistentPlayer = React.memo(() => {
               size="icon"
               onClick={playNext}
               disabled={isNextDisabled}
-              title="Siguiente"
+              title={nextTooltip}
             >
               <SkipForward className="h-4 w-4" />
             </Button>
@@ -852,7 +856,7 @@ export const PersistentPlayer = React.memo(() => {
               variant="ghost"
               size="icon"
               onClick={toggleShuffle}
-              title={`Aleatorio: ${isShuffle ? "Activado" : "Desactivado"}`}
+              title={shuffleTooltip}
               className={`hidden sm:inline-flex ${isShuffle ? "text-primary" : "text-muted-foreground"}`}
             >
               <Shuffle className="h-4 w-4" />
@@ -1036,7 +1040,7 @@ export const PersistentPlayer = React.memo(() => {
               variant="ghost"
               size="icon"
               onClick={cycleRepeatMode}
-              title={`Modo repetición: ${repeatMode}`}
+              title={repeatTooltip}
               className={repeatMode !== "off" ? "text-primary" : ""}
             >
               {repeatMode === "one" ? (
@@ -1051,7 +1055,7 @@ export const PersistentPlayer = React.memo(() => {
               size="icon"
               onClick={playPrevious}
               disabled={isPreviousDisabled}
-              title="Anterior"
+              title={previousTooltip}
             >
               <SkipBack className="h-4 w-4" />
             </Button>
@@ -1061,6 +1065,7 @@ export const PersistentPlayer = React.memo(() => {
               size="icon"
               onClick={togglePlayPause}
               disabled={!currentTrack}
+              title={playPauseTooltip}
               aria-label={isPlaying ? "Pausar" : "Reproducir"}
             >
               {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
@@ -1071,7 +1076,7 @@ export const PersistentPlayer = React.memo(() => {
               size="icon"
               onClick={playNext}
               disabled={isNextDisabled}
-              title="Siguiente"
+              title={nextTooltip}
             >
               <SkipForward className="h-4 w-4" />
             </Button>
@@ -1080,7 +1085,7 @@ export const PersistentPlayer = React.memo(() => {
               variant="ghost"
               size="icon"
               onClick={toggleShuffle}
-              title={`Aleatorio: ${isShuffle ? "Activado" : "Desactivado"}`}
+              title={shuffleTooltip}
               className={isShuffle ? "text-primary" : "text-muted-foreground"}
             >
               <Shuffle className="h-4 w-4" />

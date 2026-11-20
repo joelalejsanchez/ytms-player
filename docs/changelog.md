@@ -6,6 +6,26 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.10] - 2026-11-20
+
+### Añadido
+
+#### Tooltips Contextuales Dinámicos y Bloqueo Condicional de Navegación (`usePlayerControlTooltips`, `PersistentPlayer` y `NowPlayingView`)
+- **Hook centralizado `usePlayerControlTooltips`**:
+  - Unifica la lógica de estados y etiquetas contextuales para los controles de reproducción tanto en la barra inferior persistente (`PersistentPlayer` en modos escritorio y compacto) como en la vista de reproducción expandida (`NowPlayingView`).
+- **Retroalimentación explícita para navegación hacia adelante (`SkipForward`)**:
+  - Muestra *"Siguiente"* cuando la navegación está habilitada.
+  - Conmuta a *"Fin de la cola"* cuando no hay pistas posteriores en la cola (`repeatMode === "off"`), o *"Cola vacía"* cuando la cola carece de elementos.
+- **Retroalimentación contextual para navegación hacia atrás (`SkipBack`)**:
+  - Muestra *"Reiniciar canción"* cuando el minutero de reproducción supera el umbral de 3 segundos (`currentTime > 3s`).
+  - Muestra *"Anterior"* cuando es posible volver a la pista previa.
+  - Conmuta a *"Inicio de la cola"* cuando se encuentra bloqueado en la primera pista (`currentIndex <= 0` y `currentTime <= 3s`) con repetición desactivada, o *"Cola vacía"* si no hay canción activa.
+- **Tooltips dinámicos en Play/Pause, Repetición y Modo Aleatorio**:
+  - El botón principal informa reactivamente su estado: *"Cargando pista..."*, *"Sin canciones en cola"*, *"Pausar"*, *"Reanudar"* (si la canción fue pausada con avance) o *"Reproducir"*.
+  - Sincronización homogénea de tooltips para repetición (*"Modo repetición: Desactivado / Una canción / Todas"*) y aleatorio (*"Modo aleatorio: Activado / Desactivado"*).
+
+---
+
 ## [1.9.9] - 2026-11-20
 
 ### Corregido
