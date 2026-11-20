@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"html"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -48,6 +50,7 @@ func NewAPIHandler(
 func (h *APIHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/download", h.HandleDownload)
 	mux.HandleFunc("/api/download/preview", h.HandlePreview)
+	mux.HandleFunc("/api/search", h.HandleSearch)
 	mux.HandleFunc("/api/progress/stream", h.HandleProgressStream)
 	mux.HandleFunc("/api/sync-likes", h.HandleSyncLikes)
 	mux.HandleFunc("/api/rate-video", h.HandleRateVideo)
@@ -129,6 +132,45 @@ func (h *APIHandler) HandlePreview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, preview)
+}
+
+// HandleSearch procesa GET /api/search?q=...&limit=... devolviendo canciones coincidentes desde YouTube.
+func (h *APIHandler) HandleSearch(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method_not_allowed", "only GET is supported")
+		return
+	}
+
+	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	if query == "" {
+		writeJSON(w, http.StatusOK, domain.SearchResponse{
+			Query:   "",
+			Results: []domain.SearchResultItem{},
+		})
+		return
+	}
+
+	limit := 8
+	if limitStr := strings.TrimSpace(r.URL.Query().Get("limit")); limitStr != "" {
+		if parsed, err := strconv.Atoi(limitStr); err == nil && parsed > 0 && parsed <= 20 {
+			limit = parsed
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+	defer cancel()
+
+	results, err := h.downloadUC.SearchTracks(ctx, query, limit)
+	if err != nil {
+		log.Printf("[http] search failed: %v", err)
+		writeJSONError(w, http.StatusInternalServerError, "search_failed", err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, domain.SearchResponse{
+		Query:   query,
+		Results: results,
+	})
 }
 
 // HandleProgressStream transmite eventos SSE en tiempo real para GET /api/progress/stream (SDD 6.2).

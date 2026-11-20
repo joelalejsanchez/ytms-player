@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use crate::domain::entities::{
     HealthStatusDto, LikeSyncResponseDto, MicroserviceDownloadRequest,
-    MicroserviceDownloadResponse, OAuthStatusDto,
+    MicroserviceDownloadResponse, OAuthStatusDto, SearchResponseDto, SearchResultItemDto,
 };
 use crate::domain::errors::{DomainError, DomainResult};
 use crate::domain::ports::MicroserviceClientPort;
@@ -249,6 +249,44 @@ impl MicroserviceClientPort for GoMicroserviceClient {
                 )));
             }
             Ok(())
+        })
+    }
+
+    fn search_tracks(&self, query: &str) -> DomainResult<Vec<SearchResultItemDto>> {
+        let trimmed = query.trim();
+        if trimmed.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let url = format!("{}/api/search", self.base_url);
+        let client = self.http_client.clone();
+        let query_str = trimmed.to_string();
+
+        Self::block_on(async move {
+            let resp = client
+                .get(&url)
+                .query(&[("q", &query_str)])
+                .send()
+                .await
+                .map_err(|e| {
+                    DomainError::MicroserviceError(format!("GET /api/search failed: {e}"))
+                })?;
+
+            if !resp.status().is_success() {
+                let status = resp.status();
+                let body = resp.text().await.unwrap_or_default();
+                return Err(DomainError::MicroserviceError(format!(
+                    "Go microservice /api/search returned HTTP {status}: {body}"
+                )));
+            }
+
+            let search_resp = resp.json::<SearchResponseDto>().await.map_err(|e| {
+                DomainError::MicroserviceError(format!(
+                    "Failed to deserialize /api/search response: {e}"
+                ))
+            })?;
+
+            Ok(search_resp.results)
         })
     }
 }

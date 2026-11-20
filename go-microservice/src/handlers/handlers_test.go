@@ -32,6 +32,19 @@ func (s *stubDownloader) FetchMetadata(_ context.Context, _ string) ([]domain.Ra
 	}, nil
 }
 
+func (s *stubDownloader) SearchTracks(_ context.Context, query string, limit int) ([]domain.SearchResultItem, error) {
+	return []domain.SearchResultItem{
+		{
+			YouTubeID:    "dQw4w9WgXcQ",
+			Title:        "Never Gonna Give You Up",
+			Artist:       "Rick Astley",
+			Duration:     213,
+			ThumbnailURL: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+			UploadDate:   "20091025",
+		},
+	}, nil
+}
+
 func (s *stubDownloader) DownloadTrack(
 	_ context.Context,
 	youtubeID string,
@@ -275,5 +288,47 @@ func TestHandleOAuthBrowserFlow(t *testing.T) {
 	defer func() { _ = logoutResp.Body.Close() }()
 	if logoutResp.StatusCode != http.StatusOK {
 		t.Fatalf("expected 200 from /api/oauth/logout, got %d", logoutResp.StatusCode)
+	}
+}
+
+func TestHandleSearch(t *testing.T) {
+	srv, _, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	// 1. Búsqueda con query vacío devuelve 200 y array vacío
+	emptyResp, err := http.Get(srv.URL + "/api/search")
+	if err != nil {
+		t.Fatalf("GET /api/search failed: %v", err)
+	}
+	defer func() { _ = emptyResp.Body.Close() }()
+	if emptyResp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200 for empty search, got %d", emptyResp.StatusCode)
+	}
+	var emptyData domain.SearchResponse
+	if err := json.NewDecoder(emptyResp.Body).Decode(&emptyData); err != nil {
+		t.Fatalf("failed to decode empty search response: %v", err)
+	}
+	if len(emptyData.Results) != 0 {
+		t.Fatalf("expected 0 results for empty search, got %d", len(emptyData.Results))
+	}
+
+	// 2. Búsqueda con query válido
+	resp, err := http.Get(srv.URL + "/api/search?q=Rick+Astley&limit=5")
+	if err != nil {
+		t.Fatalf("GET /api/search?q=Rick+Astley failed: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200 from search, got %d", resp.StatusCode)
+	}
+	var searchResp domain.SearchResponse
+	if err := json.NewDecoder(resp.Body).Decode(&searchResp); err != nil {
+		t.Fatalf("failed to decode search response: %v", err)
+	}
+	if searchResp.Query != "Rick Astley" || len(searchResp.Results) != 1 {
+		t.Fatalf("unexpected search response: %+v", searchResp)
+	}
+	if searchResp.Results[0].YouTubeID != "dQw4w9WgXcQ" {
+		t.Errorf("expected YouTubeID dQw4w9WgXcQ, got %s", searchResp.Results[0].YouTubeID)
 	}
 }

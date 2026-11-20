@@ -102,6 +102,57 @@ func (a *YtDlpAdapter) FetchMetadata(ctx context.Context, rawURL string) ([]doma
 	return items, nil
 }
 
+// SearchTracks busca canciones en YouTube utilizando ytsearch de yt-dlp y devuelve una lista ligera de resultados.
+func (a *YtDlpAdapter) SearchTracks(ctx context.Context, query string, limit int) ([]domain.SearchResultItem, error) {
+	if limit <= 0 || limit > 20 {
+		limit = 8
+	}
+	searchArg := fmt.Sprintf("ytsearch%d:%s", limit, strings.TrimSpace(query))
+	args := []string{
+		"--dump-json",
+		"--flat-playlist",
+		"--no-warnings",
+		"--no-call-home",
+	}
+	args = a.appendCookieArgs(args)
+	args = append(args, "--", searchArg)
+
+	out, err := a.executor.Run(ctx, "yt-dlp", args...)
+	if err != nil {
+		return nil, err
+	}
+
+	lines := bytes.Split(bytes.TrimSpace(out), []byte("\n"))
+	items := make([]domain.SearchResultItem, 0, len(lines))
+
+	for _, line := range lines {
+		trimmed := bytes.TrimSpace(line)
+		if len(trimmed) == 0 {
+			continue
+		}
+		var entry ytdlpJSONEntry
+		if err := json.Unmarshal(trimmed, &entry); err != nil {
+			continue
+		}
+		if entry.ID == "" {
+			continue
+		}
+		artist := firstNonEmpty(entry.Artist, entry.Creator, entry.Uploader, entry.Channel, "Unknown Artist")
+		thumbURL := fmt.Sprintf("https://i.ytimg.com/vi/%s/hqdefault.jpg", entry.ID)
+
+		items = append(items, domain.SearchResultItem{
+			YouTubeID:    entry.ID,
+			Title:        firstNonEmpty(entry.Title, entry.ID),
+			Artist:       artist,
+			Duration:     int(entry.Duration),
+			ThumbnailURL: thumbURL,
+			UploadDate:   entry.UploadDate,
+		})
+	}
+
+	return items, nil
+}
+
 // DownloadTrack descarga el audio y la miniatura de un youtube_id específico emitiendo eventos de progreso en tiempo real.
 func (a *YtDlpAdapter) DownloadTrack(
 	ctx context.Context,

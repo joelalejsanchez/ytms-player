@@ -6,6 +6,23 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.15] - 2026-11-20
+
+### Añadido
+
+#### Buscador Integrado de Canciones con Descarga Asistida en `DownloadsView`
+- **Buscador interactivo en tiempo real con selector de modo**:
+  - Incorporado un selector de pestañas accesible (`role="tablist"`) para alternar fluidamente entre *"Descarga por Enlace"* y *"Búsqueda Asistida"*.
+  - En el modo de búsqueda, input interactivo con icono de lupa, botón directo de limpieza rápida (`X`), selector de formato de audio persistente (`mp3`, `m4a`, `opus`) y debounce automático calibrado a 400ms para evitar saturación de red y ejecuciones innecesarias.
+- **Backend desacoplado con endpoint ligero de búsqueda rápida (`GET /api/search`)**:
+  - Implementado en el microservicio Go el endpoint `GET /api/search?q={query}&limit={limit}` que consulta metadatos de las mejores coincidencias mediante `yt-dlp --dump-json --flat-playlist --no-warnings --no-call-home ytsearch{N}:{query}` con timeout de 15 segundos y sin descargar flujos de audio ni saturar ancho de banda.
+  - Expuesto el comando IPC de Tauri `search_youtube_tracks` y cliente HTTP robusto en Rust con tipado estricto `SearchResultItemDto`.
+- **Tarjetas de resultados con estado reactivo y descarga con 1 clic**:
+  - Renderizado de tarjetas enriquecidas con miniatura, título de la canción, artista/canal y duración formateada (`formatDuration`).
+  - Detección reactiva de estado: badge verde *"En biblioteca"* si la canción ya existe localmente en el workspace, badge ámbar *"Descargando..."* o *"En cola"* si se encuentra en proceso activo en `useDownloadStore`, o botón interactivo *"Descargar"* para iniciar la descarga con 1 solo clic aprovechando el pipeline existente de SSE, FFmpeg y persistencia en SQLite.
+
+---
+
 ## [1.9.14] - 2026-11-20
 
 ### Mejorado

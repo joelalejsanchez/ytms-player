@@ -14,9 +14,9 @@ use interfaces::commands::{
     get_playlist_track_map, get_playlists, get_tracks, get_workspace_info, import_cookies_file,
     logout_oauth, open_logs_folder, open_oauth_login, preview_playlist_url, rate_video,
     read_audio_data_url, recover_track, refresh_track_metadata, register_track,
-    remove_saved_workspace, remove_track_from_playlist, select_workspace, set_microservice_url,
-    set_preferred_audio_format, start_download, sync_likes, sync_playlist_tracks,
-    toggle_track_like, verify_integrity,
+    remove_saved_workspace, remove_track_from_playlist, search_youtube_tracks, select_workspace,
+    set_microservice_url, set_preferred_audio_format, start_download, sync_likes,
+    sync_playlist_tracks, toggle_track_like, verify_integrity,
 };
 use interfaces::state::AppState;
 
@@ -127,6 +127,7 @@ fn main() {
             delete_orphan_file,
             preview_playlist_url,
             sync_playlist_tracks,
+            search_youtube_tracks,
             logout_oauth,
             rate_video,
             refresh_track_metadata,
@@ -468,7 +469,7 @@ mod tests {
     fn test_origin_discrimination_and_likes_sync_exclusion() {
         use std::sync::Mutex;
         use crate::application::download_sync_usecases;
-        use crate::domain::entities::{HealthStatusDto, LikeSyncResponseDto, MicroserviceDownloadRequest, MicroserviceDownloadResponse, OAuthStatusDto, PlaylistPreviewDto};
+        use crate::domain::entities::{HealthStatusDto, LikeSyncResponseDto, MicroserviceDownloadRequest, MicroserviceDownloadResponse, OAuthStatusDto, PlaylistPreviewDto, SearchResultItemDto};
         use crate::domain::errors::DomainResult;
         use crate::domain::ports::MicroserviceClientPort;
 
@@ -499,6 +500,7 @@ mod tests {
             fn logout_oauth(&self) -> DomainResult<()> { unimplemented!() }
             fn rate_video(&self, _: &str, _: &str) -> DomainResult<()> { unimplemented!() }
             fn preview_url(&self, _: &str) -> DomainResult<PlaylistPreviewDto> { unimplemented!() }
+            fn search_tracks(&self, _: &str) -> DomainResult<Vec<SearchResultItemDto>> { Ok(Vec::new()) }
         }
 
         let ws_dir = temp_workspace_dir("origin-test");

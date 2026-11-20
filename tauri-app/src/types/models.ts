@@ -133,6 +133,15 @@ export interface PlaylistPreviewDto {
   items: PlaylistPreviewItemDto[];
 }
 
+export interface SearchResultItem {
+  youtube_id: string;
+  title: string;
+  artist: string;
+  duration: number;
+  thumbnail_url: string;
+  upload_date?: string;
+}
+
 export interface DownloadCommandInput {
   url: string;
   audio_format: AudioFormat;

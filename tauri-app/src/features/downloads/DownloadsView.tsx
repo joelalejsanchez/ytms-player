@@ -1,25 +1,35 @@
 import {
   AlertCircle,
+  Check,
   ChevronDown,
   ChevronUp,
   Download,
   History,
+  Link as LinkIcon,
   ListMusic,
   Loader2,
   Music2,
   RotateCcw,
+  Search,
   Trash2,
+  X,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { CustomSelect, type SelectOption } from "@/components/ui/CustomSelect";
 import { Badge, Button, Input, ProgressBar } from "@/components/ui/Primitives";
-import { cn, toAssetUrl } from "@/lib/utils";
+import { cn, formatDuration, toAssetUrl } from "@/lib/utils";
 import { downloadFormSchema } from "@/schemas/validation";
+import { tauriApi } from "@/services/tauriIpc";
 import { useDownloadStore } from "@/stores/useDownloadStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
-import type { AudioFormat, DownloadProgressEvent } from "@/types/models";
+import { toast } from "@/stores/useToastStore";
+import type {
+  AudioFormat,
+  DownloadProgressEvent,
+  SearchResultItem,
+} from "@/types/models";
 import { PlaylistImportModal } from "./PlaylistImportModal";
 
 const AUDIO_FORMAT_OPTIONS: SelectOption<AudioFormat>[] = [
@@ -120,6 +130,12 @@ export const DownloadsView = React.memo(() => {
   const [collapsedPlaylists, setCollapsedPlaylists] = useState<Record<string, boolean>>(
     {},
   );
+  const [downloadMode, setDownloadMode] = useState<"url" | "search">("url");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const tasks = useDownloadStore((s) => s.tasks);
   const isSubmitting = useDownloadStore((s) => s.isSubmitting);
@@ -144,6 +160,86 @@ export const DownloadsView = React.memo(() => {
       void setPreferredFormat(newFormat);
     },
     [setPreferredFormat],
+  );
+
+  const performSearch = useCallback(async (queryToSearch: string) => {
+    const trimmed = queryToSearch.trim();
+    if (!trimmed) {
+      setSearchResults([]);
+      setHasSearched(false);
+      setSearchError(null);
+      return;
+    }
+    setIsSearching(true);
+    setSearchError(null);
+    setHasSearched(true);
+    try {
+      const results = await tauriApi.searchTracks(trimmed);
+      setSearchResults(results);
+    } catch (err) {
+      console.error("Error al buscar canciones:", err);
+      setSearchError(
+        err instanceof Error ? err.message : "Error al realizar la búsqueda en YouTube",
+      );
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  // Debounce de 400ms al tipear
+  useEffect(() => {
+    if (downloadMode !== "search") return;
+    const trimmed = searchQuery.trim();
+    if (trimmed.length < 2) {
+      if (trimmed.length === 0) {
+        setSearchResults([]);
+        setHasSearched(false);
+        setSearchError(null);
+      }
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      void performSearch(trimmed);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, downloadMode, performSearch]);
+
+  const handleDownloadSearchResult = useCallback(
+    async (item: SearchResultItem) => {
+      const targetUrl = `https://www.youtube.com/watch?v=${item.youtube_id}`;
+      toast.info(`Iniciando descarga: ${item.title}`);
+      try {
+        await startDownloadTask({
+          url: targetUrl,
+          audio_format: audioFormat,
+          force_overwrite: false,
+          async_mode: asyncMode,
+        });
+      } catch (err) {
+        console.error("Error iniciando descarga desde búsqueda:", err);
+      }
+    },
+    [audioFormat, asyncMode, startDownloadTask],
+  );
+
+  const isItemInLibrary = useCallback(
+    (youtubeId: string) => tracks.some((t) => t.youtube_id === youtubeId),
+    [tracks],
+  );
+
+  const getItemActiveTask = useCallback(
+    (youtubeId: string) => {
+      return Object.values(tasks).find(
+        (t) =>
+          t.youtube_id === youtubeId &&
+          (t.status === "queued" ||
+            t.status === "downloading" ||
+            t.status === "processing"),
+      );
+    },
+    [tasks],
   );
 
   // Mapa rápido de miniaturas desde la biblioteca
@@ -395,98 +491,304 @@ export const DownloadsView = React.memo(() => {
 
   return (
     <section className="flex h-full flex-col gap-5">
-      {/* Formulario de descarga validado con Zod */}
-      <form
-        onSubmit={(e) => void handleSubmit(e)}
-        className="space-y-4 rounded-xl border border-border bg-card p-4"
+      {/* Selector de modo: Por Enlace vs Búsqueda Asistida */}
+      <div
+        role="tablist"
+        aria-label="Modo de descarga"
+        className="inline-flex items-center gap-1 rounded-xl border border-border/60 bg-muted/70 p-1 shadow-inner w-fit"
       >
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="min-w-0 w-full sm:w-auto sm:min-w-[260px] flex-1">
-            <Input
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ o URL de playlist..."
-              aria-label="URL de YouTube"
+        <button
+          type="button"
+          role="tab"
+          aria-selected={downloadMode === "url"}
+          onClick={() => setDownloadMode("url")}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer select-none",
+            downloadMode === "url"
+              ? "bg-background text-foreground shadow-xs font-semibold ring-1 ring-border/50"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <LinkIcon className="h-3.5 w-3.5" />
+          <span>Descarga por Enlace</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={downloadMode === "search"}
+          onClick={() => setDownloadMode("search")}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer select-none",
+            downloadMode === "search"
+              ? "bg-background text-foreground shadow-xs font-semibold ring-1 ring-border/50"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <Search className="h-3.5 w-3.5" />
+          <span>Búsqueda Asistida</span>
+        </button>
+      </div>
+
+      {downloadMode === "url" ? (
+        /* Formulario de descarga por URL validado con Zod */
+        <form
+          onSubmit={(e) => void handleSubmit(e)}
+          className="space-y-4 rounded-xl border border-border bg-card p-4"
+        >
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="min-w-0 w-full sm:w-auto sm:min-w-[260px] flex-1">
+              <Input
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ o URL de playlist..."
+                aria-label="URL de YouTube"
+              />
+            </div>
+
+            <CustomSelect
+              value={audioFormat}
+              onChange={(val) => handleFormatChange(val as AudioFormat)}
+              options={AUDIO_FORMAT_OPTIONS}
+              ariaLabel="Formato de audio"
+              className="w-full sm:w-auto"
+              triggerClassName="h-9 px-3 text-sm min-w-0 w-full sm:min-w-[220px]"
             />
+
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : shouldOpenPlaylistModal ? (
+                <ListMusic className="h-4 w-4" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              {shouldOpenPlaylistModal ? "Importar Playlist" : "Descargar"}
+            </Button>
           </div>
 
-          <CustomSelect
-            value={audioFormat}
-            onChange={(val) => handleFormatChange(val as AudioFormat)}
-            options={AUDIO_FORMAT_OPTIONS}
-            ariaLabel="Formato de audio"
-            className="w-full sm:w-auto"
-            triggerClassName="h-9 px-3 text-sm min-w-0 w-full sm:min-w-[220px]"
-          />
-
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : shouldOpenPlaylistModal ? (
-              <ListMusic className="h-4 w-4" />
-            ) : (
-              <Download className="h-4 w-4" />
-            )}
-            {shouldOpenPlaylistModal ? "Importar Playlist" : "Descargar"}
-          </Button>
-        </div>
-
-        {/* Alerta y Selector inteligente si se pega un Mix de YouTube (list=RD...) */}
-        {isMixUrl && (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-500">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 shrink-0 text-amber-500" />
-              <span>
-                Detectamos un Mix autogenerado de YouTube en la URL. ¿Qué deseas
-                descargar?
-              </span>
+          {/* Alerta y Selector inteligente si se pega un Mix de YouTube (list=RD...) */}
+          {isMixUrl && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-500">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 text-amber-500" />
+                <span>
+                  Detectamos un Mix autogenerado de YouTube en la URL. ¿Qué deseas
+                  descargar?
+                </span>
+              </div>
+              {/* Switch selector moderno de 2 estados */}
+              <div
+                role="radiogroup"
+                aria-label="Opción de descarga para Mix de YouTube"
+                className="inline-flex items-center rounded-xl border border-border/60 bg-muted/70 p-1 shadow-inner gap-1"
+              >
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={mixOption === "track"}
+                  onClick={() => setMixOption("track")}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer select-none",
+                    mixOption === "track"
+                      ? "bg-background text-foreground shadow-xs font-semibold ring-1 ring-border/50"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Music2 className="h-3.5 w-3.5" />
+                  <span>Solo la canción</span>
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={mixOption === "mix"}
+                  onClick={() => setMixOption("mix")}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer select-none",
+                    mixOption === "mix"
+                      ? "bg-background text-foreground shadow-xs font-semibold ring-1 ring-border/50"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <ListMusic className="h-3.5 w-3.5" />
+                  <span>Mix completo / Lista completa</span>
+                </button>
+              </div>
             </div>
-            {/* Switch selector moderno de 2 estados */}
-            <div
-              role="radiogroup"
-              aria-label="Opción de descarga para Mix de YouTube"
-              className="inline-flex items-center rounded-xl border border-border/60 bg-muted/70 p-1 shadow-inner gap-1"
+          )}
+
+          {(validationError || lastError) && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/15 px-3 py-2 text-xs text-destructive">
+              {validationError ?? lastError}
+            </div>
+          )}
+        </form>
+      ) : (
+        /* Panel de Búsqueda Asistida */
+        <div className="space-y-4 rounded-xl border border-border bg-card p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative min-w-0 w-full sm:w-auto sm:min-w-[260px] flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void performSearch(searchQuery);
+                  }
+                }}
+                placeholder="Buscar canciones o artistas en YouTube..."
+                aria-label="Buscar en YouTube"
+                className="pl-9 pr-9"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSearchResults([]);
+                    setHasSearched(false);
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            <CustomSelect
+              value={audioFormat}
+              onChange={(val) => handleFormatChange(val as AudioFormat)}
+              options={AUDIO_FORMAT_OPTIONS}
+              ariaLabel="Formato de audio para descarga"
+              className="w-full sm:w-auto"
+              triggerClassName="h-9 px-3 text-sm min-w-0 w-full sm:min-w-[220px]"
+            />
+
+            <Button
+              type="button"
+              onClick={() => void performSearch(searchQuery)}
+              disabled={isSearching || !searchQuery.trim()}
             >
-              <button
-                type="button"
-                role="radio"
-                aria-checked={mixOption === "track"}
-                onClick={() => setMixOption("track")}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer select-none",
-                  mixOption === "track"
-                    ? "bg-background text-foreground shadow-xs font-semibold ring-1 ring-border/50"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <Music2 className="h-3.5 w-3.5" />
-                <span>Solo la canción</span>
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={mixOption === "mix"}
-                onClick={() => setMixOption("mix")}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 cursor-pointer select-none",
-                  mixOption === "mix"
-                    ? "bg-background text-foreground shadow-xs font-semibold ring-1 ring-border/50"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <ListMusic className="h-3.5 w-3.5" />
-                <span>Mix completo / Lista completa</span>
-              </button>
-            </div>
+              {isSearching ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
+              Buscar
+            </Button>
           </div>
-        )}
 
-        {(validationError || lastError) && (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/15 px-3 py-2 text-xs text-destructive">
-            {validationError ?? lastError}
-          </div>
-        )}
-      </form>
+          {searchError && (
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/15 px-3 py-2 text-xs text-destructive">
+              <span>{searchError}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => void performSearch(searchQuery)}
+              >
+                Reintentar
+              </Button>
+            </div>
+          )}
+
+          {isSearching && (
+            <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <span>Buscando canciones en YouTube...</span>
+            </div>
+          )}
+
+          {!isSearching &&
+            hasSearched &&
+            searchResults.length === 0 &&
+            !searchError && (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                No se encontraron resultados para &ldquo;{searchQuery}&rdquo;.
+              </div>
+            )}
+
+          {!isSearching && !hasSearched && (
+            <div className="py-4 text-center text-xs text-muted-foreground/80">
+              Escribe el nombre de una canción o artista para buscar en YouTube y
+              descargar con 1 clic.
+            </div>
+          )}
+
+          {!isSearching && searchResults.length > 0 && (
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {searchResults.map((item) => {
+                const inLibrary = isItemInLibrary(item.youtube_id);
+                const activeTask = getItemActiveTask(item.youtube_id);
+
+                return (
+                  <div
+                    key={item.youtube_id}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/30 p-2.5 transition hover:bg-muted/50"
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <ItemThumbnail src={item.thumbnail_url} alt={item.title} />
+                      <div className="min-w-0">
+                        <p
+                          className="truncate text-sm font-medium text-foreground"
+                          title={item.title}
+                        >
+                          {item.title}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="truncate max-w-[140px]">{item.artist}</span>
+                          {item.duration > 0 && (
+                            <>
+                              <span>•</span>
+                              <span>{formatDuration(item.duration)}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0">
+                      {inLibrary ? (
+                        <Badge
+                          tone="success"
+                          className="gap-1 border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
+                        >
+                          <Check className="h-3 w-3" />
+                          <span>En biblioteca</span>
+                        </Badge>
+                      ) : activeTask ? (
+                        <Badge
+                          tone="warning"
+                          className="gap-1 border-amber-500/40 bg-amber-500/10 text-amber-400"
+                        >
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          <span>
+                            {activeTask.status === "downloading"
+                              ? "Descargando..."
+                              : "En cola"}
+                          </span>
+                        </Badge>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 gap-1.5 px-3 text-xs font-medium cursor-pointer"
+                          onClick={() => void handleDownloadSearchResult(item)}
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          <span>Descargar</span>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Panel unificado: Descargas en curso arriba + Historial por día abajo */}
       <div className="flex-1 space-y-6 overflow-y-auto rounded-xl border border-border bg-card/40 p-4">

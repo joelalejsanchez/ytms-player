@@ -128,6 +128,18 @@ func TestYtDlpAdapter_ProgressAndMetadata(t *testing.T) {
 	if downloaded.YouTubeID != "dQw4w9WgXcQ" {
 		t.Errorf("expected YouTubeID dQw4w9WgXcQ, got %s", downloaded.YouTubeID)
 	}
+
+	// Prueba de SearchTracks
+	searchResults, err := adapter.SearchTracks(context.Background(), "Rick Astley", 5)
+	if err != nil {
+		t.Fatalf("SearchTracks failed: %v", err)
+	}
+	if len(searchResults) != 1 || searchResults[0].YouTubeID != "dQw4w9WgXcQ" {
+		t.Fatalf("unexpected search results: %+v", searchResults)
+	}
+	if searchResults[0].ThumbnailURL != "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg" {
+		t.Errorf("unexpected thumbnail url: %s", searchResults[0].ThumbnailURL)
+	}
 	if len(progressUpdates) != 2 || progressUpdates[0].Progress != 42.5 {
 		t.Errorf("unexpected progress updates: %+v", progressUpdates)
 	}

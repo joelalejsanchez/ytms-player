@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -17,6 +18,18 @@ type downloadJob struct {
 	ctx    context.Context
 	taskID string
 	req    domain.DownloadRequest
+}
+
+// SearchTracks busca canciones en YouTube utilizando yt-dlp con límite acotado de resultados.
+func (uc *DownloadUseCase) SearchTracks(ctx context.Context, query string, limit int) ([]domain.SearchResultItem, error) {
+	trimmed := strings.TrimSpace(query)
+	if trimmed == "" {
+		return []domain.SearchResultItem{}, nil
+	}
+	if limit <= 0 || limit > 20 {
+		limit = 8
+	}
+	return uc.downloader.SearchTracks(ctx, trimmed, limit)
 }
 
 // PreviewURL extrae la lista de temas en una sola operación bulk de yt-dlp sin descargar audio.

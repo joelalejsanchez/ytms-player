@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use crate::domain::entities::{
     DownloadHistoryEntry, HealthStatusDto, LikeSyncItemDto, LikeSyncResponseDto,
     MicroserviceDownloadRequest, MicroserviceDownloadResponse, NewTrack, OAuthStatusDto,
-    OrphanTrackFile, Playlist, PlaylistWithTracks, Track, WorkspaceInfo,
+    OrphanTrackFile, Playlist, PlaylistWithTracks, SearchResultItemDto, Track, WorkspaceInfo,
 };
 use crate::domain::errors::DomainResult;
 
@@ -105,4 +105,5 @@ pub trait MicroserviceClientPort: Send + Sync {
     fn logout_oauth(&self) -> DomainResult<()>;
     fn rate_video(&self, youtube_id: &str, rating: &str) -> DomainResult<()>;
     fn preview_url(&self, url: &str) -> DomainResult<crate::domain::entities::PlaylistPreviewDto>;
+    fn search_tracks(&self, query: &str) -> DomainResult<Vec<SearchResultItemDto>>;
 }

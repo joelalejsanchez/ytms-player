@@ -16,6 +16,7 @@ import type {
   Playlist,
   PlaylistPreviewDto,
   PlaylistWithTracks,
+  SearchResultItem,
   Track,
   WorkspaceInfo,
 } from "@/types/models";
@@ -252,5 +253,9 @@ export const tauriApi = {
 
   openLogsFolder(): Promise<string> {
     return safeInvoke<string>("open_logs_folder");
+  },
+
+  searchTracks(query: string): Promise<SearchResultItem[]> {
+    return safeInvoke<SearchResultItem[]>("search_youtube_tracks", { query });
   },
 };

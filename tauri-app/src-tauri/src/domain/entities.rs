@@ -262,3 +262,22 @@ pub struct OAuthStatusDto {
     pub redirect_uri: Option<String>,
     pub expires_at: Option<String>,
 }
+
+/// Elemento de resultado devuelto por la búsqueda en YouTube (`GET /api/search`).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SearchResultItemDto {
+    pub youtube_id: String,
+    pub title: String,
+    pub artist: String,
+    pub duration: i64,
+    pub thumbnail_url: String,
+    #[serde(default)]
+    pub upload_date: Option<String>,
+}
+
+/// Respuesta general devuelta por `GET /api/search` del microservicio Go.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SearchResponseDto {
+    pub query: String,
+    pub results: Vec<SearchResultItemDto>,
+}

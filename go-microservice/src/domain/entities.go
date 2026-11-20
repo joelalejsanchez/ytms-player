@@ -63,6 +63,22 @@ type PlaylistPreviewResponse struct {
 	Items         []PlaylistPreviewItem `json:"items"`
 }
 
+// SearchResultItem representa un resultado de búsqueda de canciones en YouTube.
+type SearchResultItem struct {
+	YouTubeID    string `json:"youtube_id"`
+	Title        string `json:"title"`
+	Artist       string `json:"artist"`
+	Duration     int    `json:"duration"`
+	ThumbnailURL string `json:"thumbnail_url"`
+	UploadDate   string `json:"upload_date,omitempty"`
+}
+
+// SearchResponse encapsula la respuesta devuelta por GET /api/search?q=...
+type SearchResponse struct {
+	Query   string             `json:"query"`
+	Results []SearchResultItem `json:"results"`
+}
+
 // DownloadRequest encapsula los parámetros de entrada para POST /api/download (SDD 6.1).
 type DownloadRequest struct {
 	URL            string      `json:"url"`

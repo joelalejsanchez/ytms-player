@@ -25,6 +25,22 @@ func (m *mockDownloader) FetchMetadata(_ context.Context, _ string) ([]domain.Ra
 	return m.metadataItems, nil
 }
 
+func (m *mockDownloader) SearchTracks(_ context.Context, query string, limit int) ([]domain.SearchResultItem, error) {
+	if m.downloadErr != nil {
+		return nil, m.downloadErr
+	}
+	return []domain.SearchResultItem{
+		{
+			YouTubeID:    "dQw4w9WgXcQ",
+			Title:        "Never Gonna Give You Up",
+			Artist:       "Rick Astley",
+			Duration:     213,
+			ThumbnailURL: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+			UploadDate:   "20091025",
+		},
+	}, nil
+}
+
 func (m *mockDownloader) DownloadTrack(
 	_ context.Context,
 	youtubeID string,

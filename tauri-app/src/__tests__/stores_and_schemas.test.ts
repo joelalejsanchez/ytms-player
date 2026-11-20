@@ -2011,5 +2011,86 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       expect(mixBtn.getAttribute("aria-checked")).toBe("true");
       expect(soloBtn.getAttribute("aria-checked")).toBe("false");
     });
+
+    it("supports integrated search mode, displays search results with reactive badges and assisted 1-click download", async () => {
+      useLibraryStore.setState({
+        tracks: [
+          {
+            id: 1,
+            youtube_id: "in_library_id",
+            title: "Already Downloaded Song",
+            artist: "Local Artist",
+            duration: 180,
+            published_at: null,
+            file_extension: "mp3",
+            thumbnail_path: null,
+            audio_path: "/tracks/in_library_id.mp3",
+            synced: true,
+            liked: null,
+            is_missing: false,
+            file_size: 1000,
+            created_at: "2026-11-20T00:00:00Z",
+          },
+        ],
+      });
+
+      const searchSpy = vi.spyOn(tauriApi, "searchTracks").mockResolvedValue([
+        {
+          youtube_id: "in_library_id",
+          title: "Already Downloaded Song",
+          artist: "Local Artist",
+          duration: 180,
+          thumbnail_url: "https://i.ytimg.com/vi/in_library_id/hqdefault.jpg",
+        },
+        {
+          youtube_id: "new_track_id",
+          title: "Brand New Track",
+          artist: "Famous Singer",
+          duration: 215,
+          thumbnail_url: "https://i.ytimg.com/vi/new_track_id/hqdefault.jpg",
+        },
+      ]);
+
+      const { getByRole, getByPlaceholderText, findByText, getByText } = render(
+        React.createElement(DownloadsView),
+      );
+
+      // 1. Selector de modo debe estar presente
+      const searchTab = getByRole("tab", { name: /Búsqueda Asistida/i });
+      const urlTab = getByRole("tab", { name: /Descarga por Enlace/i });
+      expect(searchTab).toBeInTheDocument();
+      expect(urlTab).toBeInTheDocument();
+
+      // 2. Cambiar a modo Búsqueda Asistida
+      fireEvent.click(searchTab);
+      expect(searchTab.getAttribute("aria-selected")).toBe("true");
+
+      // 3. Escribir término de búsqueda y buscar
+      const searchInput = getByPlaceholderText(
+        "Buscar canciones o artistas en YouTube...",
+      );
+      expect(searchInput).toBeInTheDocument();
+
+      fireEvent.change(searchInput, { target: { value: "Rick Astley" } });
+      const searchButton = getByRole("button", { name: /^Buscar$/i });
+      fireEvent.click(searchButton);
+
+      expect(searchSpy).toHaveBeenCalledWith("Rick Astley");
+
+      // 4. Verificar que se renderizan los resultados
+      const inLibraryItem = await findByText("Already Downloaded Song");
+      const newItem = await findByText("Brand New Track");
+      expect(inLibraryItem).toBeInTheDocument();
+      expect(newItem).toBeInTheDocument();
+
+      // 5. Verificar que el item que ya está en biblioteca tiene el badge "En biblioteca"
+      expect(getByText("En biblioteca")).toBeInTheDocument();
+
+      // 6. Verificar botón de Descargar en el item nuevo
+      const downloadButtons = getByRole("button", { name: /Descargar/i });
+      expect(downloadButtons).toBeInTheDocument();
+
+      searchSpy.mockRestore();
+    });
   });
 });

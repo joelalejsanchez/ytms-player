@@ -33,12 +33,6 @@ Este documento registra las características, mejoras y extensiones que **no est
        - Botón **Descargar:** Estilo *primary* destacado con icono de descarga (`Download`), que ejecuta la importación y sincronización.
   - **Diferenciación visual:** Aplicar estilos *outline* claros a los botones secundarios (Cancelar y Atrás) para evitar confusión visual con la acción principal (*primary*), e incorporar iconos descriptivos en cada acción como guía visual inmediata.
 
-- [ ] **Buscador integrado de canciones con descarga asistida (`DownloadsView`):**
-  - Incorporar en la vista de Descargas un campo de búsqueda interactiva por texto (título, artista o palabras clave), eliminando la fricción de tener que buscar en un navegador y copiar enlaces manualmente.
-  - **Backend (Microservicio Go y `yt-dlp`):** Exponer un endpoint de búsqueda rápida (ej. `GET /api/search?q={query}`) que ejecute `yt-dlp --dump-json "ytsearch4:{query}"` para obtener metadatos ligeros de las 3 a 5 mejores coincidencias sin descargar streams de audio.
-  - **Frontend (Vista previa interactiva):** Desplegar los resultados en tarjetas compactas con miniatura, título limpio, nombre del canal/artista, duración formateada y fecha de publicación.
-  - **Descarga con 1 clic:** Cada coincidencia cuenta con un botón directo de descarga que envía el identificador a la cola existente (`useDownloadStore`), aprovechando el pipeline actual de SSE, conversión con FFmpeg e indexación automática en la base de datos local.
-
 - [ ] **Paneles colapsables en sección de Personalización (`WorkspaceSettingsView`):**
   - La sección de Personalización se ha tornado extensa al incorporar paletas cromáticas, modos de tema y selector de visualizadores.
   - Implementar componentes desplegables/colapsables (`Collapsible` o `Accordion`) exclusivamente para los 3 bloques de Personalización (Paleta de Colores, Modo de Tema y Visualizador predeterminado) para mantener compacta la interfaz.

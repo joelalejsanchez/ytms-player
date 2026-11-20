@@ -9,8 +9,8 @@ use crate::application::{
 use crate::domain::entities::{
     AppSettings, DownloadCommandInput, DownloadHistoryEntry, HealthStatusDto, IntegrityReport,
     LikeSyncResponseDto, LogEntryPayload, MicroserviceDownloadItem, MicroserviceDownloadResponse,
-    NewTrack, OAuthStatusDto, Playlist, PlaylistPreviewDto, PlaylistWithTracks, Track,
-    WorkspaceInfo,
+    NewTrack, OAuthStatusDto, Playlist, PlaylistPreviewDto, PlaylistWithTracks, SearchResultItemDto,
+    Track, WorkspaceInfo,
 };
 use crate::domain::errors::{validate_youtube_id, DomainError, DomainResult};
 use crate::domain::ports::{MicroserviceClientPort, TrackRepository, WorkspaceManagerPort};
@@ -151,6 +151,18 @@ pub async fn preview_playlist_url(
     tokio::task::spawn_blocking(move || client.preview_url(&url))
         .await
         .map_err(|e| DomainError::MicroserviceError(format!("Preview execution failed: {e}")))?
+}
+
+/// Busca canciones en YouTube a través del microservicio Go.
+#[tauri::command]
+pub async fn search_youtube_tracks(
+    query: String,
+    state: State<'_, AppState>,
+) -> DomainResult<Vec<SearchResultItemDto>> {
+    let client = state.microservice_client()?;
+    tokio::task::spawn_blocking(move || client.search_tracks(&query))
+        .await
+        .map_err(|e| DomainError::MicroserviceError(format!("Search execution failed: {e}")))?
 }
 
 /// Sincroniza en bulk los tracks de una playlist con una lista de IDs de YouTube.
