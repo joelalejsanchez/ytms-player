@@ -6,6 +6,28 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.19] - 2026-11-20
+
+### Añadido
+
+#### Paneles Colapsables con Previsualización Activa en Sección de Personalización (`WorkspaceSettingsView` & `CollapsibleSection`)
+- **Componente Reutilizable y Accesible `CollapsibleSection`**:
+  - Implementación con semántica WAI-ARIA (`aria-expanded`, `aria-controls`, `role="region"`) y cabecera accionable accesible.
+  - Transición fluida de apertura/cierre mediante CSS Grid (`grid-rows-[1fr]` y `grid-rows-[0fr]`) con rotación animada de indicador `ChevronDown`.
+- **Estructura Compacta en Sección de Personalización**:
+  - Conversión de los 3 bloques de Personalización (*Paleta de Colores*, *Apariencia* y *Visualizador de Reproducción*) a paneles colapsables independientes.
+  - Estado inicial cerrado por defecto para todos los bloques para mantener la vista limpia, despejada y compacta sin desplazamientos verticales excesivos.
+- **Resumen y Previsualización Dinámica en Cabecera**:
+  - Muestra un badge interactivo con el estado seleccionado cuando el panel está colapsado:
+    - *Paleta de Colores:* Nombre de la paleta y conjunto de muestras cromáticas activas (swatches).
+    - *Apariencia:* Icono y nombre del modo de tema activo (*Claro*, *Oscuro*, *Sistema*).
+    - *Visualizador de Reproducción:* Icono específico y nombre del visualizador predeterminado activo.
+- **Apertura Nativa de Enlaces Externos y Correo (`open_external_url`)**:
+  - Nuevo comando IPC en Rust (`open_external_url`) con apertura delegada al sistema operativo (`xdg-open` en Linux, `cmd /C start` en Windows, `open` en macOS).
+  - Apertura interactiva del perfil de GitHub en el navegador predeterminado y del cliente de correo con protocolo `mailto:` sin recargas internas ni errores dentro de la WebView de la app.
+
+---
+
 ## [1.9.18] - 2026-11-20
 
 ### Añadido

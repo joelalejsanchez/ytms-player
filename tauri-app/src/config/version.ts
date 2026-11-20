@@ -13,8 +13,8 @@ export const APP_INFO = {
   name: "Your Tracks Music Server",
   slug: "ytms-player",
   version: APP_VERSION,
-  author: "Joel Alejandro Sánchez Valdez",
+  author: "Joel Alejandro Sanchez Valdez",
   email: "joelalejsanchez@gmail.com",
-  license: "GPL-3.0-or-later",
-  stack: ["Tauri v2", "React 18", "Vite", "Rust", "SQLite"],
+  github: "https://github.com/joelalejsanchez",
+  license: "GPL-3.0",
 } as const;

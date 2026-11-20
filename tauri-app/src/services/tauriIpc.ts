@@ -266,4 +266,12 @@ export const tauriApi = {
   searchTracks(query: string): Promise<SearchResultItem[]> {
     return safeInvoke<SearchResultItem[]>("search_youtube_tracks", { query });
   },
+
+  async openExternalUrl(url: string): Promise<void> {
+    if (!isTauriEnvironment()) {
+      window.open(url, "_blank");
+      return;
+    }
+    return safeInvoke<void>("open_external_url", { url });
+  },
 };

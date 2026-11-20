@@ -8,6 +8,8 @@ import { PlaylistImportModal } from "@/features/downloads/PlaylistImportModal";
 import { HomeView } from "@/features/home/HomeView";
 import { TrackRow } from "@/features/library/TrackRow";
 import { PlaylistsView } from "@/features/playlists/PlaylistsView";
+import { WorkspaceSettingsView } from "@/features/workspace/WorkspaceSettingsView";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { NowPlayingView } from "@/features/visualizer/components/NowPlayingView";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import {
@@ -2348,6 +2350,59 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       expect(backBtn).toBeDisabled();
 
       previewSpy.mockRestore();
+    });
+  });
+
+  describe("Personalization Collapsible Sections (WorkspaceSettingsView & CollapsibleSection)", () => {
+    it("renders CollapsibleSection closed by default with accessible semantics and toggles on click", () => {
+      const toggleFn = vi.fn();
+      const { getByRole, getByText } = render(
+        React.createElement(
+          CollapsibleSection,
+          {
+            title: "Test Section",
+            subtitle: "Subtitle text",
+            isOpen: false,
+            onToggle: toggleFn,
+            preview: React.createElement("span", null, "Preview Badge"),
+          },
+          React.createElement("div", null, "Inner Secret Content"),
+        ),
+      );
+
+      const trigger = getByRole("button", { name: /Test Section/i });
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
+      expect(getByText("Preview Badge")).toBeInTheDocument();
+
+      fireEvent.click(trigger);
+      expect(toggleFn).toHaveBeenCalledTimes(1);
+    });
+
+    it("renders Personalization sections in WorkspaceSettingsView collapsed by default and allows toggling them", () => {
+      const { getByRole } = render(React.createElement(WorkspaceSettingsView, null));
+
+      // Verificar que los 3 botones de las secciones colapsables existan y estén colapsados por defecto (aria-expanded === false)
+      const paletteTrigger = getByRole("button", { name: /Paleta de Colores/i });
+      const themeTrigger = getByRole("button", { name: /Apariencia/i });
+      const vizTrigger = getByRole("button", {
+        name: /Visualizador de Reproducción/i,
+      });
+
+      expect(paletteTrigger).toHaveAttribute("aria-expanded", "false");
+      expect(themeTrigger).toHaveAttribute("aria-expanded", "false");
+      expect(vizTrigger).toHaveAttribute("aria-expanded", "false");
+
+      // Abrir Paleta de Colores al hacer clic
+      fireEvent.click(paletteTrigger);
+      expect(paletteTrigger).toHaveAttribute("aria-expanded", "true");
+
+      // Abrir Apariencia al hacer clic
+      fireEvent.click(themeTrigger);
+      expect(themeTrigger).toHaveAttribute("aria-expanded", "true");
+
+      // Abrir Visualizador al hacer clic
+      fireEvent.click(vizTrigger);
+      expect(vizTrigger).toHaveAttribute("aria-expanded", "true");
     });
   });
 });

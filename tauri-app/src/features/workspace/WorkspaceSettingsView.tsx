@@ -32,6 +32,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { AppLogo } from "@/components/AppLogo";
 import { APP_INFO, APP_VERSION } from "@/config/version";
 import { ActionMenu } from "@/components/ui/ActionMenu";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Badge, Button, Input, RadioButton } from "@/components/ui/Primitives";
 import { cn } from "@/lib/utils";
@@ -181,6 +182,25 @@ const THEME_MODES: ThemeModeOption[] = [
   },
 ];
 
+const getVisualizerIcon = (id: string) => {
+  switch (id) {
+    case "vinyl":
+      return Disc3;
+    case "spectrum":
+      return Activity;
+    case "ambient-aura":
+      return Sparkles;
+    case "cover-waves":
+      return AudioWaveform;
+    case "physical-case":
+      return Box;
+    case "static-disc":
+      return Disc;
+    default:
+      return Music;
+  }
+};
+
 export const WorkspaceSettingsView = React.memo(() => {
   const workspace = useLibraryStore((s) => s.workspace);
   const appSettings = useLibraryStore((s) => s.appSettings);
@@ -205,6 +225,20 @@ export const WorkspaceSettingsView = React.memo(() => {
   const setActiveVisualizer = useVisualizerStore((s) => s.setActiveVisualizer);
   const currentTrack = usePlayerStore((s) => s.currentTrack);
   const [hoveredVisualizerId, setHoveredVisualizerId] = useState<string | null>(null);
+
+  // Estados para secciones colapsables de Personalización (cerradas por defecto)
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const [isThemeOpen, setIsThemeOpen] = useState(false);
+  const [isVisualizerOpen, setIsVisualizerOpen] = useState(false);
+
+  const activePalette = COLOR_PALETTES.find((p) => p.id === colorFamily);
+  const activeTheme = THEME_MODES.find((m) => m.id === mode);
+  const activeVisualizer = getAllVisualizers().find(
+    (v) => v.metadata.id === activeVisualizerId,
+  );
+  const ActiveVisualizerIcon = activeVisualizer
+    ? getVisualizerIcon(activeVisualizer.metadata.id)
+    : Music;
 
   // Estados para Microservicio
   const [urlInput, setUrlInput] = useState(microserviceUrl);
@@ -471,7 +505,7 @@ export const WorkspaceSettingsView = React.memo(() => {
       {/* ============================================================== */}
       {/* 0. TARJETA INFORMATIVA DEL SISTEMA Y VERSIÓN                     */}
       {/* ============================================================== */}
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-r from-card via-card to-primary/5 p-5 shadow-2xs">
+      <div className="relative shrink-0 max-h-none rounded-2xl border border-border bg-gradient-to-r from-card via-card to-primary/5 p-5 shadow-2xs">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3.5">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-primary shadow-xs">
@@ -486,19 +520,36 @@ export const WorkspaceSettingsView = React.memo(() => {
                   v{APP_VERSION}
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {APP_INFO.slug} • Autor: {APP_INFO.author}
-              </p>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                <span>{APP_INFO.slug}</span>
+                <span>•</span>
+                <button
+                  type="button"
+                  onClick={() => void tauriApi.openExternalUrl(APP_INFO.github)}
+                  className="hover:text-primary transition-colors underline-offset-2 hover:underline cursor-pointer"
+                  title="Abrir perfil de GitHub en el navegador"
+                >
+                  {APP_INFO.github}
+                </button>
+                <span>•</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    void tauriApi.openExternalUrl(`mailto:${APP_INFO.email}`)
+                  }
+                  className="hover:text-primary transition-colors underline-offset-2 hover:underline cursor-pointer"
+                  title="Enviar correo electrónico"
+                >
+                  {APP_INFO.email}
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
             <Badge tone="default" className="text-2xs font-mono">
               {APP_INFO.license}
             </Badge>
-            <div className="hidden sm:flex items-center gap-1.5 text-2xs text-muted-foreground font-mono">
-              {APP_INFO.stack.join(" • ")}
-            </div>
           </div>
         </div>
       </div>
@@ -506,7 +557,7 @@ export const WorkspaceSettingsView = React.memo(() => {
       {/* ============================================================== */}
       {/* 1. SECCIÓN: PERSONALIZACIÓN (COLORES Y MODO)                   */}
       {/* ============================================================== */}
-      <div className="space-y-5 rounded-xl border border-border bg-card p-5">
+      <div className="shrink-0 space-y-5 rounded-xl border border-border bg-card p-5">
         <div className="flex items-center justify-between border-b border-border pb-3">
           <div className="flex items-center gap-2.5">
             <Palette className="h-5 w-5 text-primary" />
@@ -524,18 +575,33 @@ export const WorkspaceSettingsView = React.memo(() => {
           </Badge>
         </div>
 
-        {/* Subsección A: Colores (Cards organizadas en vertical, ancho constante, con RadioButton) */}
-        <div className="space-y-3">
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Paleta de Colores
-            </h4>
-            <p className="text-[11px] text-muted-foreground">
-              Color principal para botones, bordes y controles
-            </p>
-          </div>
-
-          <div className="space-y-2 w-full">
+        {/* Subsección A: Colores (Collapsible con RadioButton y preview en cabecera) */}
+        <CollapsibleSection
+          title="Paleta de Colores"
+          subtitle="Color principal para botones, bordes y controles"
+          isOpen={isPaletteOpen}
+          onToggle={() => setIsPaletteOpen((prev) => !prev)}
+          preview={
+            activePalette && (
+              <div className="flex items-center gap-2 rounded-full border border-border bg-card/60 px-2.5 py-1 text-xs font-medium text-foreground shadow-2xs">
+                <span className="truncate max-w-[120px] hidden sm:inline">
+                  {activePalette.name}
+                </span>
+                <div className="flex shrink-0 items-center gap-1">
+                  {activePalette.colors.map((c) => (
+                    <span
+                      key={c.name}
+                      className="h-2.5 w-2.5 rounded-full border border-black/20 shadow-2xs"
+                      style={{ backgroundColor: c.hex }}
+                      title={c.name}
+                    />
+                  ))}
+                </div>
+              </div>
+            )
+          }
+        >
+          <div className="space-y-2 w-full pt-1">
             {COLOR_PALETTES.map((palette) => {
               const isSelected = colorFamily === palette.id;
               return (
@@ -584,196 +650,208 @@ export const WorkspaceSettingsView = React.memo(() => {
               );
             })}
           </div>
+        </CollapsibleSection>
+
+        {/* Subsección B: Modo (Collapsible Claro, Oscuro, Sistema con preview) */}
+        <div className="pt-3 border-t border-border/60">
+          <CollapsibleSection
+            title="Apariencia"
+            subtitle="Selecciona el modo claro, oscuro o automático según el sistema"
+            isOpen={isThemeOpen}
+            onToggle={() => setIsThemeOpen((prev) => !prev)}
+            preview={
+              activeTheme && (
+                <div className="flex items-center gap-1.5 rounded-full border border-border bg-card/60 px-2.5 py-1 text-xs font-medium text-foreground shadow-2xs">
+                  <activeTheme.icon className="h-3.5 w-3.5 text-primary" />
+                  <span>{activeTheme.label}</span>
+                </div>
+              )
+            }
+          >
+            <div className="space-y-2 w-full pt-1">
+              {THEME_MODES.map((item) => {
+                const isSelected = mode === item.id;
+                const Icon = item.icon;
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => handleSelectMode(item.id)}
+                    className={cn(
+                      "flex cursor-pointer items-center justify-between gap-4 rounded-xl border p-3.5 transition w-full select-none",
+                      isSelected
+                        ? "border-primary bg-primary/10 shadow-xs"
+                        : "border-border bg-card/60 hover:border-primary/50 hover:bg-muted/40",
+                    )}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <RadioButton
+                        checked={isSelected}
+                        onChange={() => handleSelectMode(item.id)}
+                      />
+                      <div className="flex items-center gap-2">
+                        <Icon
+                          className={cn(
+                            "h-4 w-4 shrink-0",
+                            isSelected ? "text-primary" : "text-muted-foreground",
+                          )}
+                        />
+                        <span
+                          className={cn(
+                            "text-xs font-semibold",
+                            isSelected ? "text-primary" : "text-foreground",
+                          )}
+                        >
+                          {item.label}
+                        </span>
+                      </div>
+                    </div>
+
+                    <span className="text-[11px] text-muted-foreground shrink-0 hidden sm:inline">
+                      {item.description}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </CollapsibleSection>
         </div>
 
-        {/* Subsección B: Modo (3 cards en vertical: Claro, Oscuro, Sistema) */}
-        <div className="space-y-3 pt-3 border-t border-border/60">
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Apariencia
-            </h4>
-            <p className="text-[11px] text-muted-foreground">
-              Selecciona el modo claro, oscuro o automático según el sistema
-            </p>
-          </div>
-
-          <div className="space-y-2 w-full">
-            {THEME_MODES.map((item) => {
-              const isSelected = mode === item.id;
-              const Icon = item.icon;
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => handleSelectMode(item.id)}
-                  className={cn(
-                    "flex cursor-pointer items-center justify-between gap-4 rounded-xl border p-3.5 transition w-full select-none",
-                    isSelected
-                      ? "border-primary bg-primary/10 shadow-xs"
-                      : "border-border bg-card/60 hover:border-primary/50 hover:bg-muted/40",
-                  )}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <RadioButton
-                      checked={isSelected}
-                      onChange={() => handleSelectMode(item.id)}
-                    />
-                    <div className="flex items-center gap-2">
-                      <Icon
-                        className={cn(
-                          "h-4 w-4 shrink-0",
-                          isSelected ? "text-primary" : "text-muted-foreground",
-                        )}
-                      />
-                      <span
-                        className={cn(
-                          "text-xs font-semibold",
-                          isSelected ? "text-primary" : "text-foreground",
-                        )}
-                      >
-                        {item.label}
-                      </span>
-                    </div>
-                  </div>
-
-                  <span className="text-[11px] text-muted-foreground shrink-0 hidden sm:inline">
-                    {item.description}
+        {/* Subsección C: Visualizador de Reproducción (Collapsible Now Playing con preview) */}
+        <div className="pt-3 border-t border-border/60">
+          <CollapsibleSection
+            title="Visualizador de Reproducción"
+            subtitle="Elige el estilo visual al ampliar la reproducción a pantalla completa. Posa el cursor sobre una opción para ver la animación en vivo."
+            isOpen={isVisualizerOpen}
+            onToggle={() => setIsVisualizerOpen((prev) => !prev)}
+            preview={
+              activeVisualizer && (
+                <div className="flex items-center gap-1.5 rounded-full border border-border bg-card/60 px-2.5 py-1 text-xs font-medium text-foreground shadow-2xs">
+                  <ActiveVisualizerIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span className="truncate max-w-[140px]">
+                    {activeVisualizer.metadata.name}
                   </span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
+              )
+            }
+          >
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-4 w-full pt-1">
+              {getAllVisualizers().map((viz) => {
+                const isSelected = activeVisualizerId === viz.metadata.id;
+                const isHovered = hoveredVisualizerId === viz.metadata.id;
+                const PreviewComp = viz.PreviewComponent;
 
-        {/* Subsección C: Visualizador de Reproducción (Now Playing) */}
-        <div className="space-y-3 pt-3 border-t border-border/60">
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Visualizador de Reproducción
-            </h4>
-            <p className="text-[11px] text-muted-foreground">
-              Elige el estilo visual al ampliar la reproducción a pantalla completa.
-              Posa el cursor sobre una opción para ver la animación en vivo.
-            </p>
-          </div>
-
-          {/* Cuadrícula paralela vertical con auto-fit */}
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-4 w-full">
-            {getAllVisualizers().map((viz) => {
-              const isSelected = activeVisualizerId === viz.metadata.id;
-              const isHovered = hoveredVisualizerId === viz.metadata.id;
-              const PreviewComp = viz.PreviewComponent;
-
-              return (
-                <div
-                  key={viz.metadata.id}
-                  onClick={() => setActiveVisualizer(viz.metadata.id)}
-                  onMouseEnter={() => setHoveredVisualizerId(viz.metadata.id)}
-                  onMouseLeave={() => setHoveredVisualizerId(null)}
-                  className={cn(
-                    "group flex flex-col cursor-pointer justify-between gap-3.5 rounded-xl border p-4 transition w-full select-none relative overflow-hidden",
-                    isSelected
-                      ? "border-primary bg-card ring-1 ring-primary shadow-xs"
-                      : "border-border bg-card hover:border-primary",
-                  )}
-                >
-                  {/* Encabezado: Icono, Título con Tooltip Info y RadioButton */}
-                  <div className="flex items-center justify-between gap-2 w-full">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      {viz.metadata.id === "vinyl" && (
-                        <Disc3
-                          className={cn(
-                            "h-4 w-4 shrink-0",
-                            isSelected ? "text-primary" : "text-muted-foreground",
-                          )}
-                        />
-                      )}
-                      {viz.metadata.id === "spectrum" && (
-                        <Activity
-                          className={cn(
-                            "h-4 w-4 shrink-0",
-                            isSelected ? "text-primary" : "text-muted-foreground",
-                          )}
-                        />
-                      )}
-                      {viz.metadata.id === "ambient-aura" && (
-                        <Sparkles
-                          className={cn(
-                            "h-4 w-4 shrink-0",
-                            isSelected ? "text-primary" : "text-muted-foreground",
-                          )}
-                        />
-                      )}
-                      {viz.metadata.id === "cover-waves" && (
-                        <AudioWaveform
-                          className={cn(
-                            "h-4 w-4 shrink-0",
-                            isSelected ? "text-primary" : "text-muted-foreground",
-                          )}
-                        />
-                      )}
-                      {viz.metadata.id === "physical-case" && (
-                        <Box
-                          className={cn(
-                            "h-4 w-4 shrink-0",
-                            isSelected ? "text-primary" : "text-muted-foreground",
-                          )}
-                        />
-                      )}
-                      {viz.metadata.id === "static-disc" && (
-                        <Disc
-                          className={cn(
-                            "h-4 w-4 shrink-0",
-                            isSelected ? "text-primary" : "text-muted-foreground",
-                          )}
-                        />
-                      )}
-                      <span
-                        className={cn(
-                          "text-xs font-semibold truncate",
-                          isSelected ? "text-primary" : "text-foreground",
+                return (
+                  <div
+                    key={viz.metadata.id}
+                    onClick={() => setActiveVisualizer(viz.metadata.id)}
+                    onMouseEnter={() => setHoveredVisualizerId(viz.metadata.id)}
+                    onMouseLeave={() => setHoveredVisualizerId(null)}
+                    className={cn(
+                      "group flex flex-col cursor-pointer justify-between gap-3.5 rounded-xl border p-4 transition w-full select-none relative overflow-hidden",
+                      isSelected
+                        ? "border-primary bg-card ring-1 ring-primary shadow-xs"
+                        : "border-border bg-card hover:border-primary",
+                    )}
+                  >
+                    {/* Encabezado: Icono, Título con Tooltip Info y RadioButton */}
+                    <div className="flex items-center justify-between gap-2 w-full">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {viz.metadata.id === "vinyl" && (
+                          <Disc3
+                            className={cn(
+                              "h-4 w-4 shrink-0",
+                              isSelected ? "text-primary" : "text-muted-foreground",
+                            )}
+                          />
                         )}
-                      >
-                        {viz.metadata.name}
-                      </span>
+                        {viz.metadata.id === "spectrum" && (
+                          <Activity
+                            className={cn(
+                              "h-4 w-4 shrink-0",
+                              isSelected ? "text-primary" : "text-muted-foreground",
+                            )}
+                          />
+                        )}
+                        {viz.metadata.id === "ambient-aura" && (
+                          <Sparkles
+                            className={cn(
+                              "h-4 w-4 shrink-0",
+                              isSelected ? "text-primary" : "text-muted-foreground",
+                            )}
+                          />
+                        )}
+                        {viz.metadata.id === "cover-waves" && (
+                          <AudioWaveform
+                            className={cn(
+                              "h-4 w-4 shrink-0",
+                              isSelected ? "text-primary" : "text-muted-foreground",
+                            )}
+                          />
+                        )}
+                        {viz.metadata.id === "physical-case" && (
+                          <Box
+                            className={cn(
+                              "h-4 w-4 shrink-0",
+                              isSelected ? "text-primary" : "text-muted-foreground",
+                            )}
+                          />
+                        )}
+                        {viz.metadata.id === "static-disc" && (
+                          <Disc
+                            className={cn(
+                              "h-4 w-4 shrink-0",
+                              isSelected ? "text-primary" : "text-muted-foreground",
+                            )}
+                          />
+                        )}
+                        <span
+                          className={cn(
+                            "text-xs font-semibold truncate",
+                            isSelected ? "text-primary" : "text-foreground",
+                          )}
+                        >
+                          {viz.metadata.name}
+                        </span>
 
-                      {/* Tooltip con icono de información */}
-                      <div
-                        className="relative group/info inline-flex items-center shrink-0"
-                        title={viz.metadata.description}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Info className="h-3.5 w-3.5 text-muted-foreground/60 hover:text-foreground transition-colors cursor-help" />
-                        <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden w-48 rounded-md bg-popover p-2 text-[11px] text-popover-foreground shadow-md border border-border group-hover/info:block z-30 text-center leading-tight">
-                          {viz.metadata.description}
+                        {/* Tooltip con icono de información */}
+                        <div
+                          className="relative group/info inline-flex items-center shrink-0"
+                          title={viz.metadata.description}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Info className="h-3.5 w-3.5 text-muted-foreground/60 hover:text-foreground transition-colors cursor-help" />
+                          <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden w-48 rounded-md bg-popover p-2 text-[11px] text-popover-foreground shadow-md border border-border group-hover/info:block z-30 text-center leading-tight">
+                            {viz.metadata.description}
+                          </div>
                         </div>
                       </div>
+
+                      <RadioButton
+                        checked={isSelected}
+                        onChange={() => setActiveVisualizer(viz.metadata.id)}
+                      />
                     </div>
 
-                    <RadioButton
-                      checked={isSelected}
-                      onChange={() => setActiveVisualizer(viz.metadata.id)}
-                    />
+                    {/* Previsualización en vivo centrada (activa exclusivamente al posar el cursor) */}
+                    <div className="flex items-center justify-center py-2 w-full">
+                      {PreviewComp && (
+                        <div className="transition-transform duration-300 group-hover:scale-105">
+                          <PreviewComp
+                            track={currentTrack}
+                            isPlaying={isHovered}
+                            currentTime={0}
+                            duration={100}
+                            volume={1}
+                            isMuted={false}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
-
-                  {/* Previsualización en vivo centrada (activa exclusivamente al posar el cursor) */}
-                  <div className="flex items-center justify-center py-2 w-full">
-                    {PreviewComp && (
-                      <div className="transition-transform duration-300 group-hover:scale-105">
-                        <PreviewComp
-                          track={currentTrack}
-                          isPlaying={isHovered}
-                          currentTime={0}
-                          duration={100}
-                          volume={1}
-                          isMuted={false}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </CollapsibleSection>
         </div>
       </div>
 

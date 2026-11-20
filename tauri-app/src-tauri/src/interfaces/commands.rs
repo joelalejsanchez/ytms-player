@@ -792,6 +792,18 @@ pub fn open_oauth_login(state: State<'_, AppState>) -> DomainResult<String> {
     Ok(login_url)
 }
 
+/// Abre una URL o URI externa (http/https, mailto) en la aplicación predeterminada del sistema operativo.
+#[tauri::command]
+pub fn open_external_url(url: String) -> DomainResult<()> {
+    if !url.starts_with("https://") && !url.starts_with("http://") && !url.starts_with("mailto:") {
+        return Err(DomainError::ValidationError(
+            "Solo se permiten URLs http, https y mailto".into(),
+        ));
+    }
+    open_url_in_system_browser(&url)?;
+    Ok(())
+}
+
 fn open_url_in_system_browser(url: &str) -> DomainResult<()> {
     #[cfg(target_os = "linux")]
     let status = std::process::Command::new("xdg-open").arg(url).spawn();
