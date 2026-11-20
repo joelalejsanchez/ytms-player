@@ -6,6 +6,25 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.10.0] - 2026-11-20
+
+### Añadido
+
+#### Ampliación Integral de Opciones en Menú Contextual (`ActionMenu`), Modales de Información y Acciones Rápidas
+- **Modal de Información Técnica de Pista (`TrackInfoModal.tsx`)**:
+  - Inspección exhaustiva de metadatos de audio: título, artista, duración exacta y legible, tamaño en disco formateado, códec/extensión (`MP3`, `M4A`, `OPUS`), origen (`Local` o `YouTube`), estado de favoritos y fecha de descarga/registro.
+  - Copia rápida al portapapeles de la ruta física en disco (`audio_path`) y del enlace de YouTube con retroalimentación instantánea vía Toast.
+  - Accesibilidad completa WAI-ARIA (`role="dialog"`, bloqueo de scroll, cierre con tecla Escape y clic en backdrop).
+- **Modal de Información y Estadísticas de Playlist (`PlaylistInfoModal.tsx`)**:
+  - Vista general de playlists con portada dinámica, título, badge de origen (`Local` vs `YouTube`) y recuento de pistas.
+  - Métricas acumuladas calculadas en vivo: duración total formateada en horas/minutos y tamaño estimado acumulado en disco (`formatBytes`). Carga asíncrona de pistas bajo demanda si se abre desde vistas resumidas como `HomeView`.
+  - Acción rápida para copiar el enlace de YouTube de la playlist con notificación Toast.
+- **Ampliación de Acciones en Menús de 3 Puntos (`ActionMenu`)**:
+  - Incorporación de *"Información de la pista"* y copia directa de enlace con notificación en `TrackRow` y `PlaylistTrackRow`.
+  - Incorporación de *"Información de la playlist"* y *"Copiar enlace de YouTube"* en tarjetas de playlists de `HomeView`, tarjetas/filas de `PlaylistsView` y cabecera de la vista de detalle de playlists.
+
+---
+
 ## [1.9.24] - 2026-11-20
 
 ### Añadido

@@ -7,8 +7,10 @@ import { DownloadsView } from "@/features/downloads/DownloadsView";
 import { PlaylistImportModal } from "@/features/downloads/PlaylistImportModal";
 import { HomeView } from "@/features/home/HomeView";
 import { TrackRow } from "@/features/library/TrackRow";
+import { TrackInfoModal } from "@/features/library/TrackInfoModal";
 import { LibraryView } from "@/features/library/LibraryView";
 import { PlaylistsView } from "@/features/playlists/PlaylistsView";
+import { PlaylistInfoModal } from "@/features/playlists/PlaylistInfoModal";
 import { Sidebar } from "@/components/Sidebar";
 import { WorkspaceSettingsView } from "@/features/workspace/WorkspaceSettingsView";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
@@ -40,7 +42,7 @@ import {
   useVisualizerStore,
   visualizerRegistry,
 } from "@/features/visualizer";
-import type { Track } from "@/types/models";
+import type { Playlist, Track } from "@/types/models";
 
 const sampleTrack: Track = {
   id: 1,
@@ -2764,6 +2766,133 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       fireEvent.click(sortOrderBtn);
       expect(sortOrderBtn.title).toContain("Orden: Ascendente");
       expect(sortOrderBtn.textContent).toContain("ASC");
+    });
+  });
+
+  describe("ActionMenu Extended Options & Modals (TrackInfoModal & PlaylistInfoModal)", () => {
+    const mockTrack: Track = {
+      id: 1,
+      youtube_id: "test_yt_123",
+      title: "Bohemian Rhapsody",
+      artist: "Queen",
+      duration: 354,
+      published_at: "1975-10-31",
+      file_extension: "mp3",
+      thumbnail_path: "/path/to/thumb.jpg",
+      audio_path: "/workspace/tracks/test_yt_123.mp3",
+      synced: true,
+      liked: true,
+      is_missing: false,
+      file_size: 8500000,
+      created_at: "2026-11-20 04:00:00",
+      origin: "youtube",
+    };
+
+    const mockPlaylist: Playlist = {
+      id: 10,
+      title: "Classic Rock Hits",
+      youtube_playlist_id: "PL_ROCK_123",
+      cover_path: "/workspace/thumbnails/pl_10.jpg",
+      track_count: 1,
+      created_at: "2026-11-20 03:00:00",
+    };
+
+    it("renders TrackInfoModal with complete technical metadata and copies fields", async () => {
+      const onClose = vi.fn();
+      const writeTextMock = vi.fn().mockResolvedValue(undefined);
+      Object.assign(navigator, {
+        clipboard: { writeText: writeTextMock },
+      });
+
+      const { getByRole, getByText } = render(
+        React.createElement(TrackInfoModal, {
+          track: mockTrack,
+          isOpen: true,
+          onClose,
+        }),
+      );
+
+      expect(getByText("Bohemian Rhapsody")).toBeInTheDocument();
+      expect(getByText("Queen")).toBeInTheDocument();
+      expect(getByText("8.1 MB")).toBeInTheDocument();
+      expect(getByText("/workspace/tracks/test_yt_123.mp3")).toBeInTheDocument();
+      expect(
+        getByText("https://www.youtube.com/watch?v=test_yt_123"),
+      ).toBeInTheDocument();
+
+      // Botón copiar enlace de YouTube
+      const copyBtn = getByRole("button", { name: /Copiar enlace/i });
+      fireEvent.click(copyBtn);
+      expect(writeTextMock).toHaveBeenCalledWith(
+        "https://www.youtube.com/watch?v=test_yt_123",
+      );
+
+      // Cerrar modal
+      const closeBtn = getByRole("button", { name: /^Cerrar$/i });
+      fireEvent.click(closeBtn);
+      expect(onClose).toHaveBeenCalled();
+    });
+
+    it("renders PlaylistInfoModal with computed duration, disk size and copies playlist URL", async () => {
+      const onClose = vi.fn();
+      const writeTextMock = vi.fn().mockResolvedValue(undefined);
+      Object.assign(navigator, {
+        clipboard: { writeText: writeTextMock },
+      });
+
+      const { getByRole, getByText } = render(
+        React.createElement(PlaylistInfoModal, {
+          playlist: mockPlaylist,
+          tracks: [mockTrack],
+          isOpen: true,
+          onClose,
+        }),
+      );
+
+      expect(getByText("Classic Rock Hits")).toBeInTheDocument();
+      expect(getByText("1 canción")).toBeInTheDocument();
+      expect(getByText("8.1 MB")).toBeInTheDocument();
+      expect(
+        getByText("https://www.youtube.com/playlist?list=PL_ROCK_123"),
+      ).toBeInTheDocument();
+
+      const copyPlBtn = getByRole("button", { name: /Copiar enlace/i });
+      fireEvent.click(copyPlBtn);
+      expect(writeTextMock).toHaveBeenCalledWith(
+        "https://www.youtube.com/playlist?list=PL_ROCK_123",
+      );
+    });
+
+    it("TrackRow renders 'Información de la pista' and 'Copiar enlace de YouTube' in ActionMenu", async () => {
+      const onShowInfo = vi.fn();
+      const writeTextMock = vi.fn().mockResolvedValue(undefined);
+      Object.assign(navigator, {
+        clipboard: { writeText: writeTextMock },
+      });
+
+      const { getByRole, getByTitle } = render(
+        React.createElement(TrackRow, {
+          track: mockTrack,
+          isCurrent: false,
+          isPlaying: false,
+          playlists: [],
+          onPlay: vi.fn(),
+          onEnqueue: vi.fn(),
+          onToggleLike: vi.fn(),
+          onDelete: vi.fn(),
+          onTogglePlaylist: vi.fn(),
+          onShowInfo,
+        }),
+      );
+
+      const actionMenuTrigger = getByTitle("Opciones de la canción");
+      fireEvent.click(actionMenuTrigger);
+
+      // Debe contener la opción de información de la pista
+      const infoItem = getByRole("menuitem", { name: /Información de la pista/i });
+      expect(infoItem).toBeInTheDocument();
+      fireEvent.click(infoItem);
+      expect(onShowInfo).toHaveBeenCalledWith(mockTrack);
     });
   });
 });

@@ -15,6 +15,7 @@ import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { CustomSelect, type SelectOption } from "@/components/ui/CustomSelect";
 import { Button, Input } from "@/components/ui/Primitives";
 import { MetadataSyncModal } from "@/features/library/MetadataSyncModal";
+import { TrackInfoModal } from "@/features/library/TrackInfoModal";
 import { TrackRow } from "@/features/library/TrackRow";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
@@ -50,6 +51,7 @@ export const LibraryView = React.memo(() => {
   const [isSyncingLikes, setIsSyncingLikes] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [trackToDelete, setTrackToDelete] = useState<Track | null>(null);
+  const [infoTrack, setInfoTrack] = useState<Track | null>(null);
 
   const tracks = useLibraryStore((s) => s.tracks);
   const playlists = useLibraryStore((s) => s.playlists);
@@ -388,6 +390,7 @@ export const LibraryView = React.memo(() => {
                     onToggleLike={handleToggleLike}
                     onDelete={handleDelete}
                     onTogglePlaylist={handleTogglePlaylist}
+                    onShowInfo={setInfoTrack}
                   />
                 </div>
               );
@@ -399,6 +402,12 @@ export const LibraryView = React.memo(() => {
       <MetadataSyncModal
         isOpen={isMetadataModalOpen}
         onClose={() => setIsMetadataModalOpen(false)}
+      />
+
+      <TrackInfoModal
+        track={infoTrack}
+        isOpen={Boolean(infoTrack)}
+        onClose={() => setInfoTrack(null)}
       />
 
       <ConfirmationModal

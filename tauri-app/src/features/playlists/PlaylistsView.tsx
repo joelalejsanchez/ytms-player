@@ -3,6 +3,7 @@ import {
   Clock,
   Download,
   HardDrive,
+  Info,
   LayoutGrid,
   Link as LinkIcon,
   List,
@@ -30,6 +31,8 @@ import {
 } from "@/lib/utils";
 import { playlistFormSchema } from "@/schemas/validation";
 import { tauriApi } from "@/services/tauriIpc";
+import { PlaylistInfoModal } from "@/features/playlists/PlaylistInfoModal";
+import { TrackInfoModal } from "@/features/library/TrackInfoModal";
 import { useDownloadStore } from "@/stores/useDownloadStore";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
@@ -47,6 +50,7 @@ interface PlaylistCardProps {
   onPlay: (id: number) => void;
   onDeleteRequest: (playlist: Playlist) => void;
   onSyncRequest?: (playlist: Playlist) => void;
+  onInfoRequest?: (playlist: Playlist) => void;
 }
 
 const PlaylistCard = React.memo(
@@ -58,6 +62,7 @@ const PlaylistCard = React.memo(
     onPlay,
     onDeleteRequest,
     onSyncRequest,
+    onInfoRequest,
   }: PlaylistCardProps) => {
     const coverUrl = toAssetUrl(playlist.cover_path);
 
@@ -157,6 +162,32 @@ const PlaylistCard = React.memo(
             <ActionMenu
               title="Opciones de playlist"
               items={[
+                {
+                  label: "Información de la playlist",
+                  icon: <Info className="h-3.5 w-3.5 text-primary" />,
+                  onClick: () => onInfoRequest?.(playlist),
+                },
+                ...(playlist.youtube_playlist_id
+                  ? [
+                      {
+                        label: "Copiar enlace de YouTube",
+                        icon: <LinkIcon className="h-3.5 w-3.5" />,
+                        onClick: async () => {
+                          try {
+                            await navigator.clipboard.writeText(
+                              `https://www.youtube.com/playlist?list=${playlist.youtube_playlist_id}`,
+                            );
+                            toast.success(
+                              "Enlace copiado",
+                              "Enlace de YouTube copiado al portapapeles",
+                            );
+                          } catch (err) {
+                            console.error("Error al copiar enlace:", err);
+                          }
+                        },
+                      },
+                    ]
+                  : []),
                 ...(playlist.youtube_playlist_id && onSyncRequest
                   ? [
                       {
@@ -213,6 +244,7 @@ interface PlaylistRowProps {
   onPlay: (id: number) => void;
   onDeleteRequest: (playlist: Playlist) => void;
   onSyncRequest?: (playlist: Playlist) => void;
+  onInfoRequest?: (playlist: Playlist) => void;
 }
 
 const PlaylistRow = React.memo(
@@ -224,6 +256,7 @@ const PlaylistRow = React.memo(
     onPlay,
     onDeleteRequest,
     onSyncRequest,
+    onInfoRequest,
   }: PlaylistRowProps) => {
     const coverUrl = toAssetUrl(playlist.cover_path);
 
@@ -321,6 +354,32 @@ const PlaylistRow = React.memo(
           <ActionMenu
             title="Opciones de playlist"
             items={[
+              {
+                label: "Información de la playlist",
+                icon: <Info className="h-3.5 w-3.5 text-primary" />,
+                onClick: () => onInfoRequest?.(playlist),
+              },
+              ...(playlist.youtube_playlist_id
+                ? [
+                    {
+                      label: "Copiar enlace de YouTube",
+                      icon: <LinkIcon className="h-3.5 w-3.5" />,
+                      onClick: async () => {
+                        try {
+                          await navigator.clipboard.writeText(
+                            `https://www.youtube.com/playlist?list=${playlist.youtube_playlist_id}`,
+                          );
+                          toast.success(
+                            "Enlace copiado",
+                            "Enlace de YouTube copiado al portapapeles",
+                          );
+                        } catch (err) {
+                          console.error("Error al copiar enlace:", err);
+                        }
+                      },
+                    },
+                  ]
+                : []),
               ...(playlist.youtube_playlist_id && onSyncRequest
                 ? [
                     {
@@ -354,10 +413,18 @@ interface PlaylistTrackRowProps {
   isCurrent: boolean;
   onPlay: (track: Track) => void;
   onRemove: (track: Track) => void;
+  onShowInfo?: (track: Track) => void;
 }
 
 const PlaylistTrackRow = React.memo(
-  ({ index, track, isCurrent, onPlay, onRemove }: PlaylistTrackRowProps) => {
+  ({
+    index,
+    track,
+    isCurrent,
+    onPlay,
+    onRemove,
+    onShowInfo,
+  }: PlaylistTrackRowProps) => {
     const thumbUrl = toAssetUrl(track.thumbnail_path);
 
     const handleCopyLink = useCallback(async () => {
@@ -462,6 +529,15 @@ const PlaylistTrackRow = React.memo(
           <ActionMenu
             title="Opciones de la pista"
             items={[
+              ...(onShowInfo
+                ? [
+                    {
+                      label: "Información de la pista",
+                      icon: <Info className="h-3.5 w-3.5 text-primary" />,
+                      onClick: () => onShowInfo(track),
+                    },
+                  ]
+                : []),
               {
                 label: "Copiar enlace de YouTube",
                 icon: <LinkIcon className="h-3.5 w-3.5" />,
@@ -502,6 +578,8 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = React.memo(
 
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [removingTrackId, setRemovingTrackId] = useState<number | null>(null);
+    const [infoPlaylist, setInfoPlaylist] = useState<Playlist | null>(null);
+    const [infoTrack, setInfoTrack] = useState<Track | null>(null);
     const [confirmModal, setConfirmModal] = useState<{
       isOpen: boolean;
       title: string;
@@ -860,8 +938,30 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = React.memo(
                   <ActionMenu
                     title="Opciones de la playlist"
                     items={[
+                      {
+                        label: "Información de la playlist",
+                        icon: <Info className="h-3.5 w-3.5 text-primary" />,
+                        onClick: () => setInfoPlaylist(activePlaylist.playlist),
+                      },
                       ...(activePlaylist.playlist.youtube_playlist_id
                         ? [
+                            {
+                              label: "Copiar enlace de YouTube",
+                              icon: <LinkIcon className="h-3.5 w-3.5" />,
+                              onClick: async () => {
+                                try {
+                                  await navigator.clipboard.writeText(
+                                    `https://www.youtube.com/playlist?list=${activePlaylist.playlist.youtube_playlist_id}`,
+                                  );
+                                  toast.success(
+                                    "Enlace copiado",
+                                    "Enlace de YouTube copiado al portapapeles",
+                                  );
+                                } catch (err) {
+                                  console.error("Error al copiar enlace:", err);
+                                }
+                              },
+                            },
                             {
                               label: "Sincronizar / Redescargar desde YouTube",
                               icon: <Download className="h-3.5 w-3.5 text-primary" />,
@@ -947,6 +1047,7 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = React.memo(
                         playTrack(t, activePlaylist.tracks, activePlaylist.playlist.id)
                       }
                       onRemove={requestRemoveTrack}
+                      onShowInfo={setInfoTrack}
                     />
                   ))}
                 </div>
@@ -1150,6 +1251,7 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = React.memo(
                   onPlay={(id) => void handlePlayPlaylistById(id)}
                   onDeleteRequest={requestDeletePlaylist}
                   onSyncRequest={handleSyncPlaylist}
+                  onInfoRequest={setInfoPlaylist}
                 />
               ))}
             </div>
@@ -1165,6 +1267,7 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = React.memo(
                   onPlay={(id) => void handlePlayPlaylistById(id)}
                   onDeleteRequest={requestDeletePlaylist}
                   onSyncRequest={handleSyncPlaylist}
+                  onInfoRequest={setInfoPlaylist}
                 />
               ))}
             </div>
@@ -1180,6 +1283,18 @@ export const PlaylistsView: React.FC<PlaylistsViewProps> = React.memo(
           isLoading={Boolean(deletingId || removingTrackId)}
           onConfirm={confirmModal.onConfirm}
           onCancel={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+        />
+
+        <PlaylistInfoModal
+          playlist={infoPlaylist}
+          isOpen={Boolean(infoPlaylist)}
+          onClose={() => setInfoPlaylist(null)}
+        />
+
+        <TrackInfoModal
+          track={infoTrack}
+          isOpen={Boolean(infoTrack)}
+          onClose={() => setInfoTrack(null)}
         />
       </section>
     );

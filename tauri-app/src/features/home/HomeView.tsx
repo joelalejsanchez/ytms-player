@@ -5,6 +5,8 @@ import {
   HardDrive,
   Heart,
   History,
+  Info,
+  Link,
   ListMusic,
   Music,
   Pause,
@@ -17,6 +19,7 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
+import { PlaylistInfoModal } from "@/features/playlists/PlaylistInfoModal";
 import { Badge, Button } from "@/components/ui/Primitives";
 import {
   cn,
@@ -49,6 +52,7 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
     isOpen: boolean;
     playlist: Playlist | null;
   }>({ isOpen: false, playlist: null });
+  const [infoPlaylist, setInfoPlaylist] = useState<Playlist | null>(null);
   const [isDeletingPlaylist, setIsDeletingPlaylist] = useState(false);
 
   const currentTrack = usePlayerStore((s) => s.currentTrack);
@@ -424,8 +428,30 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
                       <ActionMenu
                         title="Opciones de playlist"
                         items={[
+                          {
+                            label: "Información de la playlist",
+                            icon: <Info className="h-3.5 w-3.5 text-primary" />,
+                            onClick: () => setInfoPlaylist(playlist),
+                          },
                           ...(playlist.youtube_playlist_id
                             ? [
+                                {
+                                  label: "Copiar enlace de YouTube",
+                                  icon: <Link className="h-3.5 w-3.5" />,
+                                  onClick: async () => {
+                                    try {
+                                      await navigator.clipboard.writeText(
+                                        `https://www.youtube.com/playlist?list=${playlist.youtube_playlist_id}`,
+                                      );
+                                      toast.success(
+                                        "Enlace copiado",
+                                        "Enlace de YouTube copiado al portapapeles",
+                                      );
+                                    } catch (err) {
+                                      console.error("Error al copiar enlace:", err);
+                                    }
+                                  },
+                                },
                                 {
                                   label: "Sincronizar / Redescargar",
                                   icon: (
@@ -703,6 +729,12 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
         isLoading={isDeletingPlaylist}
         onConfirm={() => void handleConfirmDeletePlaylist()}
         onCancel={() => setDeleteConfirmModal({ isOpen: false, playlist: null })}
+      />
+
+      <PlaylistInfoModal
+        playlist={infoPlaylist}
+        isOpen={Boolean(infoPlaylist)}
+        onClose={() => setInfoPlaylist(null)}
       />
     </div>
   );

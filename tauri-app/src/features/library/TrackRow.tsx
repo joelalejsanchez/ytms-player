@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   FolderPlus,
   Heart,
+  Info,
   Link,
   ListPlus,
   Music,
@@ -15,6 +16,7 @@ import { PlaylistBookmarkMenu } from "@/components/ui/PlaylistBookmarkMenu";
 import { Badge, Button } from "@/components/ui/Primitives";
 import { formatDuration, toAssetUrl } from "@/lib/utils";
 import { usePlayerStore } from "@/stores/usePlayerStore";
+import { toast } from "@/stores/useToastStore";
 import type { TrackSyncInfo } from "@/stores/useLibraryStore";
 import type { Playlist, Track } from "@/types/models";
 
@@ -36,6 +38,7 @@ export interface TrackRowProps {
     willAdd: boolean,
   ) => void | Promise<void>;
   onAddToPlaylist?: (playlistId: number, trackId: number) => void;
+  onShowInfo?: (track: Track) => void;
 }
 
 /**
@@ -56,6 +59,7 @@ export const TrackRow = React.memo(
     onToggleLike,
     onDelete,
     onTogglePlaylist,
+    onShowInfo,
   }: TrackRowProps) => {
     const thumbUrl = toAssetUrl(track.thumbnail_path);
     const isLocal = track.origin === "local";
@@ -233,15 +237,28 @@ export const TrackRow = React.memo(
             isLoading={isDeleting}
             title="Opciones de la canción"
             items={[
+              ...(onShowInfo
+                ? [
+                    {
+                      label: "Información de la pista",
+                      icon: <Info className="h-3.5 w-3.5 text-primary" />,
+                      onClick: () => onShowInfo(track),
+                    },
+                  ]
+                : []),
               ...(!isLocal
                 ? [
                     {
-                      label: "Copiar enlace",
+                      label: "Copiar enlace de YouTube",
                       icon: <Link className="h-3.5 w-3.5" />,
                       onClick: async () => {
                         try {
                           await navigator.clipboard.writeText(
                             `https://www.youtube.com/watch?v=${track.youtube_id}`,
+                          );
+                          toast.success(
+                            "Enlace copiado",
+                            "Enlace de YouTube copiado al portapapeles",
                           );
                         } catch (err) {
                           console.error(

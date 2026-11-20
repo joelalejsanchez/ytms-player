@@ -12,10 +12,6 @@ _(No hay tareas pendientes en esta categoría actualmente)._
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
-- [ ] **Ampliación de opciones en el menú contextual de 3 puntos (`ActionMenu`):**
-  - **Información detallada de la pista (Track Info):** Modal o panel lateral para inspeccionar los metadatos completos del archivo (codec de audio, bitrate, frecuencia de muestreo, tamaño en disco, fecha de descarga, ID original y enlace directo de YouTube).
-  - **Información y estadísticas de Playlist:** Modal con duración total acumulada (horas/minutos), recuento de temas, tamaño estimado en disco, ID de sincronización y enlace original a YouTube.
-  - **Copiar enlace de YouTube al portapapeles:** Acción rápida en el menú contextual para compartir o abrir en el navegador.
 - [ ] **Empaquetado y distribución nativa para Windows (`.msi` / `.exe`):**
   - Configurar pipeline de empaquetado Tauri con WebView2 Runtime y validación de paths en PowerShell.
 - [ ] **Normalización de volumen de audio (ReplayGain / EBU R128):**
