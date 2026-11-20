@@ -11,6 +11,7 @@ import {
   Play,
   Plus,
   Sparkles,
+  Youtube,
 } from "lucide-react";
 import React, { useEffect, useMemo } from "react";
 import { Badge, Button } from "@/components/ui/Primitives";
@@ -331,6 +332,17 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
                       </div>
                     )}
 
+                    {/* Insignia indicadora de sincronización con YouTube */}
+                    {playlist.youtube_playlist_id && (
+                      <div
+                        className="absolute top-2 left-2 flex items-center gap-1 rounded-md bg-black/60 backdrop-blur-xs px-1.5 py-0.5 text-[10px] font-medium text-red-400 border border-white/10 shadow-xs"
+                        title="Sincronizada con YouTube"
+                      >
+                        <Youtube className="h-3 w-3 fill-current text-red-500" />
+                        <span>YouTube</span>
+                      </div>
+                    )}
+
                     {/* Botón flotante de Quick Play */}
                     {hasTracks ? (
                       <button
@@ -379,25 +391,26 @@ export const HomeView: React.FC<HomeViewProps> = React.memo(({ onNavigate }) => 
                     )}
                   </div>
 
-                  {/* Título y Metadatos */}
-                  <h3
-                    className="truncate text-sm font-semibold text-foreground group-hover:text-primary"
-                    title={playlist.title}
-                  >
-                    {playlist.title}
-                  </h3>
-
-                  <div className="mt-1 flex items-center justify-between text-2xs text-muted-foreground">
-                    <span>
-                      {playlist.track_count}{" "}
-                      {playlist.track_count === 1 ? "canción" : "canciones"}
-                    </span>
+                  {/* Fila superior: Título de la playlist y Duración acumulada en la misma línea */}
+                  <div className="flex items-baseline justify-between gap-2 min-w-0">
+                    <h3
+                      className="truncate text-sm font-semibold text-foreground group-hover:text-primary transition-colors"
+                      title={playlist.title}
+                    >
+                      {playlist.title}
+                    </h3>
                     {playlist.computedDuration > 0 && (
-                      <span className="font-medium text-foreground/80">
+                      <span className="shrink-0 text-[10px] font-medium text-muted-foreground">
                         {formatHumanDuration(playlist.computedDuration)}
                       </span>
                     )}
                   </div>
+
+                  {/* Fila inferior: Conteo de canciones justo debajo */}
+                  <p className="mt-0.5 text-[10px] text-muted-foreground">
+                    {playlist.track_count}{" "}
+                    {playlist.track_count === 1 ? "canción" : "canciones"}
+                  </p>
                 </div>
               );
             })}

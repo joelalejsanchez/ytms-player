@@ -50,10 +50,6 @@ Este documento registra las características, mejoras y extensiones que **no est
   - **Descarte por teclado e interacciones:** Implementar cierre consistente mediante la tecla `Escape` y bloqueo estricto de eventos de puntero en el fondo (`inert` o backdrop con bloqueo de clics/taps).
   - **Atributos semánticos ARIA:** Garantizar `role="dialog"` o `role="alertdialog"`, `aria-modal="true"`, `aria-labelledby` y `aria-describedby` en todos los componentes modales y menús contextuales.
 
-- [ ] **Alineación de metadatos en cards de Playlists (`HomeView`):**
-  - En las tarjetas de playlist de la pantalla de inicio, ubicar en la misma fila horizontal el título de la playlist y su duración acumulada.
-  - Ubicar el conteo de canciones justo debajo de ambos elementos en una segunda línea para mayor legibilidad y orden visual.
-
 - [ ] **Modernización y controles en la vista de Descargas (`DownloadsView`):**
   - **Switch selector para Mix/Playlist vs Solo canción:** Al detectar una URL de lista o mix de YouTube, sustituir los radio buttons por un switch toggle moderno de 2 estados. A la izquierda: _"Solo la canción"_ (removiendo el texto "Recomendado"); a la derecha: _"Mix completo / Lista completa"_. Destacar visualmente con tipografía y color la opción activa seleccionada.
   - **Acción rápida para limpiar historial:** Simplificar la limpieza de descargas sustituyendo el menú contextual de tres puntos actual por un botón directo de _"Limpiar historial"_ con icono de escoba (`Broom` / `Eraser` / `Trash`).

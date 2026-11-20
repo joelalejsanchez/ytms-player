@@ -8,6 +8,9 @@ export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      fontSize: {
+        "2xs": ["10px", { lineHeight: "14px" }],
+      },
       colors: {
         background: withOpacity("--background"),
         foreground: withOpacity("--foreground"),

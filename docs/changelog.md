@@ -6,6 +6,20 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.6] - 2026-11-20
+
+### Mejorado
+
+#### Unificación Visual de Metadatos e Insignia de YouTube en Playlists (`HomeView` y `PlaylistsView`)
+- **Alineación y jerarquía visual uniforme de metadatos**:
+  - Reubicación del título de la playlist y de su duración acumulada calculada en la misma fila horizontal superior mediante contenedor flex (`items-baseline justify-between`), permitiendo identificar la extensión total de la lista de un vistazo.
+  - Reubicación del conteo de canciones en una segunda línea independiente inferior en ambas vistas (`HomeView` y `PlaylistsView`), calibrado con tipografía balanceada (`text-[10px]`) sin solapamientos.
+- **Insignia indicadora de sincronización y supresión de ID crudo**:
+  - Supresión definitiva de los identificadores crudos de YouTube (`<code>PL...</code>`) en tarjetas y filas de playlists.
+  - Incorporación de una insignia visual elegante y distintiva con el icono oficial de YouTube (`Youtube`) superpuesta con efecto translúcido (`bg-black/60 backdrop-blur-xs`) en la carátula de las tarjetas (cuadrícula) y como pastilla suave (`bg-red-500/10`) en las filas de lista y cabecera de detalle, identificando con claridad el origen de sincronización sin saturar la interfaz.
+
+---
+
 ## [1.9.5] - 2026-11-20
 
 ### Añadido

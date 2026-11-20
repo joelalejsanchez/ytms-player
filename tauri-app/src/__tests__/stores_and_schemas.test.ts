@@ -792,7 +792,8 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       expect(screen.getByText("Tus Playlists")).toBeInTheDocument();
       expect(screen.getByText("Synthwave Vibes")).toBeInTheDocument();
       expect(screen.getByText("Lo-Fi Study")).toBeInTheDocument();
-      expect(screen.getByText("PL1234567890")).toBeInTheDocument();
+      expect(screen.getByTitle("Sincronizada con YouTube")).toBeInTheDocument();
+      expect(screen.queryByText("PL1234567890")).not.toBeInTheDocument();
       expect(screen.getByTitle("Vista en cuadrícula")).toBeInTheDocument();
       expect(screen.getByTitle("Vista en lista")).toBeInTheDocument();
     });
@@ -931,6 +932,33 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       fireEvent.click(emptyBtn);
       // No debe redirigir a playlists
       expect(onNavigate).not.toHaveBeenCalled();
+    });
+
+    it("aligns playlist title and duration horizontally on first line and song count on second line", () => {
+      const onNavigate = vi.fn();
+      render(React.createElement(HomeView, { onNavigate }));
+
+      // Buscar tarjeta de playlist 1 ("Rock Classics")
+      const titleEl = screen.getByTitle("Rock Classics");
+      expect(titleEl).toBeInTheDocument();
+
+      // El contenedor padre debe tener flex items-baseline justify-between y contener la duración
+      const headerRow = titleEl.closest("div");
+      expect(headerRow).not.toBeNull();
+      expect(headerRow?.className).toContain("flex");
+      expect(headerRow?.className).toContain("items-baseline");
+      expect(headerRow?.className).toContain("justify-between");
+
+      // La duración acumulada debe estar en la misma fila horizontal
+      const durationSpan = headerRow?.querySelector("span");
+      expect(durationSpan).not.toBeNull();
+      expect(durationSpan?.textContent).toBe(formatHumanDuration(sampleTrack.duration));
+
+      // El conteo de canciones debe ubicarse como elemento hermano inmediatamente después
+      const countEl = headerRow?.nextElementSibling;
+      expect(countEl).not.toBeNull();
+      expect(countEl?.tagName.toLowerCase()).toBe("p");
+      expect(countEl?.textContent).toContain("1 canción");
     });
   });
 

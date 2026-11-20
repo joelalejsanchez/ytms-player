@@ -79,6 +79,17 @@ const PlaylistCard = React.memo(
             </div>
           )}
 
+          {/* Insignia indicadora de sincronización con YouTube */}
+          {playlist.youtube_playlist_id && (
+            <div
+              className="absolute top-2 left-2 flex items-center gap-1 rounded-md bg-black/60 backdrop-blur-xs px-1.5 py-0.5 text-[10px] font-medium text-red-400 border border-white/10 shadow-xs"
+              title="Sincronizada con YouTube"
+            >
+              <Youtube className="h-3 w-3 fill-current text-red-500" />
+              <span>YouTube</span>
+            </div>
+          )}
+
           {/* Botón flotante de Quick Play */}
           {playlist.track_count > 0 ? (
             <button
@@ -123,14 +134,21 @@ const PlaylistCard = React.memo(
           )}
         </div>
 
-        {/* Fila de Título y Menú */}
+        {/* Fila superior: Título de la playlist y Duración acumulada en la misma línea + Menú de opciones */}
         <div className="flex items-start justify-between gap-1.5 min-w-0">
-          <h3
-            className="truncate text-sm font-semibold text-foreground group-hover:text-primary transition-colors flex-1"
-            title={playlist.title}
-          >
-            {playlist.title}
-          </h3>
+          <div className="flex items-baseline justify-between gap-2 min-w-0 flex-1">
+            <h3
+              className="truncate text-sm font-semibold text-foreground group-hover:text-primary transition-colors"
+              title={playlist.title}
+            >
+              {playlist.title}
+            </h3>
+            {duration > 0 && (
+              <span className="shrink-0 text-[10px] font-medium text-muted-foreground">
+                {formatHumanDuration(duration)}
+              </span>
+            )}
+          </div>
           <div onClick={(e) => e.stopPropagation()} className="shrink-0 -mr-1">
             <ActionMenu
               title="Opciones de playlist"
@@ -146,26 +164,10 @@ const PlaylistCard = React.memo(
           </div>
         </div>
 
-        {/* Conteo y Duración */}
-        <div className="mt-1 flex items-center justify-between text-2xs text-muted-foreground">
-          <span>
-            {playlist.track_count}{" "}
-            {playlist.track_count === 1 ? "canción" : "canciones"}
-          </span>
-          {duration > 0 && (
-            <span className="font-medium text-foreground/80">
-              {formatHumanDuration(duration)}
-            </span>
-          )}
-        </div>
-
-        {playlist.youtube_playlist_id && (
-          <div className="mt-2 flex items-center gap-1">
-            <code className="truncate rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground max-w-full">
-              {playlist.youtube_playlist_id}
-            </code>
-          </div>
-        )}
+        {/* Fila inferior: Conteo de canciones justo debajo */}
+        <p className="mt-0.5 text-[10px] text-muted-foreground">
+          {playlist.track_count} {playlist.track_count === 1 ? "canción" : "canciones"}
+        </p>
       </div>
     );
   },
@@ -254,22 +256,26 @@ const PlaylistRow = React.memo(
               {playlist.title}
             </h3>
             <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-              <span>
+              <span className="text-[10px]">
                 {playlist.track_count}{" "}
                 {playlist.track_count === 1 ? "canción" : "canciones"}
               </span>
               {duration > 0 && (
                 <>
                   <span>·</span>
-                  <span>{formatHumanDuration(duration)}</span>
+                  <span className="text-[10px]">{formatHumanDuration(duration)}</span>
                 </>
               )}
               {playlist.youtube_playlist_id && (
                 <>
                   <span>·</span>
-                  <code className="rounded bg-muted px-1 text-[10px] text-muted-foreground">
-                    {playlist.youtube_playlist_id}
-                  </code>
+                  <span
+                    className="inline-flex items-center gap-1 rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-500"
+                    title="Sincronizada con YouTube"
+                  >
+                    <Youtube className="h-2.5 w-2.5 fill-current" />
+                    <span>YouTube</span>
+                  </span>
                 </>
               )}
             </div>
@@ -752,10 +758,13 @@ export const PlaylistsView = React.memo(() => {
                 {activePlaylist.playlist.youtube_playlist_id && (
                   <>
                     <span>·</span>
-                    <code className="rounded bg-muted px-2 py-0.5 text-[11px] text-muted-foreground flex items-center gap-1">
-                      <Youtube className="h-3 w-3 text-red-500" />
-                      {activePlaylist.playlist.youtube_playlist_id}
-                    </code>
+                    <span
+                      className="inline-flex items-center gap-1 rounded bg-red-500/10 px-2 py-0.5 text-[11px] font-medium text-red-500"
+                      title="Sincronizada con YouTube"
+                    >
+                      <Youtube className="h-3 w-3 fill-current" />
+                      <span>YouTube</span>
+                    </span>
                   </>
                 )}
               </div>
