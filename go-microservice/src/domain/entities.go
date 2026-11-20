@@ -61,6 +61,10 @@ type PlaylistPreviewResponse struct {
 	TargetID      string                `json:"target_id"`
 	PlaylistTitle string                `json:"playlist_title,omitempty"`
 	Items         []PlaylistPreviewItem `json:"items"`
+	HasMore       bool                  `json:"has_more"`
+	StartIndex    int                   `json:"start_index"`
+	EndIndex      int                   `json:"end_index"`
+	TotalTracks   *int                  `json:"total_tracks,omitempty"`
 }
 
 // SearchResultItem representa un resultado de búsqueda de canciones en YouTube.

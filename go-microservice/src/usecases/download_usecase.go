@@ -32,22 +32,40 @@ func (uc *DownloadUseCase) SearchTracks(ctx context.Context, query string, limit
 	return uc.downloader.SearchTracks(ctx, trimmed, limit)
 }
 
-// PreviewURL extrae la lista de temas en una sola operación bulk de yt-dlp sin descargar audio.
-func (uc *DownloadUseCase) PreviewURL(ctx context.Context, rawURL string) (*domain.PlaylistPreviewResponse, error) {
+// PreviewURL extrae la lista de temas paginada de yt-dlp por rango sin descargar audio ni saturar memoria.
+func (uc *DownloadUseCase) PreviewURL(ctx context.Context, rawURL string, start int, end int) (*domain.PlaylistPreviewResponse, error) {
 	contentType, targetID, err := domain.ParseYouTubeURL(rawURL)
 	if err != nil {
 		return nil, err
 	}
 
-	items, err := uc.downloader.FetchMetadata(ctx, rawURL)
+	if start <= 0 {
+		start = 1
+	}
+	if end <= 0 {
+		end = 50
+	}
+
+	limit := end - start + 1
+	// Consultamos 1 elemento extra para determinar de forma determinista si existen más canciones sin traer la lista completa
+	items, err := uc.downloader.FetchMetadata(ctx, rawURL, start, end+1)
 	if err != nil {
 		return nil, fmt.Errorf("failed to preview url: %w", err)
 	}
 
+	hasMore := len(items) > limit
+	if hasMore {
+		items = items[:limit]
+	}
+
 	previewItems := make([]domain.PlaylistPreviewItem, 0, len(items))
 	playlistTitle := ""
+	var totalTracks *int
 
 	for _, item := range items {
+		if totalTracks == nil && item.PlaylistCount != nil && *item.PlaylistCount > 0 {
+			totalTracks = item.PlaylistCount
+		}
 		if playlistTitle == "" && item.PlaylistTitle != "" {
 			playlistTitle = item.PlaylistTitle
 		}
@@ -59,11 +77,20 @@ func (uc *DownloadUseCase) PreviewURL(ctx context.Context, rawURL string) (*doma
 		})
 	}
 
+	endIdx := start
+	if len(previewItems) > 0 {
+		endIdx = start + len(previewItems) - 1
+	}
+
 	return &domain.PlaylistPreviewResponse{
 		ContentType:   contentType,
 		TargetID:      targetID,
 		PlaylistTitle: playlistTitle,
 		Items:         previewItems,
+		HasMore:       hasMore,
+		StartIndex:    start,
+		EndIndex:      endIdx,
+		TotalTracks:   totalTracks,
 	}, nil
 }
 
@@ -215,7 +242,7 @@ func (uc *DownloadUseCase) executeDownload(ctx context.Context, taskID string, r
 				FileSize:      size,
 			}
 			// Intentar enriquecer metadatos si el adaptador lo permite sin fallar si no hay red
-			if items, metaErr := uc.downloader.FetchMetadata(ctx, req.URL); metaErr == nil && len(items) > 0 {
+			if items, metaErr := uc.downloader.FetchMetadata(ctx, req.URL, 0, 0); metaErr == nil && len(items) > 0 {
 				meta.Title = nonEmpty(items[0].Title, targetID)
 				meta.Artist = nonEmpty(items[0].Artist, "Unknown Artist")
 				meta.Duration = items[0].Duration
@@ -251,7 +278,7 @@ func (uc *DownloadUseCase) executeDownload(ctx context.Context, taskID string, r
 	}
 
 	// Paso 2: Obtener lista de elementos (1 video o N items de playlist)
-	rawItems, err := uc.downloader.FetchMetadata(ctx, req.URL)
+	rawItems, err := uc.downloader.FetchMetadata(ctx, req.URL, 0, 0)
 	if err != nil {
 		uc.publishEvent(domain.ProgressEvent{
 			TaskID:    taskID,

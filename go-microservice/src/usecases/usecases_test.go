@@ -18,7 +18,7 @@ type mockDownloader struct {
 	mu            sync.Mutex
 }
 
-func (m *mockDownloader) FetchMetadata(_ context.Context, _ string) ([]domain.RawDownloadedItem, error) {
+func (m *mockDownloader) FetchMetadata(_ context.Context, _ string, _ int, _ int) ([]domain.RawDownloadedItem, error) {
 	if m.downloadErr != nil {
 		return nil, m.downloadErr
 	}

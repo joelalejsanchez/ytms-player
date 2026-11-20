@@ -16,11 +16,12 @@ type RawDownloadedItem struct {
 	RawThumbnailPath string
 	PlaylistID       string
 	PlaylistTitle    string
+	PlaylistCount    *int
 }
 
 // DownloaderPort define el contrato para el motor de extracción y descarga desde YouTube (yt-dlp).
 type DownloaderPort interface {
-	FetchMetadata(ctx context.Context, rawURL string) ([]RawDownloadedItem, error)
+	FetchMetadata(ctx context.Context, rawURL string, start int, end int) ([]RawDownloadedItem, error)
 	SearchTracks(ctx context.Context, query string, limit int) ([]SearchResultItem, error)
 	DownloadTrack(
 		ctx context.Context,

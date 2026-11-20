@@ -6,6 +6,29 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.17] - 2026-11-20
+
+### Añadido
+
+#### Carga Progresiva Remota, Paginación Incremental y Búsqueda en Previsualización de Playlists y Mixes (`PlaylistImportModal`)
+- **Paginación remota real en el backend (`yt-dlp` & Go Microservice)**:
+  - Implementado el parámetro de rango `--playlist-items {start}:{end}` en `YtDlpAdapter` y en el endpoint `GET /api/download/preview?url=...&start=1&end=50`.
+  - La consulta inicial a YouTube solicita exclusivamente las primeras 50 canciones y aborta la paginación de inmediato, reduciendo a milisegundos la respuesta sin descargar metadatos ni saturar la memoria para listas de cientos o miles de canciones.
+  - Soporte de consulta y serialización de rangos en Rust (`MicroserviceClientPort::preview_url`), Tauri IPC (`preview_playlist_url`) y cliente frontend (`tauriApi.previewPlaylistUrl(url, start, end)`).
+- **Carga remota por demanda (Lazy Loading) y descarga acotada al rango visible**:
+  - Al abrir el modal se solicita únicamente el bloque inicial (`1..50`).
+  - Al pulsar *"Cargar 50 más"*, se consulta remotamente el bloque siguiente (`51..100`), anexándolo a la vista y memoria de forma fluida.
+  - La selección y las acciones de descarga quedan estrictamente restringidas a las canciones efectivamente cargadas y previsualizadas en pantalla, impidiendo la descarga involuntaria de temas no visibles en listas masivas.
+- **Buscador interno instantáneo**:
+  - Filtro interactivo en tiempo real con icono `Search` y botón rápido de limpieza `X` que busca por título, artista o ID sobre los elementos actualmente en memoria.
+  - Mantiene el índice original de cada pista en la lista remota incluso bajo resultados filtrados.
+- **Acciones masivas de selección acotadas al conjunto cargado**:
+  - Selectores rápidos (`Todas`, `< 15 min`, `< 7 min`, `Ninguna`) y presets de duración que operan estrictamente sobre las canciones cargadas en el DOM (o coincidencias del filtro activo).
+  - Contador de selección transparente e informativo (`X de Y cargadas seleccionadas (de Z en total)`).
+  - El botón de acción final refleja con total claridad la cantidad exacta de descargas a procesar respecto al total cargado.
+
+---
+
 ## [1.9.16] - 2026-11-20
 
 ### Mejorado

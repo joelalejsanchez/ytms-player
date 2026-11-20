@@ -499,7 +499,7 @@ mod tests {
             fn get_oauth_status(&self) -> DomainResult<OAuthStatusDto> { unimplemented!() }
             fn logout_oauth(&self) -> DomainResult<()> { unimplemented!() }
             fn rate_video(&self, _: &str, _: &str) -> DomainResult<()> { unimplemented!() }
-            fn preview_url(&self, _: &str) -> DomainResult<PlaylistPreviewDto> { unimplemented!() }
+            fn preview_url(&self, _: &str, _: Option<u32>, _: Option<u32>) -> DomainResult<PlaylistPreviewDto> { unimplemented!() }
             fn search_tracks(&self, _: &str) -> DomainResult<Vec<SearchResultItemDto>> { Ok(Vec::new()) }
         }
 

@@ -12,11 +12,6 @@ _(No hay tareas pendientes en esta categoría actualmente)._
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
-- [ ] **Carga progresiva y paginación en previsualización de Playlists y Mixes (`PlaylistImportModal` / `DownloadsView`):**
-  - **Problema de rendimiento:** Al previsualizar listas de reproducción o mixes extensos de YouTube (que pueden contener cientos de canciones), renderizar todos los elementos de golpe provoca saturación del DOM, latencia en la apertura del modal y lentitud en el scroll.
-  - **Paginación progresiva de 50 en 50:** Limitar la visualización inicial de la lista a las primeras 50 canciones.
-  - **Botón de carga incremental:** Incluir al final de la lista un botón interactivo _"Cargar 50 más"_ (o mostrar el recuento de temas restantes) que agregue el siguiente bloque de 50 canciones de manera fluida hasta completar la totalidad de la lista previsualizada, optimizando el rendimiento y la memoria.
-
 - [ ] **Flujo de importación de Playlist en 2 pasos con navegación visual e iconos (`PlaylistImportModal` / `DownloadsView`):**
   - **Separación modular del flujo (Wizard Stepper):** Para facilitar la revisión de las canciones y evitar sobrecargar el modal con selectores de destino simultáneos, dividir la decisión en un asistente de 2 pasos:
     1. **Paso 1 (Selección y revisión de pistas):** Vista dedicada a revisar canciones previsualizadas, seleccionar/deseleccionar pistas en lote y verificar canciones ya descargadas.

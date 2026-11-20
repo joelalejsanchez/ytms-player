@@ -103,7 +103,7 @@ func TestYtDlpAdapter_ProgressAndMetadata(t *testing.T) {
 	}
 
 	adapter := NewYtDlpAdapter(execMock, cookiesFile)
-	items, err := adapter.FetchMetadata(context.Background(), "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+	items, err := adapter.FetchMetadata(context.Background(), "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 0, 0)
 	if err != nil {
 		t.Fatalf("FetchMetadata failed: %v", err)
 	}

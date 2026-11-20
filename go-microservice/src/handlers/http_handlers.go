@@ -125,7 +125,21 @@ func (h *APIHandler) HandlePreview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	preview, err := h.downloadUC.PreviewURL(r.Context(), targetURL)
+	start := 1
+	if sStr := strings.TrimSpace(r.URL.Query().Get("start")); sStr != "" {
+		if s, err := strconv.Atoi(sStr); err == nil && s > 0 {
+			start = s
+		}
+	}
+
+	end := start + 49
+	if eStr := strings.TrimSpace(r.URL.Query().Get("end")); eStr != "" {
+		if e, err := strconv.Atoi(eStr); err == nil && e >= start {
+			end = e
+		}
+	}
+
+	preview, err := h.downloadUC.PreviewURL(r.Context(), targetURL, start, end)
 	if err != nil {
 		writeJSONError(w, http.StatusBadRequest, "preview_failed", err.Error())
 		return

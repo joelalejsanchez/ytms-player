@@ -142,13 +142,16 @@ pub fn confirm_sse_download(
 }
 
 /// Obtiene la previsualización de una playlist o mix sin descargar los audios (SDD 6.1).
+/// Soporta paginación remota por rango (start..end) para optimizar el uso de red y memoria.
 #[tauri::command]
 pub async fn preview_playlist_url(
     url: String,
+    start: Option<u32>,
+    end: Option<u32>,
     state: State<'_, AppState>,
 ) -> DomainResult<PlaylistPreviewDto> {
     let client = state.microservice_client()?;
-    tokio::task::spawn_blocking(move || client.preview_url(&url))
+    tokio::task::spawn_blocking(move || client.preview_url(&url, start, end))
         .await
         .map_err(|e| DomainError::MicroserviceError(format!("Preview execution failed: {e}")))?
 }
@@ -617,7 +620,7 @@ pub async fn adopt_orphan_file(
         if let Some(client) = client {
             if youtube_id.trim().len() == 11 {
                 if let Ok(preview) =
-                    client.preview_url(&format!("https://www.youtube.com/watch?v={youtube_id}"))
+                    client.preview_url(&format!("https://www.youtube.com/watch?v={youtube_id}"), None, None)
                 {
                     if let Some(item) = preview.items.into_iter().next() {
                         if !item.title.trim().is_empty() {
@@ -682,7 +685,7 @@ pub async fn refresh_track_metadata(
 
     tokio::task::spawn_blocking(move || {
         let preview =
-            client.preview_url(&format!("https://www.youtube.com/watch?v={youtube_id}"))?;
+            client.preview_url(&format!("https://www.youtube.com/watch?v={youtube_id}"), None, None)?;
         let item = preview.items.into_iter().next().ok_or_else(|| {
             DomainError::ValidationError(format!("No metadata found for {youtube_id} on YouTube"))
         })?;

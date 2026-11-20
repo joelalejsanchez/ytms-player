@@ -40,6 +40,7 @@ type ytdlpJSONEntry struct {
 	UploadDate    string  `json:"upload_date"`
 	PlaylistID    string  `json:"playlist_id"`
 	PlaylistTitle string  `json:"playlist_title"`
+	PlaylistCount *int    `json:"playlist_count"`
 }
 
 func (a *YtDlpAdapter) appendCookieArgs(args []string) []string {
@@ -57,12 +58,16 @@ func (a *YtDlpAdapter) appendCookieArgs(args []string) []string {
 }
 
 // FetchMetadata obtiene los metadatos de un video o los elementos de una playlist sin exponer credenciales.
-func (a *YtDlpAdapter) FetchMetadata(ctx context.Context, rawURL string) ([]domain.RawDownloadedItem, error) {
+// Si start > 0 y end >= start, restringe la descarga de metadatos al rango mediante --playlist-items.
+func (a *YtDlpAdapter) FetchMetadata(ctx context.Context, rawURL string, start int, end int) ([]domain.RawDownloadedItem, error) {
 	args := []string{
 		"--dump-json",
 		"--flat-playlist",
 		"--no-warnings",
 		"--no-call-home",
+	}
+	if start > 0 && end >= start {
+		args = append(args, "--playlist-items", fmt.Sprintf("%d:%d", start, end))
 	}
 	args = a.appendCookieArgs(args)
 	args = append(args, "--", rawURL)
@@ -96,6 +101,7 @@ func (a *YtDlpAdapter) FetchMetadata(ctx context.Context, rawURL string) ([]doma
 			UploadDate:    entry.UploadDate,
 			PlaylistID:    entry.PlaylistID,
 			PlaylistTitle: entry.PlaylistTitle,
+			PlaylistCount: entry.PlaylistCount,
 		})
 	}
 

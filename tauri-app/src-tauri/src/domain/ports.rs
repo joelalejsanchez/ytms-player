@@ -104,6 +104,11 @@ pub trait MicroserviceClientPort: Send + Sync {
     fn get_oauth_status(&self) -> DomainResult<OAuthStatusDto>;
     fn logout_oauth(&self) -> DomainResult<()>;
     fn rate_video(&self, youtube_id: &str, rating: &str) -> DomainResult<()>;
-    fn preview_url(&self, url: &str) -> DomainResult<crate::domain::entities::PlaylistPreviewDto>;
+    fn preview_url(
+        &self,
+        url: &str,
+        start: Option<u32>,
+        end: Option<u32>,
+    ) -> DomainResult<crate::domain::entities::PlaylistPreviewDto>;
     fn search_tracks(&self, query: &str) -> DomainResult<Vec<SearchResultItemDto>>;
 }

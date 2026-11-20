@@ -1,12 +1,14 @@
 import {
   AlertCircle,
   CheckCircle2,
+  ChevronDown,
   Clock,
   Download,
   FolderPlus,
   Library,
   ListMusic,
   Loader2,
+  Search,
   X,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -34,6 +36,8 @@ export interface PlaylistImportModalProps {
   onSuccess: () => Promise<void>;
 }
 
+export const ITEMS_PER_PAGE = 50;
+
 export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
   isOpen,
   onClose,
@@ -57,7 +61,9 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<number | null>(null);
   const [unlinkRemoved, setUnlinkRemoved] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [selectedTrackIds, setSelectedTrackIds] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
   const modalRef = useRef<HTMLDivElement>(null);
 
   useModalA11y({
@@ -72,11 +78,117 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
     return new Set(libraryTracks.map((t) => t.youtube_id));
   }, [libraryTracks]);
 
-  // Canciones actualmente seleccionadas por el usuario
+  // Mapa de índice original para mantener numeración consistente aun con filtros
+  const itemIndexMap = useMemo(() => {
+    if (!previewData) return new Map<string, number>();
+    const map = new Map<string, number>();
+    previewData.items.forEach((item, idx) => {
+      map.set(item.youtube_id, idx + 1);
+    });
+    return map;
+  }, [previewData]);
+
+  // Filtrado de canciones por búsqueda interna
+  const filteredItems = useMemo(() => {
+    if (!previewData) return [];
+    if (!searchQuery.trim()) return previewData.items;
+    const q = searchQuery.toLowerCase().trim();
+    return previewData.items.filter(
+      (item) =>
+        (item.title && item.title.toLowerCase().includes(q)) ||
+        (item.artist && item.artist.toLowerCase().includes(q)) ||
+        (item.youtube_id && item.youtube_id.toLowerCase().includes(q)),
+    );
+  }, [previewData, searchQuery]);
+
+  // Canciones visibles (coincidentes con la búsqueda sobre los elementos actualmente en memoria)
+  const visibleItems = useMemo(() => {
+    return filteredItems;
+  }, [filteredItems]);
+
+  // Carga remota incremental del siguiente bloque de 50 canciones sin saturar red ni memoria
+  const handleLoadMore = useCallback(async () => {
+    if (!previewData || isLoadingMore || !previewData.has_more) return;
+    setIsLoadingMore(true);
+    try {
+      const nextStart = previewData.items.length + 1;
+      const nextEnd = nextStart + ITEMS_PER_PAGE - 1;
+      const nextBatch = await tauriApi.previewPlaylistUrl(
+        url.trim(),
+        nextStart,
+        nextEnd,
+      );
+
+      if (nextBatch.items.length > 0) {
+        setPreviewData((prev) => {
+          if (!prev) return nextBatch;
+          return {
+            ...prev,
+            items: [...prev.items, ...nextBatch.items],
+            has_more: nextBatch.has_more ?? false,
+            start_index: prev.start_index ?? 1,
+            end_index:
+              nextBatch.end_index ?? prev.items.length + nextBatch.items.length,
+          };
+        });
+
+        setSelectedTrackIds((current) => {
+          const next = new Set(current);
+          nextBatch.items
+            .filter((item) => (item.duration || 0) < 420)
+            .forEach((item) => next.add(item.youtube_id));
+          return next;
+        });
+      } else {
+        setPreviewData((prev) => (prev ? { ...prev, has_more: false } : null));
+      }
+    } catch (err) {
+      console.error("Error loading more preview tracks", err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [previewData, isLoadingMore, url]);
+
+  // Carga remota de todas las canciones restantes por demanda
+  const handleLoadAll = useCallback(async () => {
+    if (!previewData || isLoadingMore || !previewData.has_more) return;
+    setIsLoadingMore(true);
+    try {
+      const nextStart = previewData.items.length + 1;
+      const remainder = await tauriApi.previewPlaylistUrl(url.trim(), nextStart, 9999);
+
+      if (remainder.items.length > 0) {
+        setPreviewData((prev) => {
+          if (!prev) return remainder;
+          return {
+            ...prev,
+            items: [...prev.items, ...remainder.items],
+            has_more: false,
+          };
+        });
+
+        setSelectedTrackIds((current) => {
+          const next = new Set(current);
+          remainder.items
+            .filter((item) => (item.duration || 0) < 420)
+            .forEach((item) => next.add(item.youtube_id));
+          return next;
+        });
+      } else {
+        setPreviewData((prev) => (prev ? { ...prev, has_more: false } : null));
+      }
+    } catch (err) {
+      console.error("Error loading all remaining preview tracks", err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [previewData, isLoadingMore, url]);
+
+  // Canciones actualmente seleccionadas por el usuario DENTRO del rango visible/cargado en pantalla
   const selectedItems = useMemo(() => {
     if (!previewData) return [];
-    return previewData.items.filter((i) => selectedTrackIds.has(i.youtube_id));
-  }, [previewData, selectedTrackIds]);
+    return visibleItems.filter((i) => selectedTrackIds.has(i.youtube_id));
+  }, [previewData, visibleItems, selectedTrackIds]);
 
   const selectedCount = selectedItems.length;
 
@@ -92,85 +204,85 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
 
   const pendingCount = pendingItems.length;
 
-  // Acciones de selección masiva
+  // Acciones de selección masiva acotadas al conjunto cargado/visible
   const selectAll = useCallback(() => {
-    if (!previewData) return;
-    setSelectedTrackIds(new Set(previewData.items.map((i) => i.youtube_id)));
-  }, [previewData]);
+    setSelectedTrackIds((prev) => {
+      const next = new Set(prev);
+      visibleItems.forEach((i) => next.add(i.youtube_id));
+      return next;
+    });
+  }, [visibleItems]);
 
   const selectUnder15Min = useCallback(() => {
-    if (!previewData) return;
-    setSelectedTrackIds(
-      new Set(
-        previewData.items
-          .filter((i) => (i.duration || 0) < 900)
-          .map((i) => i.youtube_id),
-      ),
-    );
-  }, [previewData]);
+    setSelectedTrackIds((prev) => {
+      const next = new Set(prev);
+      visibleItems
+        .filter((i) => (i.duration || 0) < 900)
+        .forEach((i) => next.add(i.youtube_id));
+      return next;
+    });
+  }, [visibleItems]);
 
   const selectUnder7Min = useCallback(() => {
-    if (!previewData) return;
-    setSelectedTrackIds(
-      new Set(
-        previewData.items
-          .filter((i) => (i.duration || 0) < 420)
-          .map((i) => i.youtube_id),
-      ),
-    );
-  }, [previewData]);
+    setSelectedTrackIds((prev) => {
+      const next = new Set(prev);
+      visibleItems
+        .filter((i) => (i.duration || 0) < 420)
+        .forEach((i) => next.add(i.youtube_id));
+      return next;
+    });
+  }, [visibleItems]);
 
   const deselectAll = useCallback(() => {
-    setSelectedTrackIds(new Set());
-  }, []);
+    setSelectedTrackIds((prev) => {
+      const next = new Set(prev);
+      visibleItems.forEach((i) => next.delete(i.youtube_id));
+      return next;
+    });
+  }, [visibleItems]);
 
-  const totalTracks = previewData?.items.length ?? 0;
+  const visibleTracksUnder7Min = useMemo(() => {
+    return visibleItems.filter((i) => (i.duration || 0) < 420);
+  }, [visibleItems]);
 
-  const tracksUnder7Min = useMemo(() => {
-    if (!previewData) return [];
-    return previewData.items.filter((i) => (i.duration || 0) < 420);
-  }, [previewData]);
+  const visibleTracksUnder15Min = useMemo(() => {
+    return visibleItems.filter((i) => (i.duration || 0) < 900);
+  }, [visibleItems]);
 
-  const tracksUnder15Min = useMemo(() => {
-    if (!previewData) return [];
-    return previewData.items.filter((i) => (i.duration || 0) < 900);
-  }, [previewData]);
-
-  // Precedencia de estilos: Ninguna si 0; Todas si coincide con el total; luego < 7 min o < 15 min
+  // Precedencia de estilos evaluada exclusivamente sobre el rango cargado/visible
   const activePreset = useMemo<"none" | "all" | "7min" | "15min" | null>(() => {
-    if (!previewData || totalTracks === 0) return null;
+    if (visibleItems.length === 0) return null;
 
     if (selectedCount === 0) {
       return "none";
     }
 
-    if (selectedCount === totalTracks) {
+    if (selectedCount === visibleItems.length) {
       return "all";
     }
 
     if (
-      tracksUnder7Min.length > 0 &&
-      selectedCount === tracksUnder7Min.length &&
-      tracksUnder7Min.every((i) => selectedTrackIds.has(i.youtube_id))
+      visibleTracksUnder7Min.length > 0 &&
+      selectedCount === visibleTracksUnder7Min.length &&
+      visibleTracksUnder7Min.every((i) => selectedTrackIds.has(i.youtube_id))
     ) {
       return "7min";
     }
 
     if (
-      tracksUnder15Min.length > 0 &&
-      selectedCount === tracksUnder15Min.length &&
-      tracksUnder15Min.every((i) => selectedTrackIds.has(i.youtube_id))
+      visibleTracksUnder15Min.length > 0 &&
+      selectedCount === visibleTracksUnder15Min.length &&
+      visibleTracksUnder15Min.every((i) => selectedTrackIds.has(i.youtube_id))
     ) {
       return "15min";
     }
 
     return null;
   }, [
-    previewData,
-    totalTracks,
+    visibleItems.length,
     selectedCount,
-    tracksUnder7Min,
-    tracksUnder15Min,
+    visibleTracksUnder7Min,
+    visibleTracksUnder15Min,
     selectedTrackIds,
   ]);
 
@@ -192,14 +304,15 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
     setIsLoadingPreview(true);
     setPreviewError(null);
     try {
-      const data = await tauriApi.previewPlaylistUrl(url.trim());
+      const data = await tauriApi.previewPlaylistUrl(url.trim(), 1, ITEMS_PER_PAGE);
       setPreviewData(data);
       const defaultTitle = data.playlist_title?.trim() || "Nueva Playlist";
       setNewTitle(defaultTitle);
 
-      // Canciones menores a 7 minutos (420 segundos) marcadas por defecto
+      // Canciones menores a 7 minutos (420 segundos) marcadas por defecto SOLO dentro del primer lote cargado
+      const initialBatch = data.items.slice(0, ITEMS_PER_PAGE);
       const defaultSelected = new Set(
-        data.items
+        initialBatch
           .filter((item) => (item.duration || 0) < 420)
           .map((item) => item.youtube_id),
       );
@@ -229,11 +342,15 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
+      setSearchQuery("");
+      setIsLoadingMore(false);
       void loadPreview();
     } else {
       setPreviewData(null);
       setPreviewError(null);
       setSelectedTrackIds(new Set());
+      setSearchQuery("");
+      setIsLoadingMore(false);
       setIsSubmitting(false);
     }
   }, [isOpen, loadPreview]);
@@ -392,7 +509,10 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                   <div>
                     <h4 className="font-semibold text-foreground">
                       {previewData.playlist_title || "Lista sin título"} (
-                      {previewData.items.length} canciones)
+                      {previewData.total_tracks
+                        ? `${previewData.items.length} de ${previewData.total_tracks} canciones`
+                        : `${previewData.items.length}${previewData.has_more ? "+" : ""} canciones cargadas`}
+                      )
                     </h4>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       <span className="font-medium text-emerald-500">
@@ -490,71 +610,212 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                     >
                       {selectedCount}
                     </strong>{" "}
-                    de {previewData.items.length} seleccionadas
+                    de {visibleItems.length} cargadas seleccionadas
+                    {previewData?.total_tracks ? (
+                      <span className="ml-1 font-normal text-muted-foreground/80">
+                        (de {previewData.total_tracks} en total en la playlist)
+                      </span>
+                    ) : previewData?.has_more ? (
+                      <span className="ml-1 font-normal text-muted-foreground/80">
+                        (Mix continuo de YouTube)
+                      </span>
+                    ) : null}
                   </span>
                 </div>
 
-                <div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-border bg-card/60 p-2">
-                  {previewData.items.map((item, index) => {
-                    const isAlreadyDownloaded = existingTrackIds.has(item.youtube_id);
-                    const isSelected = selectedTrackIds.has(item.youtube_id);
-                    const isLong = (item.duration || 0) >= 420;
+                {/* Buscador interno rápido */}
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                    }}
+                    placeholder="Filtrar canciones por título, artista o ID..."
+                    className="h-8 bg-card/60 pl-8 pr-8 text-xs"
+                    aria-label="Filtrar canciones de la previsualización"
+                  />
+                  {searchQuery.trim() && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery("");
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
+                      aria-label="Limpiar filtro de previsualización"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
 
-                    return (
-                      <div
-                        key={`${item.youtube_id}-${index}`}
-                        onClick={() => toggleTrack(item.youtube_id)}
-                        className={`flex cursor-pointer items-center justify-between gap-3 rounded px-2.5 py-1.5 transition select-none ${
-                          isSelected
-                            ? "bg-primary/10 hover:bg-primary/15"
-                            : "opacity-60 hover:opacity-100 hover:bg-muted/40"
-                        }`}
-                      >
-                        <div className="flex min-w-0 items-center gap-2.5">
-                          <div
-                            onClick={(e) => e.stopPropagation()}
-                            className="flex shrink-0 items-center"
-                          >
-                            <Checkbox
-                              checked={isSelected}
-                              onChange={() => toggleTrack(item.youtube_id)}
-                            />
-                          </div>
-                          <span className="w-5 text-right font-mono text-[11px] text-muted-foreground">
-                            {index + 1}.
-                          </span>
-                          <div className="truncate">
-                            <p
-                              className={`truncate font-medium text-xs ${isSelected ? "text-primary font-semibold" : "text-foreground"}`}
-                            >
-                              {item.title || item.youtube_id}
-                            </p>
-                            <p className="truncate text-[11px] text-muted-foreground">
-                              {item.artist}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex shrink-0 items-center gap-2">
-                          {isLong && (
-                            <Badge tone="warning" className="text-[10px] px-1.5 py-0">
-                              &ge; 7 min
-                            </Badge>
-                          )}
-                          {isAlreadyDownloaded && (
-                            <Badge tone="success" className="text-[10px] px-1.5 py-0">
-                              <CheckCircle2 className="h-3 w-3" />
-                              Descargada
-                            </Badge>
-                          )}
-                          <span className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            {formatDuration(item.duration)}
-                          </span>
-                        </div>
+                {/* Contenedor de lista con paginación progresiva */}
+                <div className="overflow-hidden rounded-lg border border-border bg-card/60">
+                  <div className="max-h-56 space-y-1 overflow-y-auto p-2">
+                    {filteredItems.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                        <Search className="mb-1.5 h-6 w-6 opacity-40" />
+                        <p className="text-xs font-medium text-foreground">
+                          No se encontraron canciones
+                        </p>
+                        <p className="text-[11px]">
+                          Ningún tema coincide con &quot;{searchQuery}&quot;
+                        </p>
                       </div>
-                    );
-                  })}
+                    ) : (
+                      visibleItems.map((item) => {
+                        const originalIndex = itemIndexMap.get(item.youtube_id) ?? 1;
+                        const isAlreadyDownloaded = existingTrackIds.has(
+                          item.youtube_id,
+                        );
+                        const isSelected = selectedTrackIds.has(item.youtube_id);
+                        const isLong = (item.duration || 0) >= 420;
+
+                        return (
+                          <div
+                            key={item.youtube_id}
+                            onClick={() => toggleTrack(item.youtube_id)}
+                            className={`flex cursor-pointer items-center justify-between gap-3 rounded px-2.5 py-1.5 transition select-none ${
+                              isSelected
+                                ? "bg-primary/10 hover:bg-primary/15"
+                                : "opacity-60 hover:opacity-100 hover:bg-muted/40"
+                            }`}
+                          >
+                            <div className="flex min-w-0 items-center gap-2.5">
+                              <div
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex shrink-0 items-center"
+                              >
+                                <Checkbox
+                                  checked={isSelected}
+                                  onChange={() => toggleTrack(item.youtube_id)}
+                                />
+                              </div>
+                              <span className="w-6 text-right font-mono text-[11px] text-muted-foreground">
+                                {originalIndex}.
+                              </span>
+                              <div className="truncate">
+                                <p
+                                  className={`truncate font-medium text-xs ${isSelected ? "text-primary font-semibold" : "text-foreground"}`}
+                                >
+                                  {item.title || item.youtube_id}
+                                </p>
+                                <p className="truncate text-[11px] text-muted-foreground">
+                                  {item.artist}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex shrink-0 items-center gap-2">
+                              {isLong && (
+                                <Badge
+                                  tone="warning"
+                                  className="px-1.5 py-0 text-[10px]"
+                                >
+                                  &ge; 7 min
+                                </Badge>
+                              )}
+                              {isAlreadyDownloaded && (
+                                <Badge
+                                  tone="success"
+                                  className="px-1.5 py-0 text-[10px]"
+                                >
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Descargada
+                                </Badge>
+                              )}
+                              <span className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                {formatDuration(item.duration)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* Barra inferior de paginación e información de carga remota progresiva */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 bg-muted/30 px-3 py-2 text-[11px]">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <span>
+                        Mostrando{" "}
+                        <strong className="text-foreground">
+                          {visibleItems.length}
+                        </strong>
+                        {previewData?.total_tracks ? (
+                          <>
+                            {" "}
+                            de{" "}
+                            <strong className="text-foreground">
+                              {previewData.total_tracks}
+                            </strong>{" "}
+                            canciones en total
+                          </>
+                        ) : (
+                          <> canciones cargadas</>
+                        )}
+                        {searchQuery.trim() && previewData && (
+                          <span className="ml-1 font-normal text-muted-foreground/80">
+                            ({previewData.items.length} en memoria)
+                          </span>
+                        )}
+                      </span>
+                      {previewData?.total_tracks && previewData.total_tracks > 0 ? (
+                        <span className="font-mono text-muted-foreground/75">
+                          (
+                          {Math.round(
+                            (visibleItems.length / previewData.total_tracks) * 100,
+                          )}
+                          % cargado)
+                        </span>
+                      ) : !previewData?.has_more ? (
+                        <span className="font-medium text-emerald-500">
+                          · Lista completa obtenida
+                        </span>
+                      ) : (
+                        <span className="font-medium text-amber-500">
+                          · Mix continuo de YouTube
+                        </span>
+                      )}
+                    </div>
+
+                    {previewData?.has_more && !searchQuery.trim() && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => void handleLoadMore()}
+                          disabled={isLoadingMore}
+                          className="h-6 gap-1 px-2.5 text-[11px] text-foreground"
+                        >
+                          {isLoadingMore ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <ChevronDown className="h-3 w-3" />
+                          )}
+                          Cargar 50 más
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => void handleLoadAll()}
+                          disabled={isLoadingMore}
+                          className="h-6 px-2 text-[11px] font-medium text-primary hover:text-primary"
+                        >
+                          {isLoadingMore ? (
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          ) : null}
+                          Cargar todas
+                          {previewData?.total_tracks
+                            ? ` (${previewData.total_tracks})`
+                            : ""}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -710,7 +971,9 @@ export const PlaylistImportModal: React.FC<PlaylistImportModalProps> = ({
                   ? destination === "library_only"
                     ? "Ya en biblioteca (0 descargas)"
                     : "Sincronizar a Playlist (0 descargas)"
-                  : `Descargar ${pendingCount} y ${destination === "library_only" ? "Guardar" : "Sincronizar"}`}
+                  : pendingCount === visibleItems.length
+                    ? `Descargar ${pendingCount} cargadas y ${destination === "library_only" ? "Guardar" : "Sincronizar"}`
+                    : `Descargar ${pendingCount} de ${visibleItems.length} y ${destination === "library_only" ? "Guardar" : "Sincronizar"}`}
           </Button>
         </footer>
       </div>

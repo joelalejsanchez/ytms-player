@@ -176,15 +176,24 @@ impl MicroserviceClientPort for GoMicroserviceClient {
     fn preview_url(
         &self,
         raw_url: &str,
+        start: Option<u32>,
+        end: Option<u32>,
     ) -> DomainResult<crate::domain::entities::PlaylistPreviewDto> {
         let url = format!("{}/api/download/preview", self.base_url);
         let client = self.http_client.clone();
         let target = raw_url.to_string();
 
         Self::block_on(async move {
+            let mut query = vec![("url".to_string(), target)];
+            if let Some(s) = start {
+                query.push(("start".to_string(), s.to_string()));
+            }
+            if let Some(e) = end {
+                query.push(("end".to_string(), e.to_string()));
+            }
             let resp = client
                 .get(&url)
-                .query(&[("url", &target)])
+                .query(&query)
                 .send()
                 .await
                 .map_err(|e| {

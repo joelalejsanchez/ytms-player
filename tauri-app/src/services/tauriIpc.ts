@@ -162,8 +162,16 @@ export const tauriApi = {
     });
   },
 
-  previewPlaylistUrl(url: string): Promise<PlaylistPreviewDto> {
-    return safeInvoke<PlaylistPreviewDto>("preview_playlist_url", { url });
+  previewPlaylistUrl(
+    url: string,
+    start?: number,
+    end?: number,
+  ): Promise<PlaylistPreviewDto> {
+    return safeInvoke<PlaylistPreviewDto>("preview_playlist_url", {
+      url,
+      start: start ?? null,
+      end: end ?? null,
+    });
   },
 
   startDownload(input: DownloadCommandInput): Promise<MicroserviceDownloadResponse> {

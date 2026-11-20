@@ -4,6 +4,7 @@ import { act, fireEvent, render, renderHook, screen } from "@testing-library/rea
 import { formatBytes, formatDuration, formatHumanDuration } from "@/lib/utils";
 import { PersistentPlayer } from "@/components/PersistentPlayer";
 import { DownloadsView } from "@/features/downloads/DownloadsView";
+import { PlaylistImportModal } from "@/features/downloads/PlaylistImportModal";
 import { HomeView } from "@/features/home/HomeView";
 import { TrackRow } from "@/features/library/TrackRow";
 import { PlaylistsView } from "@/features/playlists/PlaylistsView";
@@ -2141,6 +2142,181 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       expect(downloadButtons).toBeInTheDocument();
 
       searchSpy.mockRestore();
+    });
+
+    it("renders items progressively in batches of 50 in PlaylistImportModal, supports load more, load all and instant filter", async () => {
+      const mockItems = Array.from({ length: 120 }, (_, idx) => ({
+        youtube_id: `yt_track_${idx + 1}`,
+        title: idx === 105 ? "Special Song Filter Target" : `Song Track ${idx + 1}`,
+        artist: idx === 105 ? "Target Artist" : `Artist ${idx + 1}`,
+        duration: 200,
+        thumbnail_url: "",
+      }));
+
+      const previewSpy = vi
+        .spyOn(tauriApi, "previewPlaylistUrl")
+        .mockImplementation(async (_url, start = 1, end = 50) => {
+          const s = (start ?? 1) - 1;
+          const e = (end ?? 50) >= 9999 ? mockItems.length : (end ?? 50);
+          const sliced = mockItems.slice(s, e);
+          const hasMore = e < mockItems.length;
+          return {
+            target_id: "PL_mock_123",
+            playlist_title: "Massive Test Playlist",
+            content_type: "playlist",
+            items: sliced,
+            has_more: hasMore,
+            start_index: start ?? 1,
+            end_index: s + sliced.length,
+            total_tracks: 120,
+          };
+        });
+
+      const {
+        getByText,
+        queryByText,
+        getByRole,
+        queryByRole,
+        getByPlaceholderText,
+        getByLabelText,
+      } = render(
+        React.createElement(PlaylistImportModal, {
+          isOpen: true,
+          onClose: vi.fn(),
+          url: "https://www.youtube.com/playlist?list=PL_mock_123",
+          audioFormat: "mp3",
+          onSuccess: vi.fn().mockResolvedValue(undefined),
+        }),
+      );
+
+      // 1. Esperar que cargue la lista
+      const title = await screen.findByText(/Massive Test Playlist/i);
+      expect(title).toBeInTheDocument();
+
+      // 2. Solo las primeras 50 canciones deben estar en el DOM y en memoria inicialmente
+      expect(getByText("Song Track 1")).toBeInTheDocument();
+      expect(getByText("Song Track 50")).toBeInTheDocument();
+      expect(queryByText("Song Track 51")).toBeNull();
+      expect(queryByText("Song Track 100")).toBeNull();
+      expect(
+        getByText(
+          (_, el) =>
+            el?.tagName.toLowerCase() === "span" &&
+            (el?.textContent?.includes("Mostrando 50 de 120 canciones en total") ??
+              false),
+        ),
+      ).toBeInTheDocument();
+      expect(getByText(/\(42% cargado\)/i)).toBeInTheDocument();
+      // Verificación de rango: solo se seleccionan las 50 cargadas inicialmente, NO las 120
+      expect(
+        getByText(
+          (_, el) =>
+            el?.tagName.toLowerCase() === "span" &&
+            (el?.textContent?.includes("50 de 50 cargadas seleccionadas") ?? false),
+        ),
+      ).toBeInTheDocument();
+      expect(getByText(/\(de 120 en total en la playlist\)/i)).toBeInTheDocument();
+
+      // 3. Botones de Cargar 50 más y Cargar todas
+      const loadMoreBtn = getByRole("button", { name: /Cargar 50 más/i });
+      const loadAllBtn = getByRole("button", { name: /Cargar todas \(120\)/i });
+      expect(loadMoreBtn).toBeInTheDocument();
+      expect(loadAllBtn).toBeInTheDocument();
+
+      // 4. Clic en Cargar 50 más -> consulta remota del siguiente bloque de 50 (51..100)
+      await act(async () => {
+        fireEvent.click(loadMoreBtn);
+      });
+      expect(getByText("Song Track 51")).toBeInTheDocument();
+      expect(getByText("Song Track 100")).toBeInTheDocument();
+      expect(queryByText("Song Track 101")).toBeNull();
+      expect(
+        getByText(
+          (_, el) =>
+            el?.tagName.toLowerCase() === "span" &&
+            (el?.textContent?.includes("Mostrando 100 de 120 canciones en total") ??
+              false),
+        ),
+      ).toBeInTheDocument();
+      expect(getByText(/\(83% cargado\)/i)).toBeInTheDocument();
+      expect(
+        getByText(
+          (_, el) =>
+            el?.tagName.toLowerCase() === "span" &&
+            (el?.textContent?.includes("100 de 100 cargadas seleccionadas") ?? false),
+        ),
+      ).toBeInTheDocument();
+
+      // 5. Clic en Cargar todas -> consulta remota del remanente por demanda
+      await act(async () => {
+        fireEvent.click(loadAllBtn);
+      });
+      expect(getByText("Song Track 101")).toBeInTheDocument();
+      expect(getByText("Song Track 120")).toBeInTheDocument();
+      expect(queryByRole("button", { name: /Cargar.*más/i })).toBeNull();
+      expect(
+        getByText(
+          (_, el) =>
+            el?.tagName.toLowerCase() === "span" &&
+            (el?.textContent?.includes("Mostrando 120 de 120 canciones en total") ??
+              false),
+        ),
+      ).toBeInTheDocument();
+      expect(getByText(/\(100% cargado\)/i)).toBeInTheDocument();
+      expect(
+        getByText(
+          (_, el) =>
+            el?.tagName.toLowerCase() === "span" &&
+            (el?.textContent?.includes("120 de 120 cargadas seleccionadas") ?? false),
+        ),
+      ).toBeInTheDocument();
+
+      // 6. Probar deselección y selección sobre rango cargado
+      const noneBtn = getByRole("button", { name: /Ninguna/i });
+      fireEvent.click(noneBtn);
+      expect(
+        getByText(
+          (_, el) =>
+            el?.tagName.toLowerCase() === "span" &&
+            (el?.textContent?.includes("0 de 120 cargadas seleccionadas") ?? false),
+        ),
+      ).toBeInTheDocument();
+
+      const allBtn = getByRole("button", { name: /Todas/i });
+      fireEvent.click(allBtn);
+      expect(
+        getByText(
+          (_, el) =>
+            el?.tagName.toLowerCase() === "span" &&
+            (el?.textContent?.includes("120 de 120 cargadas seleccionadas") ?? false),
+        ),
+      ).toBeInTheDocument();
+
+      // 6. Probar filtro interno por búsqueda
+      const searchInput = getByPlaceholderText(
+        "Filtrar canciones por título, artista o ID...",
+      );
+      fireEvent.change(searchInput, {
+        target: { value: "Special Song Filter Target" },
+      });
+      expect(getByText("Special Song Filter Target")).toBeInTheDocument();
+      expect(queryByText("Song Track 1")).toBeNull();
+      expect(
+        getByText(
+          (_, el) =>
+            el?.tagName.toLowerCase() === "span" &&
+            (el?.textContent?.includes("Mostrando 1 de 120 canciones en total") ??
+              false),
+        ),
+      ).toBeInTheDocument();
+      expect(getByText(/106\./)).toBeInTheDocument(); // Mantiene índice original 106
+
+      // 7. Limpiar filtro
+      const clearBtn = getByLabelText("Limpiar filtro de previsualización");
+      fireEvent.click(clearBtn);
+      expect(getByText("Song Track 1")).toBeInTheDocument();
+
+      previewSpy.mockRestore();
     });
   });
 });

@@ -144,6 +144,14 @@ pub struct PlaylistPreviewDto {
     pub target_id: String,
     pub playlist_title: Option<String>,
     pub items: Vec<PlaylistPreviewItemDto>,
+    #[serde(default)]
+    pub has_more: bool,
+    #[serde(default)]
+    pub start_index: Option<u32>,
+    #[serde(default)]
+    pub end_index: Option<u32>,
+    #[serde(default)]
+    pub total_tracks: Option<u32>,
 }
 
 /// Petición de descarga enviada desde el frontend hacia Tauri y delegada al microservicio Go (SDD 6.1).

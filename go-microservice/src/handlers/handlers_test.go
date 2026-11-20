@@ -20,7 +20,7 @@ import (
 
 type stubDownloader struct{}
 
-func (s *stubDownloader) FetchMetadata(_ context.Context, _ string) ([]domain.RawDownloadedItem, error) {
+func (s *stubDownloader) FetchMetadata(_ context.Context, _ string, _ int, _ int) ([]domain.RawDownloadedItem, error) {
 	return []domain.RawDownloadedItem{
 		{
 			YouTubeID:  "dQw4w9WgXcQ",

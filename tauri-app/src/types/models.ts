@@ -131,6 +131,10 @@ export interface PlaylistPreviewDto {
   target_id: string;
   playlist_title?: string | null;
   items: PlaylistPreviewItemDto[];
+  has_more?: boolean;
+  start_index?: number;
+  end_index?: number;
+  total_tracks?: number | null;
 }
 
 export interface SearchResultItem {
