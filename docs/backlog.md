@@ -17,6 +17,11 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
+- [ ] **Reproducción instantánea mediante doble clic en filas de canciones (`LibraryView` / `TrackRow`):**
+  - **Contexto UX:** En aplicaciones de música de escritorio estándar (Spotify, Apple Music, VLC), el doble clic sobre cualquier fila de pista detona inmediatamente la reproducción de dicha canción y establece el contexto de reproducción actual.
+  - **Implementación requerida:** Añadir el evento `onDoubleClick` en el contenedor de la fila de pista (`TrackRow`), invocando la acción de reproducción sobre la pista seleccionada y actualizando la cola con el listado activo de la biblioteca.
+  - **Aislamiento de controles interactivos:** Evitar que el doble clic se dispare inadvertidamente cuando el usuario interactúa con botones internos específicos (botón de like, menú de opciones de 3 puntos `ActionMenu` o selector de favoritos) mediante discriminación del objetivo del evento o control de propagación.
+
 - [ ] **Accesibilidad, bloqueo de scroll y trampa de foco en componentes emergentes y modales (`UI / A11y`):**
   - **Diagnóstico del problema:** Los modales y diálogos emergentes actuales (`ConfirmationModal`, `PlaylistImportModal`, `MetadataSyncModal`, `ErrorLogsModal`, `ActionMenu`) permiten que la rueda del ratón o gestos táctiles continúen desplazando el fondo de la pantalla (_scroll leak_), no capturan totalmente las interacciones de puntero y carecen de confinamiento de teclado. Al presionar `Tab`, el foco salta a controles invisibles o situados detrás del modal, violando las pautas de accesibilidad WAI-ARIA Dialog.
   - **Bloqueo de scroll (Scroll Lock estilo shadcn/Radix):** Inmovilizar el desplazamiento de fondo (`overflow: hidden` o bloqueo en contenedor raíz) al abrir cualquier diálogo o modal, compensando dinámicamente el ancho de la barra de desplazamiento para evitar saltos visuales de interfaz (_layout shift_).
