@@ -12,6 +12,16 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
+- [ ] **Nuevos visualizadores estáticos (Estuche/Cartucho físico y Disco estático) y depuración minimalista (`VisualizerRegistry` / `NowPlayingView`):**
+  - **Módulo de Portada Estática (Estuche / Formato Físico):** Incorporar un visualizador estático cuadrado/rectangular inspirado en estuches físicos coleccionables (caja Blu-ray, cartucho o disquete retro tipo Nintendo donde el lateral/lomo exhibe el arte de la carátula), brindando una presentación cuidada y sobria sin deformaciones dinámicas.
+  - **Módulo de Disco Estático:** Añadir una variante de vinilo/CD estática que preserve la textura y acabados analógicos pero prescinda de la rotación continua, orientada a quienes prefieren una estética musical clásica sin movimiento continuo en pantalla ni consumo innecesario de GPU.
+  - **Depuración de textos y adornos superfluos:** Eliminar de todos los visualizadores existentes (`VinylVisualizer`, `AmbientAuraVisualizer`, `CoverWavesVisualizer`) las etiquetas y leyendas de texto secundarias innecesarias (ej. "33⅓ RPM", "Onda Resonante Activa", "Ondas de sonido reactivas" o indicadores de frecuencia), manteniendo la presentación artística limpia y directa sin textos distractores.
+
+- [ ] **Rediseño de Toasts de notificación: Apilado de hojas (Stacked Cards) y temporizador perimetral animado (`ToastContainer`):**
+  - **Presentación apilada estilo hojas superpuestas:** Reemplazar la lista vertical de alertas por una pila de tarjetas superpuestas (estilo *Sonner* / *stacked sheets*). El último mensaje recibido se ubica al frente con legibilidad completa, mientras los anteriores se resguardan sutilmente detrás con escala reducida y ligero desplazamiento vertical, reduciendo la saturación visual.
+  - **Supresión del loader circular:** Retirar el reloj circular SVG de cuenta regresiva del extremo derecho de cada toast.
+  - **Temporizador en borde perimetral animado:** Dibujar una animación de borde perimetral que recorre la tarjeta con el color correspondiente a la variante (destructivo para error, ámbar para advertencia, esmeralda para éxito y primario para info), rotando o avanzando progresivamente para indicar el tiempo de expiración restante de forma elegante.
+
 - [ ] **Reproducción instantánea mediante doble clic en filas de canciones (`LibraryView` / `TrackRow`):**
   - **Contexto UX:** En aplicaciones de música de escritorio estándar (Spotify, Apple Music, VLC), el doble clic sobre cualquier fila de pista detona inmediatamente la reproducción de dicha canción y establece el contexto de reproducción actual.
   - **Implementación requerida:** Añadir el evento `onDoubleClick` en el contenedor de la fila de pista (`TrackRow`), invocando la acción de reproducción sobre la pista seleccionada y actualizando la cola con el listado activo de la biblioteca.
