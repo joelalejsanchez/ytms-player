@@ -191,14 +191,9 @@ impl MicroserviceClientPort for GoMicroserviceClient {
             if let Some(e) = end {
                 query.push(("end".to_string(), e.to_string()));
             }
-            let resp = client
-                .get(&url)
-                .query(&query)
-                .send()
-                .await
-                .map_err(|e| {
-                    DomainError::MicroserviceError(format!("GET /api/download/preview failed: {e}"))
-                })?;
+            let resp = client.get(&url).query(&query).send().await.map_err(|e| {
+                DomainError::MicroserviceError(format!("GET /api/download/preview failed: {e}"))
+            })?;
 
             if !resp.status().is_success() {
                 let status = resp.status();

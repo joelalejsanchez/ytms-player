@@ -101,7 +101,10 @@ impl SqliteWorkspaceStore {
 
         // Migración retrocompatible para bases de datos existentes
         let _ = conn.execute("ALTER TABLE playlists ADD COLUMN cover_path TEXT NULL", []);
-        let _ = conn.execute("ALTER TABLE tracks ADD COLUMN origin TEXT NOT NULL DEFAULT 'youtube'", []);
+        let _ = conn.execute(
+            "ALTER TABLE tracks ADD COLUMN origin TEXT NOT NULL DEFAULT 'youtube'",
+            [],
+        );
 
         Ok(Self {
             workspace_root,

@@ -12,8 +12,8 @@ use interfaces::commands::{
     delete_orphan_file, delete_playlist, delete_track, get_app_settings, get_audio_stream_url,
     get_download_history, get_missing_tracks, get_oauth_status, get_playlist_details,
     get_playlist_track_map, get_playlists, get_tracks, get_workspace_info, import_cookies_file,
-    logout_oauth, open_external_url, open_logs_folder, open_oauth_login, preview_playlist_url, rate_video,
-    read_audio_data_url, recover_track, refresh_track_metadata, register_track,
+    logout_oauth, open_external_url, open_logs_folder, open_oauth_login, preview_playlist_url,
+    rate_video, read_audio_data_url, recover_track, refresh_track_metadata, register_track,
     remove_saved_workspace, remove_track_from_playlist, search_youtube_tracks, select_workspace,
     set_microservice_url, set_preferred_audio_format, start_download, sync_likes,
     sync_playlist_tracks, toggle_track_like, verify_integrity,
@@ -178,7 +178,6 @@ mod tests {
         let _ = fs::remove_dir_all(&ws_dir);
     }
 
-
     #[test]
     fn test_workspace_log_file_append_and_rotation() {
         let ws_dir = temp_workspace_dir("logs");
@@ -219,7 +218,6 @@ mod tests {
 
         let _ = fs::remove_dir_all(&ws_dir);
     }
-
 
     #[test]
     fn test_track_deduplication_and_missing_integrity() {
@@ -278,7 +276,6 @@ mod tests {
 
         let _ = fs::remove_dir_all(&ws_dir);
     }
-
 
     #[test]
     fn test_playlists_and_likes_sync_transactions() {
@@ -368,7 +365,6 @@ mod tests {
 
         let _ = fs::remove_dir_all(&ws_dir);
     }
-
 
     #[test]
     fn test_dynamic_playlist_covers_lifecycle() {
@@ -468,40 +464,70 @@ mod tests {
 
     #[test]
     fn test_origin_discrimination_and_likes_sync_exclusion() {
-        use std::sync::Mutex;
         use crate::application::download_sync_usecases;
-        use crate::domain::entities::{HealthStatusDto, LikeSyncResponseDto, MicroserviceDownloadRequest, MicroserviceDownloadResponse, OAuthStatusDto, PlaylistPreviewDto, SearchResultItemDto};
+        use crate::domain::entities::{
+            HealthStatusDto, LikeSyncResponseDto, MicroserviceDownloadRequest,
+            MicroserviceDownloadResponse, OAuthStatusDto, PlaylistPreviewDto, SearchResultItemDto,
+        };
         use crate::domain::errors::DomainResult;
         use crate::domain::ports::MicroserviceClientPort;
+        use std::sync::Mutex;
 
         struct MockLikesClient {
             sent_ids: Mutex<Vec<String>>,
         }
 
         impl MicroserviceClientPort for MockLikesClient {
-            fn trigger_download(&self, _: &MicroserviceDownloadRequest) -> DomainResult<MicroserviceDownloadResponse> {
+            fn trigger_download(
+                &self,
+                _: &MicroserviceDownloadRequest,
+            ) -> DomainResult<MicroserviceDownloadResponse> {
                 unimplemented!()
             }
-            fn sync_likes(&self, ids: &[String], _: Option<&str>) -> DomainResult<LikeSyncResponseDto> {
+            fn sync_likes(
+                &self,
+                ids: &[String],
+                _: Option<&str>,
+            ) -> DomainResult<LikeSyncResponseDto> {
                 let mut guard = self.sent_ids.lock().unwrap();
                 guard.extend(ids.iter().cloned());
                 Ok(LikeSyncResponseDto {
-                    results: ids.iter().map(|id| LikeSyncItemDto {
-                        youtube_id: id.clone(),
-                        liked: true,
-                        synced: true,
-                        synced_at: "2026-11-20T00:00:00Z".to_string(),
-                    }).collect(),
+                    results: ids
+                        .iter()
+                        .map(|id| LikeSyncItemDto {
+                            youtube_id: id.clone(),
+                            liked: true,
+                            synced: true,
+                            synced_at: "2026-11-20T00:00:00Z".to_string(),
+                        })
+                        .collect(),
                     total_processed: ids.len(),
                     synced_count: ids.len(),
                 })
             }
-            fn check_health(&self) -> DomainResult<HealthStatusDto> { unimplemented!() }
-            fn get_oauth_status(&self) -> DomainResult<OAuthStatusDto> { unimplemented!() }
-            fn logout_oauth(&self) -> DomainResult<()> { unimplemented!() }
-            fn rate_video(&self, _: &str, _: &str) -> DomainResult<()> { unimplemented!() }
-            fn preview_url(&self, _: &str, _: Option<u32>, _: Option<u32>) -> DomainResult<PlaylistPreviewDto> { unimplemented!() }
-            fn search_tracks(&self, _: &str) -> DomainResult<Vec<SearchResultItemDto>> { Ok(Vec::new()) }
+            fn check_health(&self) -> DomainResult<HealthStatusDto> {
+                unimplemented!()
+            }
+            fn get_oauth_status(&self) -> DomainResult<OAuthStatusDto> {
+                unimplemented!()
+            }
+            fn logout_oauth(&self) -> DomainResult<()> {
+                unimplemented!()
+            }
+            fn rate_video(&self, _: &str, _: &str) -> DomainResult<()> {
+                unimplemented!()
+            }
+            fn preview_url(
+                &self,
+                _: &str,
+                _: Option<u32>,
+                _: Option<u32>,
+            ) -> DomainResult<PlaylistPreviewDto> {
+                unimplemented!()
+            }
+            fn search_tracks(&self, _: &str) -> DomainResult<Vec<SearchResultItemDto>> {
+                Ok(Vec::new())
+            }
         }
 
         let ws_dir = temp_workspace_dir("origin-test");

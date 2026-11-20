@@ -9,8 +9,8 @@ use crate::application::{
 use crate::domain::entities::{
     AppSettings, DownloadCommandInput, DownloadHistoryEntry, HealthStatusDto, IntegrityReport,
     LikeSyncResponseDto, LogEntryPayload, MicroserviceDownloadItem, MicroserviceDownloadResponse,
-    NewTrack, OAuthStatusDto, Playlist, PlaylistPreviewDto, PlaylistWithTracks, SearchResultItemDto,
-    Track, WorkspaceInfo,
+    NewTrack, OAuthStatusDto, Playlist, PlaylistPreviewDto, PlaylistWithTracks,
+    SearchResultItemDto, Track, WorkspaceInfo,
 };
 use crate::domain::errors::{validate_youtube_id, DomainError, DomainResult};
 use crate::domain::ports::{MicroserviceClientPort, TrackRepository, WorkspaceManagerPort};
@@ -619,9 +619,11 @@ pub async fn adopt_orphan_file(
 
         if let Some(client) = client {
             if youtube_id.trim().len() == 11 {
-                if let Ok(preview) =
-                    client.preview_url(&format!("https://www.youtube.com/watch?v={youtube_id}"), None, None)
-                {
+                if let Ok(preview) = client.preview_url(
+                    &format!("https://www.youtube.com/watch?v={youtube_id}"),
+                    None,
+                    None,
+                ) {
                     if let Some(item) = preview.items.into_iter().next() {
                         if !item.title.trim().is_empty() {
                             final_title = item.title;
@@ -684,8 +686,11 @@ pub async fn refresh_track_metadata(
     let root_path = ctx.root_path.clone();
 
     tokio::task::spawn_blocking(move || {
-        let preview =
-            client.preview_url(&format!("https://www.youtube.com/watch?v={youtube_id}"), None, None)?;
+        let preview = client.preview_url(
+            &format!("https://www.youtube.com/watch?v={youtube_id}"),
+            None,
+            None,
+        )?;
         let item = preview.items.into_iter().next().ok_or_else(|| {
             DomainError::ValidationError(format!("No metadata found for {youtube_id} on YouTube"))
         })?;
