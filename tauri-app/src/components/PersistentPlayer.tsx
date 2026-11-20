@@ -17,6 +17,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { Button } from "@/components/ui/Primitives";
 import { ScrollableText } from "@/components/ui/ScrollableText";
+import { useMediaSession } from "@/hooks/useMediaSession";
 import { formatDuration, toAssetUrl } from "@/lib/utils";
 import { tauriApi } from "@/services/tauriIpc";
 import { usePlayerStore } from "@/stores/usePlayerStore";
@@ -50,6 +51,7 @@ function dataUrlToBlobUrl(dataUrl: string): string {
  */
 export const PersistentPlayer = React.memo(() => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  useMediaSession(audioRef);
   const fadeAnimationRef = useRef<number | null>(null);
   const [showQueue, setShowQueue] = useState(false);
   const [showVolumePopover, setShowVolumePopover] = useState(false);

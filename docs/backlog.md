@@ -12,12 +12,6 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
-- [ ] **Integración y sincronización con MediaSession API nativa (`navigator.mediaSession` / `PersistentPlayer`):**
-  - **Exposición de metadatos del reproductor:** Publicar en `navigator.mediaSession.metadata` la información completa de la pista activa (`title`, `artist`, `album` y carátula en alta resolución `artwork`) para que el sistema operativo y dispositivos externos reconozcan la pista en reproducción.
-  - **Handlers de control multimedia nativos:** Conectar los manejadores de eventos estándar de la MediaSession API: `play`, `pause`, `previoustrack`, `nexttrack`, `seekto` y `stop` directamente hacia las acciones de `usePlayerStore`.
-  - **Sincronización con periféricos y centro de control del SO:** Permitir que las teclas de control multimedia de teclados físicos, mandos y auriculares Bluetooth, así como los controles del centro de notificaciones nativo de Linux (MPRIS / widget multimedia) y Windows (System Media Transport Controls) gobiernen la reproducción respetando de forma íntegra las políticas de bloqueo condicional de navegación hacia adelante y hacia atrás.
-  - **Sincronización de estado de reproducción y posición:** Actualizar reactivamente `playbackState` (`"playing"` o `"paused"`) y `setPositionState` (`duration`, `playbackRate: 1`, `position`) ante eventos de cambio de tiempo para que la barra de progreso del sistema operativo refleje fielmente el scrubbing y la posición en curso.
-
 - [ ] **Sistema configurable de atajos de teclado y gestor de Hotkeys (`useHotkeyStore` / `WorkspaceSettingsView`):**
   - **Arquitectura de atajos desacoplada y centralizada (`useHotkeyStore`):** Diseñar un store Zustand específico con persistencia en `localStorage` que gestione el mapeo de combinaciones de teclas hacia acciones del reproductor y navegación de la aplicación (ej. `togglePlayPause`, `playNext`, `playPrevious`, `volumeUp`, `volumeDown`, `toggleMute`, `toggleShuffle`, `cycleRepeat`, `toggleNowPlayingExpanded`, `focusSearch`).
   - **Mapeos predeterminados intuitivos:** Configuración por defecto con teclas multimedia estándar y combinaciones comunes: `Espacio` (reproducir / pausar), `Alt + Flecha Derecha` (pista siguiente), `Alt + Flecha Izquierda` (pista anterior), `Flecha Arriba` / `Flecha Abajo` (subir/bajar volumen en saltos del 5%), `M` (silenciar/reactivar), `S` (modo aleatorio), `R` (modo repetición) y `F` / `Escape` (expandir/cerrar vista Now Playing).

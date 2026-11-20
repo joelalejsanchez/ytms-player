@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import React from "react";
-import { fireEvent, render, renderHook, screen } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { formatBytes, formatDuration, formatHumanDuration } from "@/lib/utils";
 import { PersistentPlayer } from "@/components/PersistentPlayer";
 import { HomeView } from "@/features/home/HomeView";
@@ -21,6 +21,7 @@ import { usePlayerStore } from "@/stores/usePlayerStore";
 import { useThemeStore } from "@/stores/useThemeStore";
 import { sortToastsByPriority, toast, useToastStore } from "@/stores/useToastStore";
 import { ToastContainer } from "@/components/ui/ToastContainer";
+import { useMediaSession } from "@/hooks/useMediaSession";
 import {
   getAllVisualizers,
   getVisualizer,
@@ -465,7 +466,9 @@ describe("useToastStore and toast API", () => {
     expect(getByText("+2 más")).toBeInTheDocument();
 
     // Drenaje secuencial: al descartar el error, el siguiente toast pasa al frente y el badge decrece a +1
-    toast.dismiss(errorId);
+    act(() => {
+      toast.dismiss(errorId);
+    });
     expect(useToastStore.getState().toasts).toHaveLength(4);
   });
 
@@ -1435,6 +1438,117 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       const titleElement = screen.getByText(missingTrack.title);
       fireEvent.doubleClick(titleElement);
       expect(onPlay).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("useMediaSession native OS integration", () => {
+    function MediaSessionTestComponent({
+      audioRef,
+    }: {
+      audioRef: React.RefObject<HTMLAudioElement | null>;
+    }) {
+      useMediaSession(audioRef);
+      return null;
+    }
+
+    beforeEach(() => {
+      usePlayerStore.getState().clearQueue();
+      usePlayerStore.setState({
+        currentTrack: null,
+        isPlaying: false,
+        isLoadingTrack: false,
+        currentTime: 0,
+        duration: 100,
+        seekTarget: null,
+      });
+      if ("mediaSession" in navigator) {
+        navigator.mediaSession.metadata = null;
+        navigator.mediaSession.playbackState = "none";
+      }
+    });
+
+    it("publishes track metadata and fallback artwork to navigator.mediaSession", () => {
+      const audioRef = { current: document.createElement("audio") };
+      const { unmount } = render(
+        React.createElement(MediaSessionTestComponent, { audioRef }),
+      );
+
+      // Sin pista activa: metadata es null y playbackState es none
+      expect(navigator.mediaSession.metadata).toBeNull();
+      expect(navigator.mediaSession.playbackState).toBe("none");
+
+      // Establecemos pista sin thumbnail_path (debe usar fallback SVG)
+      act(() => {
+        usePlayerStore.setState({
+          currentTrack: { ...sampleTrack, thumbnail_path: null },
+          isPlaying: true,
+          duration: 213,
+          currentTime: 10,
+        });
+      });
+
+      expect(navigator.mediaSession.metadata).not.toBeNull();
+      expect(navigator.mediaSession.metadata?.title).toBe(sampleTrack.title);
+      expect(navigator.mediaSession.metadata?.artist).toBe(sampleTrack.artist);
+      expect(navigator.mediaSession.metadata?.artwork[0].src).toContain(
+        "data:image/svg+xml",
+      );
+      expect(navigator.mediaSession.playbackState).toBe("playing");
+
+      // Establecemos pista con thumbnail_path (debe usar resoluciones del cover)
+      act(() => {
+        usePlayerStore.setState({
+          currentTrack: {
+            ...sampleTrack,
+            thumbnail_path: "/workspace/thumbnails/cover.jpg",
+          },
+        });
+      });
+      expect(navigator.mediaSession.metadata?.artwork[0].src).toContain("cover.jpg");
+
+      unmount();
+    });
+
+    it("executes registered action handlers and respects conditional navigation blocking", () => {
+      const audioEl = document.createElement("audio");
+      const audioRef = { current: audioEl };
+      render(React.createElement(MediaSessionTestComponent, { audioRef }));
+
+      const handlers = (
+        navigator.mediaSession as unknown as {
+          _handlers: Map<string, (details?: unknown) => void>;
+        }
+      )._handlers;
+      expect(handlers.has("play")).toBe(true);
+      expect(handlers.has("pause")).toBe(true);
+      expect(handlers.has("previoustrack")).toBe(true);
+      expect(handlers.has("nexttrack")).toBe(true);
+      expect(handlers.has("seekto")).toBe(true);
+
+      // Play / Pause
+      act(() => {
+        handlers.get("play")!();
+      });
+      expect(usePlayerStore.getState().isPlaying).toBe(true);
+
+      act(() => {
+        handlers.get("pause")!();
+      });
+      expect(usePlayerStore.getState().isPlaying).toBe(false);
+
+      // SeekTo
+      act(() => {
+        handlers.get("seekto")!({ seekTime: 45 });
+      });
+      expect(usePlayerStore.getState().seekTarget).toBe(45);
+
+      // Previous track con currentTime > 3: reinicia a 0
+      audioEl.currentTime = 5;
+      act(() => {
+        handlers.get("previoustrack")!();
+      });
+      expect(audioEl.currentTime).toBe(0);
+      expect(usePlayerStore.getState().currentTime).toBe(0);
     });
   });
 });

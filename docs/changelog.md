@@ -6,6 +6,26 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.8] - 2026-11-20
+
+### Añadido
+
+#### Integración y Sincronización con MediaSession API Nativa (`useMediaSession` y `PersistentPlayer`)
+- **Publicación de metadatos del reproductor**:
+  - Exposición reactiva en `navigator.mediaSession.metadata` con título, artista, álbum y conjunto de resoluciones de carátula (`artwork` de 96x96 a 512x512).
+  - Generación automática de artwork con fallback en formato SVG Data URL ante pistas que carezcan de carátula física (`cover_path` nulo), previniendo cajas vacías en el centro de control del SO.
+- **Sincronización de estado de reproducción y posición**:
+  - Actualización automática de `navigator.mediaSession.playbackState` (`"playing"`, `"paused"` o `"none"`).
+  - Sincronización continua de posición y duración mediante `navigator.mediaSession.setPositionState` para reflejar con precisión el progreso y soportar scrubbing nativo.
+- **Handlers de control multimedia nativos y soporte para periféricos**:
+  - Conexión de manejadores para `play`, `pause`, `previoustrack`, `nexttrack`, `seekto`, `seekbackward`, `seekforward` y `stop`.
+  - Integración con mandos de auriculares Bluetooth, teclas multimedia de teclados físicos y widgets del sistema operativo (Linux MPRIS y Windows Media Controls).
+  - Blindaje con las políticas de bloqueo condicional (`repeatMode === "off"` en extremos de cola) y reinicio automático de pista cuando `currentTime > 3s`.
+- **Aislamiento multiplataforma seguro**:
+  - Verificación estricta de disponibilidad con `"mediaSession" in navigator` y registro tolerante a fallos para acciones no admitidas por ciertos entornos o navegadores.
+
+---
+
 ## [1.9.7] - 2026-11-20
 
 ### Añadido

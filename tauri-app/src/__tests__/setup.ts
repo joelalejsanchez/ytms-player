@@ -27,3 +27,48 @@ class MockResizeObserver {
 
 globalThis.ResizeObserver =
   globalThis.ResizeObserver || (MockResizeObserver as unknown as typeof ResizeObserver);
+
+export class MockMediaMetadata {
+  title: string;
+  artist: string;
+  album: string;
+  artwork: Array<{ src: string; sizes?: string; type?: string }>;
+
+  constructor(init?: {
+    title?: string;
+    artist?: string;
+    album?: string;
+    artwork?: Array<{ src: string; sizes?: string; type?: string }>;
+  }) {
+    this.title = init?.title || "";
+    this.artist = init?.artist || "";
+    this.album = init?.album || "";
+    this.artwork = init?.artwork || [];
+  }
+}
+
+// MediaMetadata constructor mock en el entorno global de pruebas
+if (typeof globalThis.MediaMetadata === "undefined") {
+  (globalThis as unknown as { MediaMetadata: typeof MockMediaMetadata }).MediaMetadata =
+    MockMediaMetadata;
+}
+
+// Mock de navigator.mediaSession
+if (typeof navigator !== "undefined" && !("mediaSession" in navigator)) {
+  const handlers = new Map<string, ((details?: unknown) => void) | null>();
+  Object.defineProperty(navigator, "mediaSession", {
+    configurable: true,
+    writable: true,
+    value: {
+      metadata: null,
+      playbackState: "none",
+      setActionHandler: vi.fn(
+        (action: string, handler: ((details?: unknown) => void) | null) => {
+          handlers.set(action, handler);
+        },
+      ),
+      setPositionState: vi.fn(),
+      _handlers: handlers,
+    },
+  });
+}
