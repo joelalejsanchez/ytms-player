@@ -12,9 +12,6 @@ _(No hay tareas pendientes en esta categoría actualmente)._
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
-- [ ] **Reubicación de la vista de Diagnóstico y Errores (Bugs):**
-  - Remover la opción de logs/bugs del sidebar principal para simplificar y limpiar la navegación general.
-  - Integrar el visor de logs y diagnóstico exclusivamente dentro de la vista de Configuración.
 - [ ] **Microinteracción UX en el logo del Sidebar:**
   - Al colocar el cursor (hover) sobre el logo de la aplicación en la cabecera del sidebar, sustituir dinámicamente el logo por el icono estándar de colapsar/expandir barra lateral (ej. `PanelLeftClose` / icono de sidebar común).
   - Clarifica al usuario que el logo actúa como detonante interactivo para alternar el estado del sidebar.

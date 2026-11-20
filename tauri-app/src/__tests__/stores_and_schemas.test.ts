@@ -8,10 +8,12 @@ import { PlaylistImportModal } from "@/features/downloads/PlaylistImportModal";
 import { HomeView } from "@/features/home/HomeView";
 import { TrackRow } from "@/features/library/TrackRow";
 import { PlaylistsView } from "@/features/playlists/PlaylistsView";
+import { Sidebar } from "@/components/Sidebar";
 import { WorkspaceSettingsView } from "@/features/workspace/WorkspaceSettingsView";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { NowPlayingView } from "@/features/visualizer/components/NowPlayingView";
 import { useLibraryStore } from "@/stores/useLibraryStore";
+import { useLogStore } from "@/stores/useLogStore";
 import {
   downloadFormSchema,
   playlistFormSchema,
@@ -2642,6 +2644,53 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       expect(card?.classList.contains("border-primary")).toBe(true);
 
       getDetailsSpy.mockRestore();
+    });
+  });
+
+  describe("Sidebar Diagnostics Relocation & Error Badge", () => {
+    it("removes direct bug button from sidebar and renders reactive error badge on Configuración button when errors exist", () => {
+      useLogStore.setState({
+        logs: [],
+      });
+
+      const onSelectTab = vi.fn();
+      const { getByRole, queryByRole } = render(
+        React.createElement(Sidebar, {
+          activeTab: "home",
+          onSelectTab,
+        }),
+      );
+
+      // No debe existir el botón 'Logs de errores' en el sidebar
+      expect(queryByRole("button", { name: /Logs de errores/i })).toBeNull();
+
+      // Botón de Configuración presente sin badge de error
+      const configBtn = getByRole("button", { name: /^Configuración$/i });
+      expect(configBtn).toBeInTheDocument();
+      expect(configBtn.textContent).not.toContain("1");
+
+      // Introducir un log de nivel error
+      act(() => {
+        useLogStore.setState({
+          logs: [
+            {
+              id: "err_1",
+              timestamp: 1700000000000,
+              formattedTime: "2026-11-20 10:00:00",
+              level: "error",
+              title: "Test Fatal Error",
+              context: "Network",
+            },
+          ],
+        });
+      });
+
+      // El botón de Configuración ahora refleja el badge de error
+      expect(configBtn.textContent).toContain("1");
+
+      // Al hacer clic, navega a la pestaña de workspace (Configuración)
+      fireEvent.click(configBtn);
+      expect(onSelectTab).toHaveBeenCalledWith("workspace");
     });
   });
 });

@@ -6,6 +6,18 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.22] - 2026-11-20
+
+### Añadido
+
+#### Reubicación de Diagnóstico y Registro de Errores al Panel de Configuración (`Sidebar` & `WorkspaceSettingsView`)
+- **Limpieza y Centralización de Diagnósticos**:
+  - Remoción del botón redundante de logs/bugs del pie del sidebar lateral principal, liberando espacio y simplificando la navegación global.
+  - Centralización del visor completo de errores y diagnóstico exclusivamente dentro de la sección de Configuración (`WorkspaceSettingsView`).
+  - Incorporación de un indicador y badge reactivo de peligro (`tone="danger"`) en el botón de *Configuración* del Sidebar cuando existan errores no resueltos en sesión, preservando retroalimentación inmediata sin saturar la navegación.
+
+---
+
 ## [1.9.21] - 2026-11-20
 
 ### Añadido

@@ -1,6 +1,5 @@
 import {
   AlertTriangle,
-  Bug,
   Download,
   Home,
   Library,
@@ -115,7 +114,6 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
   const playlistCount = useLibraryStore((s) => s.playlists.length);
 
   const errorLogs = useLogStore((s) => s.logs);
-  const setOpenLogModal = useLogStore((s) => s.setOpenModal);
   const errorCount = useMemo(
     () => errorLogs.filter((l) => l.level === "error").length,
     [errorLogs],
@@ -336,44 +334,45 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
           <button
             type="button"
             onClick={() => onSelectTab("workspace")}
-            title="Configuración"
+            title={
+              errorCount > 0
+                ? `Configuración (${errorCount} ${errorCount === 1 ? "error" : "errores"} registrados)`
+                : "Configuración"
+            }
             className={cn(
-              "flex items-center rounded-lg transition-colors",
+              "relative flex items-center rounded-lg transition-colors",
               isCollapsed
                 ? "h-10 w-10 mx-auto justify-center p-0"
-                : "w-full justify-start gap-3 px-3 py-2 text-sm font-medium",
+                : "w-full justify-between px-3 py-2 text-sm font-medium",
               activeTab === "workspace"
                 ? "bg-primary/15 text-primary ring-1 ring-primary"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
-            <Settings className="h-4 w-4 shrink-0" />
-            {!isCollapsed && <span className="truncate">Configuración</span>}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setOpenLogModal(true)}
-            title={`Registro de Errores${errorCount > 0 ? ` (${errorCount} errores)` : ""}`}
-            className={cn(
-              "flex items-center rounded-lg transition-colors",
-              isCollapsed
-                ? "h-10 w-10 mx-auto justify-center p-0"
-                : "w-full justify-between px-3 py-2 text-sm font-medium",
-              errorCount > 0
-                ? "text-rose-500 hover:bg-rose-500/10"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
-          >
             {isCollapsed ? (
-              <Bug className="h-4 w-4 shrink-0" />
+              <>
+                <Settings className="h-4 w-4 shrink-0" />
+                {errorCount > 0 && (
+                  <span
+                    className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-background"
+                    title={`${errorCount} errores en logs`}
+                  />
+                )}
+              </>
             ) : (
               <>
                 <span className="flex items-center gap-3 min-w-0">
-                  <Bug className="h-4 w-4 shrink-0" />
-                  <span className="truncate">Logs de errores</span>
+                  <Settings className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Configuración</span>
                 </span>
-                {errorCount > 0 && <Badge tone="danger">{errorCount}</Badge>}
+                {errorCount > 0 && (
+                  <Badge
+                    tone="danger"
+                    className="shrink-0 text-[10px] px-1.5 py-0 h-4 min-w-4 flex items-center justify-center font-bold"
+                  >
+                    {errorCount}
+                  </Badge>
+                )}
               </>
             )}
           </button>
