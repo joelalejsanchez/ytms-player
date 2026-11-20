@@ -12,17 +12,6 @@ Este documento registra las características, mejoras y extensiones que **no est
 
 ## 2. Prioridad Media (Roadmap v1.x)
 
-- [ ] **Sistema configurable de atajos de teclado y gestor de Hotkeys (`useHotkeyStore` / `WorkspaceSettingsView`):**
-  - **Arquitectura de atajos desacoplada y centralizada (`useHotkeyStore`):** Diseñar un store Zustand específico con persistencia en `localStorage` que gestione el mapeo de combinaciones de teclas hacia acciones del reproductor y navegación de la aplicación (ej. `togglePlayPause`, `playNext`, `playPrevious`, `volumeUp`, `volumeDown`, `toggleMute`, `toggleShuffle`, `cycleRepeat`, `toggleNowPlayingExpanded`, `focusSearch`).
-  - **Mapeos predeterminados intuitivos:** Configuración por defecto con teclas multimedia estándar y combinaciones comunes: `Espacio` (reproducir / pausar), `Alt + Flecha Derecha` (pista siguiente), `Alt + Flecha Izquierda` (pista anterior), `Flecha Arriba` / `Flecha Abajo` (subir/bajar volumen en saltos del 5%), `M` (silenciar/reactivar preservando el volumen previo), `S` (modo aleatorio), `R` (modo repetición) y `F` / `Escape` (expandir/cerrar vista Now Playing).
-  - **Aislamiento contextual de foco:** Detector inteligente de pulsaciones a nivel global en `window` con guardia estricta para ignorar disparos cuando el foco activo del usuario resida en elementos de entrada editables (`HTMLInputElement`, `HTMLTextAreaElement`, selectores desplegables o elementos con atributo `contenteditable`).
-  - **Normalización y presentación multiplataforma de modificadores:** Representación visual de teclas contextual según el sistema operativo detectado (desplegando símbolos nativos como `⌘` / `⌥` en macOS y `Ctrl` / `Alt` en Linux y Windows).
-  - **Panel de configuración y reasignación interactiva en Ajustes (`WorkspaceSettingsView`):**
-    - Interfaz visual dentro de la sección de Configuración para visualizar todos los atajos registrados, su acción asignada y su combinación de teclas actual.
-    - Modo de captura interactiva (*Record Hotkey*): botón para reasignar un atajo haciendo clic y pulsando la combinación deseada (soportando modificadores `Ctrl`, `Alt`, `Shift`, `Meta` + Tecla).
-    - Detección de colisiones y duplicados: advertencia visual inmediata si una combinación asignada entra en conflicto con otro atajo existente.
-    - Botón de restauración de atajos predeterminados (*Reset to Defaults*).
-
 - [ ] **Tooltips contextuales dinámicos según estado de bloqueo en controles de reproducción (`PersistentPlayer` / `NowPlayingView`):**
   - **Retroalimentación explícita de bloqueo:** Sustituir los textos fijos de tooltip (*"Siguiente"* y *"Anterior"*) por etiquetas dinámicas y explicativas cuando los controles se encuentren deshabilitados.
   - **Mensajes de navegación hacia adelante:** Mostrar *"Siguiente"* cuando la navegación esté permitida, y conmutar a *"Fin de la cola"* cuando no existan más temas y el modo bucle esté apagado (`repeatMode === "off"`), o *"Cola vacía"* si no hay pistas en cola.
@@ -87,6 +76,17 @@ Este documento registra las características, mejoras y extensiones que **no est
 ---
 
 ## 3. Prioridad Baja (Casos Específicos o Opcionales)
+
+- [ ] **Sistema configurable de atajos de teclado y gestor de Hotkeys (`useHotkeyStore` / `WorkspaceSettingsView`):**
+  - **Arquitectura de atajos desacoplada y centralizada (`useHotkeyStore`):** Diseñar un store Zustand específico con persistencia en `localStorage` que gestione el mapeo de combinaciones de teclas hacia acciones del reproductor y navegación de la aplicación (ej. `togglePlayPause`, `playNext`, `playPrevious`, `volumeUp`, `volumeDown`, `toggleMute`, `toggleShuffle`, `cycleRepeat`, `toggleNowPlayingExpanded`, `focusSearch`).
+  - **Mapeos predeterminados intuitivos:** Configuración por defecto con teclas multimedia estándar y combinaciones comunes: `Espacio` (reproducir / pausar), `Alt + Flecha Derecha` (pista siguiente), `Alt + Flecha Izquierda` (pista anterior), `Flecha Arriba` / `Flecha Abajo` (subir/bajar volumen en saltos del 5%), `M` (silenciar/reactivar preservando el volumen previo), `S` (modo aleatorio), `R` (modo repetición) y `F` / `Escape` (expandir/cerrar vista Now Playing).
+  - **Aislamiento contextual de foco:** Detector inteligente de pulsaciones a nivel global en `window` con guardia estricta para ignorar disparos cuando el foco activo del usuario resida en elementos de entrada editables (`HTMLInputElement`, `HTMLTextAreaElement`, selectores desplegables o elementos con atributo `contenteditable`).
+  - **Normalización y presentación multiplataforma de modificadores:** Representación visual de teclas contextual según el sistema operativo detectado (desplegando símbolos nativos como `⌘` / `⌥` en macOS y `Ctrl` / `Alt` en Linux y Windows).
+  - **Panel de configuración y reasignación interactiva en Ajustes (`WorkspaceSettingsView`):**
+    - Interfaz visual dentro de la sección de Configuración para visualizar todos los atajos registrados, su acción asignada y su combinación de teclas actual.
+    - Modo de captura interactiva (*Record Hotkey*): botón para reasignar un atajo haciendo clic y pulsando la combinación deseada (soportando modificadores `Ctrl`, `Alt`, `Shift`, `Meta` + Tecla).
+    - Detección de colisiones y duplicados: advertencia visual inmediata si una combinación asignada entra en conflicto con otro atajo existente.
+    - Botón de restauración de atajos predeterminados (*Reset to Defaults*).
 
 - [ ] **Descarte gestual mediante deslizamiento lateral (Swipe to Dismiss en Toasts) (`ToastContainer`):**
   - **Detección gestual táctil y de puntero:** Capturar eventos de arrastre (`onPointerDown`, `onPointerMove`, `onPointerUp`) sobre la tarjeta activa del frente (`stackIndex === 0`).
