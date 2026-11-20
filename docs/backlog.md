@@ -18,9 +18,9 @@ Este documento registra las características, mejoras y extensiones que **no est
 ## 2. Prioridad Media (Roadmap v1.x)
 
 - [ ] **Accesibilidad, bloqueo de scroll y trampa de foco en componentes emergentes y modales (`UI / A11y`):**
-  - **Diagnóstico del problema:** Los modales y diálogos emergentes actuales (`ConfirmationModal`, `PlaylistImportModal`, `MetadataSyncModal`, `ErrorLogsModal`, `ActionMenu`) permiten que la rueda del ratón o gestos táctiles continúen desplazando el fondo de la pantalla (*scroll leak*), no capturan totalmente las interacciones de puntero y carecen de confinamiento de teclado. Al presionar `Tab`, el foco salta a controles invisibles o situados detrás del modal, violando las pautas de accesibilidad WAI-ARIA Dialog.
-  - **Bloqueo de scroll (Scroll Lock estilo shadcn/Radix):** Inmovilizar el desplazamiento de fondo (`overflow: hidden` o bloqueo en contenedor raíz) al abrir cualquier diálogo o modal, compensando dinámicamente el ancho de la barra de desplazamiento para evitar saltos visuales de interfaz (*layout shift*).
-  - **Trampa de foco (Focus Trap) y navegación accesible:** Confinar el ciclo de teclado (`Tab` / `Shift+Tab`) estrictamente dentro del contenedor emergente. Enfocar automáticamente el primer elemento interactivo o de confirmación al montar y restaurar el foco al elemento detonante (*trigger*) al desmontar.
+  - **Diagnóstico del problema:** Los modales y diálogos emergentes actuales (`ConfirmationModal`, `PlaylistImportModal`, `MetadataSyncModal`, `ErrorLogsModal`, `ActionMenu`) permiten que la rueda del ratón o gestos táctiles continúen desplazando el fondo de la pantalla (_scroll leak_), no capturan totalmente las interacciones de puntero y carecen de confinamiento de teclado. Al presionar `Tab`, el foco salta a controles invisibles o situados detrás del modal, violando las pautas de accesibilidad WAI-ARIA Dialog.
+  - **Bloqueo de scroll (Scroll Lock estilo shadcn/Radix):** Inmovilizar el desplazamiento de fondo (`overflow: hidden` o bloqueo en contenedor raíz) al abrir cualquier diálogo o modal, compensando dinámicamente el ancho de la barra de desplazamiento para evitar saltos visuales de interfaz (_layout shift_).
+  - **Trampa de foco (Focus Trap) y navegación accesible:** Confinar el ciclo de teclado (`Tab` / `Shift+Tab`) estrictamente dentro del contenedor emergente. Enfocar automáticamente el primer elemento interactivo o de confirmación al montar y restaurar el foco al elemento detonante (_trigger_) al desmontar.
   - **Descarte por teclado e interacciones:** Implementar cierre consistente mediante la tecla `Escape` y bloqueo estricto de eventos de puntero en el fondo (`inert` o backdrop con bloqueo de clics/taps).
   - **Atributos semánticos ARIA:** Garantizar `role="dialog"` o `role="alertdialog"`, `aria-modal="true"`, `aria-labelledby` y `aria-describedby` en todos los componentes modales y menús contextuales.
 
@@ -59,9 +59,7 @@ Este documento registra las características, mejoras y extensiones que **no est
 - [ ] **Acción rápida para redescarga de Playlists vinculadas:**
   - Botón directo en la vista de playlist para aquellas que posean un `youtube_playlist_id`.
   - Redirecciona automáticamente a la vista de Descargas precargando el ID o enlace de la lista para facilitar la re-descarga y recuperación de audios corruptos o faltantes.
-- [ ] **Barra inferior de reproducción adaptable (Responsive PlayerBar):**
-  - Implementación de layout adaptativo y breakpoints para ventanas compactas o modo de pantalla dividida.
-  - Reorganización de elementos: apilar la barra de progreso, compactar el control de volumen en menú desplegable o slider flotante y priorizar la visibilidad de controles esenciales (Play/Pause, anterior/siguiente y carátula).
+
 - [ ] **Reubicación de la vista de Diagnóstico y Errores (Bugs):**
   - Remover la opción de logs/bugs del sidebar principal para simplificar y limpiar la navegación general.
   - Integrar el visor de logs y diagnóstico exclusivamente dentro de la vista de Configuración.

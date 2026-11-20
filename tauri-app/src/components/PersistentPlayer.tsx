@@ -13,9 +13,10 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { Button } from "@/components/ui/Primitives";
+import { ScrollableText } from "@/components/ui/ScrollableText";
 import { formatDuration, toAssetUrl } from "@/lib/utils";
 import { tauriApi } from "@/services/tauriIpc";
 import { usePlayerStore } from "@/stores/usePlayerStore";
@@ -51,8 +52,27 @@ export const PersistentPlayer = React.memo(() => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fadeAnimationRef = useRef<number | null>(null);
   const [showQueue, setShowQueue] = useState(false);
+  const [showVolumePopover, setShowVolumePopover] = useState(false);
   const [isSeekingLocally, setIsSeekingLocally] = useState(false);
   const [localSeekTime, setLocalSeekTime] = useState(0);
+
+  const queueRef = useRef<HTMLDivElement | null>(null);
+  const volumePopoverRef = useRef<HTMLDivElement | null>(null);
+  const volumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleVolumeMouseEnter = useCallback(() => {
+    if (volumeTimeoutRef.current) {
+      clearTimeout(volumeTimeoutRef.current);
+      volumeTimeoutRef.current = null;
+    }
+    setShowVolumePopover(true);
+  }, []);
+
+  const handleVolumeMouseLeave = useCallback(() => {
+    volumeTimeoutRef.current = setTimeout(() => {
+      setShowVolumePopover(false);
+    }, 200);
+  }, []);
 
   const currentTrack = usePlayerStore((s) => s.currentTrack);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
@@ -96,6 +116,54 @@ export const PersistentPlayer = React.memo(() => {
     volumeRef.current = volume;
     isMutedRef.current = isMuted;
   }, [volume, isMuted]);
+
+  // Cierre de popovers flotantes al hacer clic fuera o presionar Escape
+  useEffect(() => {
+    if (!showVolumePopover && !showQueue) return;
+
+    const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (
+        showVolumePopover &&
+        volumePopoverRef.current &&
+        !volumePopoverRef.current.contains(target)
+      ) {
+        setShowVolumePopover(false);
+      }
+      if (showQueue && queueRef.current && !queueRef.current.contains(target)) {
+        const queueTrigger = document.querySelector('[data-queue-trigger="true"]');
+        if (!queueTrigger || !queueTrigger.contains(target)) {
+          setShowQueue(false);
+        }
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowVolumePopover(false);
+        setShowQueue(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown, true);
+    document.addEventListener("touchstart", handlePointerDown, true);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown, true);
+      document.removeEventListener("touchstart", handlePointerDown, true);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showVolumePopover, showQueue]);
+
+  const handleVerticalVolumePointer = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const offsetY = rect.bottom - e.clientY;
+      const newVol = Math.max(0, Math.min(1, offsetY / rect.height));
+      setVolume(newVol);
+    },
+    [setVolume],
+  );
 
   // Conversión de volumen perceptual (curva cúbica de PulseAudio / PipeWire) a ganancia lineal para HTML5 Audio
   const toLinearGain = useCallback((perceptualVolume: number) => {
@@ -449,14 +517,110 @@ export const PersistentPlayer = React.memo(() => {
 
   const thumbnailSrc = toAssetUrl(currentTrack?.thumbnail_path);
 
+  const displayTitle = useMemo(() => {
+    if (!currentTrack) return "Sin pista seleccionada";
+    return currentTrack.title.replace(/\.(mp3|m4a|opus|flac|wav|webm|aac|ogg)$/i, "");
+  }, [currentTrack]);
+  const displayArtist = currentTrack
+    ? currentTrack.artist
+    : "Selecciona un track de la biblioteca";
+
   const displayTime = isSeekingLocally ? localSeekTime : currentTime;
   const progressPercent =
     duration > 0 ? Math.min(100, Math.max(0, (displayTime / duration) * 100)) : 0;
   const volumeValue = isMuted ? 0 : volume;
   const volumePercent = Math.min(100, Math.max(0, volumeValue * 100));
 
+  // Renderizado reutilizable de la barra de progreso de reproducción
+  const renderProgressBar = (compact = false) => (
+    <div
+      className={`group relative flex h-4 flex-1 select-none items-center ${
+        !currentTrack || isLoadingTrack
+          ? "cursor-not-allowed opacity-50 pointer-events-none"
+          : "cursor-pointer"
+      }`}
+      title={isLoadingTrack ? "Cargando pista..." : undefined}
+    >
+      {/* Fondo de la barra */}
+      <div className="relative h-1 w-full overflow-hidden rounded-full bg-muted transition-all duration-150 group-hover:h-1.5">
+        {/* Relleno hasta el punto actual */}
+        <div
+          className={`h-full transition-none ${
+            isLoadingTrack ? "bg-muted-foreground/40 animate-pulse" : "bg-primary"
+          }`}
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
+
+      {/* Indicador / Thumb dinámico instantáneo */}
+      <div
+        className={`pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full shadow-md transition-none ${
+          isLoadingTrack
+            ? "bg-muted-foreground opacity-40"
+            : "bg-foreground group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-primary"
+        }`}
+        style={{ left: `${progressPercent}%` }}
+      />
+
+      {/* Input range transparente en primer plano para interacción nativa y fluida */}
+      <input
+        type="range"
+        min={0}
+        max={duration > 0 ? duration : 100}
+        step={0.5}
+        value={displayTime}
+        onChange={handleSeekChange}
+        onPointerDown={() => setIsSeekingLocally(true)}
+        onPointerUp={handleSeekCommit}
+        onKeyUp={handleSeekCommit}
+        disabled={!currentTrack || isLoadingTrack}
+        aria-label={
+          compact ? "Progreso compacto de la canción" : "Progreso de la canción"
+        }
+        aria-disabled={!currentTrack || isLoadingTrack}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed disabled:pointer-events-none"
+      />
+    </div>
+  );
+
+  // Renderizado reutilizable del control de volumen
+  const renderVolumeSlider = (compact = false) => (
+    <div
+      className={`group relative flex h-4 ${
+        compact ? "w-24" : "w-24 lg:w-28"
+      } cursor-pointer select-none items-center`}
+    >
+      {/* Pista de fondo */}
+      <div className="relative h-1 w-full overflow-hidden rounded-full bg-muted transition-all duration-150 group-hover:h-1.5">
+        {/* Relleno hasta el valor de volumen */}
+        <div
+          className="h-full bg-primary transition-none"
+          style={{ width: `${volumePercent}%` }}
+        />
+      </div>
+
+      {/* Indicador / Thumb pequeño instantáneo */}
+      <div
+        className="pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full bg-foreground shadow-md transition-none group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-primary"
+        style={{ left: `${volumePercent}%` }}
+      />
+
+      {/* Input range transparente */}
+      <input
+        type="range"
+        min={0}
+        max={1}
+        step={0.01}
+        value={volumeValue}
+        onChange={handleVolumeInput}
+        aria-label={compact ? "Control de volumen flotante" : "Control de volumen"}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+      />
+    </div>
+  );
+
   return (
-    <footer className="relative z-20 border-t border-border bg-card px-6 py-3 backdrop-blur">
+    <footer className="relative z-20 border-t border-border bg-card px-3 sm:px-6 py-2 sm:py-3 backdrop-blur select-none">
       <audio
         ref={audioRef}
         onTimeUpdate={handleTimeUpdate}
@@ -468,7 +632,10 @@ export const PersistentPlayer = React.memo(() => {
       />
 
       {showQueue && (
-        <div className="absolute bottom-full right-6 mb-2 w-96 rounded-xl border border-border bg-popover text-popover-foreground p-4 shadow-2xl">
+        <div
+          ref={queueRef}
+          className="absolute bottom-full right-2 sm:right-6 mb-2 w-[calc(100vw-1rem)] sm:w-96 max-w-sm rounded-xl border border-border bg-popover text-popover-foreground p-4 shadow-2xl z-50"
+        >
           <div className="mb-3 flex items-center justify-between border-b border-border pb-2">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Cola de Reproducción ({queue.length})
@@ -529,103 +696,302 @@ export const PersistentPlayer = React.memo(() => {
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-6">
-        {/* Track actual */}
+      {/* ------------------------------------------------------------------------
+          LAYOUT COMPACTO (< 1024px o modo pantalla dividida) (lg:hidden)
+          - Row 1: Nombre de la pista centrado arriba con desplazamiento lineal: [titulo] - [autor]
+          - Row 2: Timer ocupando TODO el ancho disponible de la barra
+          - Row 3: Debajo del timer: Portada a la izquierda (solo portada), controles al centro, sonido vertical y cola a la derecha
+          ------------------------------------------------------------------------ */}
+      <div className="flex flex-col lg:hidden w-full gap-1.5">
+        {/* Row 1: Nombre de la canción encima del autor en la parte superior del reproductor */}
         <div
           onClick={currentTrack ? toggleNowPlayingExpanded : undefined}
           title={
             currentTrack ? "Ampliar vista de visualización (Now Playing)" : undefined
           }
-          className={`flex min-w-[240px] max-w-[300px] items-center gap-3 transition-opacity ${
-            currentTrack ? "cursor-pointer group hover:opacity-85" : ""
+          className={`flex flex-col items-center justify-center w-full px-2 text-center min-w-0 ${
+            currentTrack ? "cursor-pointer group" : ""
+          }`}
+        >
+          <ScrollableText
+            text={displayTitle}
+            containerClassName="w-full text-center"
+            className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors"
+          />
+          <ScrollableText
+            text={displayArtist}
+            containerClassName="w-full text-center"
+            className="text-[11px] text-muted-foreground"
+          />
+        </div>
+
+        {/* Row 2: Timer ocupando todo el ancho disponible de la barra */}
+        <div className="flex w-full items-center gap-2.5 text-xs text-muted-foreground">
+          <span className="w-10 text-right font-mono text-[11px] tabular-nums">
+            {formatDuration(displayTime)}
+          </span>
+          {renderProgressBar(true)}
+          <span className="w-10 font-mono text-[11px] tabular-nums">
+            {formatDuration(duration)}
+          </span>
+        </div>
+
+        {/* Row 3: Fila inferior de controles con grid cols-[1fr_max-content_1fr] para centrado exacto */}
+        <div className="grid grid-cols-[1fr_max-content_1fr] items-center w-full pt-0.5">
+          {/* Lado izquierdo: ÚNICAMENTE la portada */}
+          <div className="flex items-center justify-start min-w-0">
+            <div
+              onClick={currentTrack ? toggleNowPlayingExpanded : undefined}
+              title={
+                currentTrack
+                  ? "Ampliar vista de visualización (Now Playing)"
+                  : undefined
+              }
+              className={`shrink-0 ${currentTrack ? "cursor-pointer group" : ""}`}
+            >
+              {thumbnailSrc ? (
+                <img
+                  src={thumbnailSrc}
+                  alt={currentTrack?.title ?? "Miniatura"}
+                  className="h-10 w-10 sm:h-11 sm:w-11 rounded-lg object-cover ring-1 ring-border group-hover:scale-105 transition-transform"
+                />
+              ) : (
+                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-muted text-muted-foreground group-hover:scale-105 transition-transform">
+                  <Music className="h-4 w-4 sm:h-5 sm:w-5" />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Centro: Controles de reproducción principales exactamente centrados */}
+          <div className="flex items-center justify-center gap-1.5 sm:gap-3 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={cycleRepeatMode}
+              title={`Modo repetición: ${repeatMode}`}
+              className={`hidden sm:inline-flex ${repeatMode !== "off" ? "text-primary" : ""}`}
+            >
+              {repeatMode === "one" ? (
+                <Repeat1 className="h-4 w-4" />
+              ) : (
+                <Repeat className="h-4 w-4" />
+              )}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={playPrevious}
+              disabled={!currentTrack}
+              title="Anterior"
+            >
+              <SkipBack className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="primary"
+              size="icon"
+              onClick={togglePlayPause}
+              disabled={!currentTrack}
+              aria-label={isPlaying ? "Pausar" : "Reproducir"}
+            >
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={playNext}
+              disabled={!currentTrack}
+              title="Siguiente"
+            >
+              <SkipForward className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleShuffle}
+              title={`Aleatorio: ${isShuffle ? "Activado" : "Desactivado"}`}
+              className={`hidden sm:inline-flex ${isShuffle ? "text-primary" : "text-muted-foreground"}`}
+            >
+              <Shuffle className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Lado derecho: Sonido vertical flotante + Cola + Pantalla Completa */}
+          <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
+            {/* Control de volumen flotante VERTICAL al acercar el ratón (hover) */}
+            <div
+              className="relative"
+              ref={volumePopoverRef}
+              onMouseEnter={handleVolumeMouseEnter}
+              onMouseLeave={handleVolumeMouseLeave}
+            >
+              <Button
+                variant={showVolumePopover ? "secondary" : "ghost"}
+                size="icon"
+                onClick={() => setShowVolumePopover((prev) => !prev)}
+                title={
+                  isMuted
+                    ? "Volumen silenciado (acercar ratón para regular)"
+                    : `Volumen: ${Math.round(volumePercent)}%`
+                }
+                aria-label="Ajustar volumen"
+              >
+                {isMuted || volume === 0 ? (
+                  <VolumeX className="h-4 w-4 text-rose-400" />
+                ) : (
+                  <Volume2 className="h-4 w-4" />
+                )}
+              </Button>
+
+              {/* Slider flotante VERTICAL */}
+              {showVolumePopover && (
+                <div
+                  role="dialog"
+                  aria-label="Ajuste de volumen vertical flotante"
+                  onMouseEnter={handleVolumeMouseEnter}
+                  onMouseLeave={handleVolumeMouseLeave}
+                  className="absolute bottom-full right-1/2 translate-x-1/2 mb-2 flex flex-col items-center gap-2 rounded-xl border border-border bg-popover py-3 px-2 text-popover-foreground shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-100"
+                >
+                  <span className="text-[10px] font-mono tabular-nums text-muted-foreground">
+                    {Math.round(volumePercent)}%
+                  </span>
+
+                  <div
+                    className="relative flex h-24 w-6 cursor-pointer select-none items-center justify-center"
+                    onPointerDown={handleVerticalVolumePointer}
+                  >
+                    <div className="relative h-full w-1.5 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="absolute bottom-0 left-0 right-0 bg-primary transition-none"
+                        style={{ height: `${volumePercent}%` }}
+                      />
+                    </div>
+
+                    <div
+                      className="pointer-events-none absolute left-1/2 -translate-x-1/2 h-2.5 w-2.5 rounded-full bg-foreground shadow-md transition-none"
+                      style={{ bottom: `${volumePercent}%`, marginBottom: "-5px" }}
+                    />
+
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={volumeValue}
+                      onChange={handleVolumeInput}
+                      aria-label="Control de volumen vertical"
+                      aria-orientation="vertical"
+                      className="absolute cursor-pointer opacity-0"
+                      style={{
+                        transform: "rotate(-90deg)",
+                        width: "96px",
+                        height: "24px",
+                      }}
+                    />
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleMute}
+                    title={isMuted ? "Reactivar audio" : "Silenciar"}
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  >
+                    {isMuted || volume === 0 ? (
+                      <VolumeX className="h-3.5 w-3.5 text-rose-400" />
+                    ) : (
+                      <Volume2 className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Botón de Cola de reproducción */}
+            <Button
+              variant={showQueue ? "secondary" : "ghost"}
+              size="sm"
+              data-queue-trigger="true"
+              onClick={() => setShowQueue((prev) => !prev)}
+              title="Mostrar cola de reproducción"
+              className="px-2.5 h-8 flex items-center gap-1.5"
+            >
+              <ListMusic className="h-4 w-4" />
+              <span className="text-xs font-medium">{queue.length}</span>
+            </Button>
+
+            {/* Botón de Pantalla Completa */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleNowPlayingExpanded}
+              disabled={!currentTrack}
+              title="Expandir visualizador a pantalla completa"
+              className="hidden sm:inline-flex text-muted-foreground hover:text-foreground"
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* ------------------------------------------------------------------------
+          LAYOUT COMPLETO DE ESCRITORIO (>= 1024px) (hidden lg:flex)
+          - Left: Portada + Título y Autor separados con marquee
+          - Center: Centered Seek Bar + Controles
+          - Right: Horizontal Volume Slider + Cola + Pantalla Completa
+          ------------------------------------------------------------------------ */}
+      <div className="hidden lg:flex items-center justify-between gap-6 w-full">
+        {/* Track actual / Portada a la izquierda */}
+        <div
+          onClick={currentTrack ? toggleNowPlayingExpanded : undefined}
+          title={
+            currentTrack ? "Ampliar vista de visualización (Now Playing)" : undefined
+          }
+          className={`flex items-center gap-3 shrink-0 max-w-[280px] xl:max-w-[320px] ${
+            currentTrack ? "cursor-pointer group" : ""
           }`}
         >
           {thumbnailSrc ? (
             <img
               src={thumbnailSrc}
               alt={currentTrack?.title ?? "Miniatura"}
-              className="h-12 w-12 rounded-lg object-cover ring-1 ring-border group-hover:scale-105 transition-transform"
+              className="h-12 w-12 shrink-0 rounded-lg object-cover ring-1 ring-border group-hover:scale-105 transition-transform"
             />
           ) : (
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-muted-foreground group-hover:scale-105 transition-transform">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground group-hover:scale-105 transition-transform">
               <Music className="h-5 w-5" />
             </div>
           )}
 
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-              {currentTrack ? currentTrack.title : "Sin pista seleccionada"}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">
-              {currentTrack
-                ? `${currentTrack.artist} · .${currentTrack.file_extension}`
-                : "Selecciona un track de la biblioteca"}
-            </p>
+          <div className="flex flex-col min-w-0 flex-1">
+            <ScrollableText
+              text={displayTitle}
+              containerClassName="w-full"
+              className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors"
+            />
+            <ScrollableText
+              text={displayArtist}
+              containerClassName="w-full"
+              className="text-[11px] text-muted-foreground"
+            />
           </div>
         </div>
 
-        {/* Controles centrales + Barra de progreso */}
-        <div className="flex max-w-xl flex-1 flex-col items-center gap-1.5">
-          {/* Barra de progreso de pista (ubicada encima de los controles) */}
+        {/* Controles centrales: Timer arriba + Botones abajo */}
+        <div className="flex flex-1 max-w-xl flex-col items-center justify-center gap-1.5">
           <div className="flex w-full items-center gap-3 text-xs text-muted-foreground">
             <span className="w-10 text-right tabular-nums">
               {formatDuration(displayTime)}
             </span>
-
-            {/* Barra de progreso de pista con bloqueo durante carga de track, relleno exacto e indicador dinámico */}
-            <div
-              className={`group relative flex h-4 flex-1 select-none items-center ${
-                !currentTrack || isLoadingTrack
-                  ? "cursor-not-allowed opacity-50 pointer-events-none"
-                  : "cursor-pointer"
-              }`}
-              title={isLoadingTrack ? "Cargando pista..." : undefined}
-            >
-              {/* Fondo de la barra */}
-              <div className="relative h-1 w-full overflow-hidden rounded-full bg-muted transition-all duration-150 group-hover:h-1.5">
-                {/* Relleno hasta el punto actual */}
-                <div
-                  className={`h-full transition-none ${
-                    isLoadingTrack
-                      ? "bg-muted-foreground/40 animate-pulse"
-                      : "bg-primary"
-                  }`}
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-
-              {/* Indicador / Thumb pequeño que crece cuando el ratón se acerca (bloqueado durante carga) */}
-              <div
-                className={`pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full shadow-md transition-none ${
-                  isLoadingTrack
-                    ? "bg-muted-foreground opacity-40"
-                    : "bg-foreground group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-primary"
-                }`}
-                style={{ left: `${progressPercent}%` }}
-              />
-
-              {/* Input range transparente en primer plano para interacción nativa y fluida */}
-              <input
-                type="range"
-                min={0}
-                max={duration > 0 ? duration : 100}
-                step={0.5}
-                value={displayTime}
-                onChange={handleSeekChange}
-                onPointerDown={() => setIsSeekingLocally(true)}
-                onPointerUp={handleSeekCommit}
-                onKeyUp={handleSeekCommit}
-                disabled={!currentTrack || isLoadingTrack}
-                aria-label="Progreso de la canción"
-                aria-disabled={!currentTrack || isLoadingTrack}
-                className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed disabled:pointer-events-none"
-              />
-            </div>
-
+            {renderProgressBar(false)}
             <span className="w-10 tabular-nums">{formatDuration(duration)}</span>
           </div>
 
-          {/* Botones de control de reproducción */}
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -683,63 +1049,39 @@ export const PersistentPlayer = React.memo(() => {
           </div>
         </div>
 
-        {/* Volumen y Cola */}
-        <div className="flex min-w-[240px] items-center justify-end gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleMute}
-            title={isMuted ? "Reactivar audio" : "Silenciar"}
-          >
-            {isMuted || volume === 0 ? (
-              <VolumeX className="h-4 w-4 text-rose-400" />
-            ) : (
-              <Volume2 className="h-4 w-4" />
-            )}
-          </Button>
+        {/* Lado derecho: Selector horizontal de volumen + Cola + Pantalla Completa */}
+        <div className="flex items-center justify-end gap-3 min-w-[240px]">
+          <div className="flex items-center gap-2.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleMute}
+              title={isMuted ? "Reactivar audio" : "Silenciar"}
+            >
+              {isMuted || volume === 0 ? (
+                <VolumeX className="h-4 w-4 text-rose-400" />
+              ) : (
+                <Volume2 className="h-4 w-4" />
+              )}
+            </Button>
 
-          {/* Selector de volumen con relleno visual exacto e indicador dinámico */}
-          <div className="group relative flex h-4 w-28 cursor-pointer select-none items-center">
-            {/* Pista de fondo */}
-            <div className="relative h-1 w-full overflow-hidden rounded-full bg-muted transition-all duration-150 group-hover:h-1.5">
-              {/* Relleno hasta el valor de volumen */}
-              <div
-                className="h-full bg-primary transition-none"
-                style={{ width: `${volumePercent}%` }}
-              />
-            </div>
+            {renderVolumeSlider(false)}
 
-            {/* Indicador / Thumb pequeño que crece al acercar el ratón */}
-            <div
-              className="pointer-events-none absolute h-2 w-2 -translate-x-1/2 rounded-full bg-foreground shadow-md transition-none group-hover:h-3.5 group-hover:w-3.5 group-hover:bg-primary"
-              style={{ left: `${volumePercent}%` }}
-            />
-
-            {/* Input range transparente */}
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={volumeValue}
-              onChange={handleVolumeInput}
-              aria-label="Control de volumen"
-              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-            />
+            <span className="w-8 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
+              {Math.round(volumePercent)}%
+            </span>
           </div>
-
-          <span className="w-8 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
-            {Math.round(volumePercent)}%
-          </span>
 
           <Button
             variant={showQueue ? "secondary" : "ghost"}
             size="sm"
+            data-queue-trigger="true"
             onClick={() => setShowQueue((prev) => !prev)}
             title="Mostrar cola de reproducción"
+            className="px-2.5 h-8 flex items-center gap-1.5"
           >
             <ListMusic className="h-4 w-4" />
-            <span>{queue.length}</span>
+            <span className="text-xs font-medium">{queue.length}</span>
           </Button>
 
           <Button

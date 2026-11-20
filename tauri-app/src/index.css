@@ -365,3 +365,27 @@
   animation: heart-pulse-loading 0.8s ease-in-out infinite;
   transform-origin: center;
 }
+
+/* =========================================================================
+   ANIMACIÓN: MARQUEE DESPLAZAMIENTO LINEAL DE TEXTO (PLAYER BAR)
+   Comportamiento: Espera ~1s al inicio, avanza de manera lineal hasta el final,
+   vuelve de golpe sin animación y repite el ciclo.
+   ========================================================================= */
+@keyframes marquee-linear {
+  0%,
+  16% {
+    transform: translateX(0);
+  }
+  99.9% {
+    transform: translateX(var(--marquee-shift, 0px));
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.animate-marquee-scroll {
+  display: inline-block;
+  will-change: transform;
+  animation: marquee-linear var(--marquee-duration, 5s) linear infinite;
+}

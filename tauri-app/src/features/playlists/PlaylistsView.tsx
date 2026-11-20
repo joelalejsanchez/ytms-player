@@ -870,7 +870,7 @@ export const PlaylistsView = React.memo(() => {
       {/* Cabecera Principal */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between shrink-0">
         <div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
             <h1 className="text-xl font-bold tracking-tight text-foreground">
               Tus Playlists
             </h1>
@@ -881,7 +881,7 @@ export const PlaylistsView = React.memo(() => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Buscador de Playlists */}
           <div className="relative w-44 sm:w-56">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />

@@ -6,6 +6,26 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.0] - 2026-11-19
+
+### Añadido
+
+#### Barra Inferior de Reproducción Adaptable (Responsive PlayerBar en `PersistentPlayer`) y Flexibilidad de Ventana
+- **Diseño adaptativo y breakpoints para pantallas compactas y pantalla dividida**:
+  - Reestructuración dinámica del reproductor persistente inferior (`PersistentPlayer`) adaptándose sin desbordamientos ni cortes desde pantallas estrechas (< 640px) y split-screen hasta monitores ultrawide.
+  - **Apertura de límites de ventana en Tauri**: Reducción del límite restrictivo del sistema operativo en `tauri.conf.json` de `minWidth: 960, minHeight: 640` a `minWidth: 400, minHeight: 500`, permitiendo encoger la ventana a modo compacto y pantalla dividida.
+  - **Corrección de restricciones Flexbox**: Inclusión de `min-w-0` y espaciado responsivo en el contenedor principal de `App.tsx`, así como `flex-wrap` en barras de herramientas de `DownloadsView` y `PlaylistsView` para garantizar compresión fluida sin desbordamientos.
+  - **Desacoplamiento y jerarquía de texto en modo compacto**: Al decrecer la pantalla (`< lg`), el título se ubica en la parte superior y el nombre del autor debajo con estilo atenuado (`text-muted-foreground`), ambos con soporte de desplazamiento horizontal lineal automático ante desbordamientos y sin extensión física de archivo.
+  - **Centrado simétrico de controles con CSS Grid**: Aplicación de `grid grid-cols-[1fr_max-content_1fr]` en la fila de controles inferiores para asegurar un centrado matemático exacto del bloque de reproducción independientemente de la diferencia de ancho entre la portada (izquierda) y las acciones de volumen/cola (derecha).
+  - **Animación lineal de desplazamiento (Linear Marquee)**: Integración del componente `ScrollableText` con `@keyframes marquee-linear` en `index.css`, activando desplazamiento lineal constante de principio a fin, retorno instantáneo y pausa de 1s antes de reiniciar.
+  - **Limpieza de metadatos**: Supresión de la extensión física del archivo de audio (`.mp3`, `.m4a`, etc.) en la interfaz del reproductor para mayor pulcritud visual.
+  - **Vista completa de escritorio refinada**: Título y artista en líneas separadas con tamaño de fuente compacto y calibrado, con soporte de desplazamiento horizontal automático ante desbordamientos.
+  - **Barra de progreso de ancho completo superior**: En ventanas compactas (`< lg`), la barra de progreso (seek bar) ocupa todo el ancho disponible de la barra en la fila superior con contadores numéricos de tiempo transcurrido y total, optimizando el espacio horizontal.
+  - **Control de volumen flotante vertical por hover**: Al acercar el cursor al icono de sonido en vista compacta, se despliega un slider vertical flotante con pista calibrada, indicador circular instantáneo, porcentaje y botón de mute.
+  - **Visibilidad y cierre inteligente de cola de reproducción**: El botón de cola (`ListMusic`) permanece visible y accesible en todas las vistas, y su ventana emergente se cierra de forma instantánea y automática al detectar clics externos en cualquier área de la pantalla o presionar `Escape`.
+
+---
+
 ## [1.8.2] - 2026-11-19
 
 ### Corregido

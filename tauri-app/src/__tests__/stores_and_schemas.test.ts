@@ -864,4 +864,108 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       }
     });
   });
+
+  describe("Responsive PlayerBar (PersistentPlayer)", () => {
+    beforeEach(() => {
+      usePlayerStore.getState().clearQueue();
+    });
+
+    it("renders both stacked progress bar for compact mode and centered progress bar for desktop", () => {
+      usePlayerStore.getState().playTrack(sampleTrack, [sampleTrack]);
+      render(React.createElement(PersistentPlayer));
+
+      const compactProgress = screen.getByLabelText("Progreso compacto de la canción");
+      const desktopProgress = screen.getByLabelText("Progreso de la canción");
+
+      expect(compactProgress).toBeInTheDocument();
+      expect(desktopProgress).toBeInTheDocument();
+
+      // Verificar que el contenedor compacto usa lg:hidden y el desktop usa hidden lg:flex
+      const compactContainer = compactProgress.closest(".lg\\:hidden");
+      expect(compactContainer).not.toBeNull();
+
+      const desktopContainer = desktopProgress.closest(".hidden.lg\\:flex");
+      expect(desktopContainer).not.toBeNull();
+    });
+
+    it("provides responsive volume controls with vertical floating popover on hover/click and desktop inline slider", () => {
+      usePlayerStore.getState().playTrack(sampleTrack, [sampleTrack]);
+      render(React.createElement(PersistentPlayer));
+
+      // Botón trigger de volumen flotante en vista compacta
+      const compactVolumeBtn = screen.getByLabelText("Ajustar volumen");
+      expect(compactVolumeBtn).toBeInTheDocument();
+
+      // Inicialmente el popover de volumen vertical flotante no está abierto
+      expect(
+        screen.queryByRole("dialog", { name: "Ajuste de volumen vertical flotante" }),
+      ).toBeNull();
+
+      // Al acercar el ratón (hover / mouseEnter) al contenedor de volumen compacto, se muestra el popover vertical flotante
+      const volumeContainer = compactVolumeBtn.closest(".relative");
+      expect(volumeContainer).not.toBeNull();
+      fireEvent.mouseEnter(volumeContainer!);
+
+      const volumePopover = screen.getByRole("dialog", {
+        name: "Ajuste de volumen vertical flotante",
+      });
+      expect(volumePopover).toBeInTheDocument();
+
+      // Dentro del popover se encuentra el slider de volumen vertical
+      const verticalSlider = screen.getByLabelText("Control de volumen vertical");
+      expect(verticalSlider).toBeInTheDocument();
+
+      // Cerrar con Escape
+      fireEvent.keyDown(window, { key: "Escape" });
+      expect(
+        screen.queryByRole("dialog", { name: "Ajuste de volumen vertical flotante" }),
+      ).toBeNull();
+    });
+
+    it("prioritizes essential playback controls and applies responsive visibility to secondary controls", () => {
+      usePlayerStore.getState().playTrack(sampleTrack, [sampleTrack]);
+      render(React.createElement(PersistentPlayer));
+
+      // Controles esenciales: Play/Pause, Anterior, Siguiente siempre presentes en ambos layouts
+      const playPauseBtns = screen.getAllByLabelText("Pausar");
+      const prevBtns = screen.getAllByTitle("Anterior");
+      const nextBtns = screen.getAllByTitle("Siguiente");
+
+      expect(playPauseBtns.length).toBeGreaterThanOrEqual(2);
+      expect(prevBtns.length).toBeGreaterThanOrEqual(2);
+      expect(nextBtns.length).toBeGreaterThanOrEqual(2);
+
+      // Controles secundarios (Repeat y Shuffle) en layout compacto tienen clases responsivas para pantallas pequeñas
+      const repeatBtns = screen.getAllByTitle(/^Modo repetición:/);
+      const shuffleBtns = screen.getAllByTitle(/^Aleatorio:/);
+
+      expect(repeatBtns[0].className).toContain("hidden");
+      expect(repeatBtns[0].className).toContain("sm:inline-flex");
+      expect(shuffleBtns[0].className).toContain("hidden");
+      expect(shuffleBtns[0].className).toContain("sm:inline-flex");
+    });
+
+    it("renders queue button in player bar and automatically closes queue popover on outside clicks or Escape", () => {
+      usePlayerStore.getState().playTrack(sampleTrack, [sampleTrack]);
+      const { container } = render(React.createElement(PersistentPlayer));
+
+      // Botón de cola visible en vista de reproductor (en layout compacto y de escritorio)
+      const queueBtns = screen.getAllByTitle("Mostrar cola de reproducción");
+      expect(queueBtns.length).toBeGreaterThanOrEqual(2);
+
+      // Abrir cola de reproducción mediante el primer botón
+      fireEvent.click(queueBtns[0]);
+      expect(screen.getByText(/Cola de Reproducción/i)).toBeInTheDocument();
+
+      // Clic externo fuera del contenedor de la cola
+      fireEvent.mouseDown(container);
+      expect(screen.queryByText(/Cola de Reproducción/i)).toBeNull();
+
+      // Volver a abrir y verificar cierre con Escape
+      fireEvent.click(queueBtns[0]);
+      expect(screen.getByText(/Cola de Reproducción/i)).toBeInTheDocument();
+      fireEvent.keyDown(window, { key: "Escape" });
+      expect(screen.queryByText(/Cola de Reproducción/i)).toBeNull();
+    });
+  });
 });

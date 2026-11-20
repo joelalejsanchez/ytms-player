@@ -83,7 +83,7 @@ export const App: React.FC = () => {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar activeTab={activeTab} onSelectTab={handleSelectTab} />
 
-        <main className="flex flex-1 flex-col overflow-hidden p-6">
+        <main className="flex flex-1 min-w-0 flex-col overflow-hidden p-3 sm:p-6">
           {!workspace && activeTab !== "workspace" && (
             <div className="mb-4 flex items-center justify-between rounded-xl border border-amber-800/60 bg-amber-950/30 px-4 py-3 text-xs text-amber-200">
               <span>

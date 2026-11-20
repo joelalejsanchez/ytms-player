@@ -412,7 +412,7 @@ export const DownloadsView = React.memo(() => {
         className="space-y-4 rounded-xl border border-border bg-card p-4"
       >
         <div className="flex flex-wrap items-center gap-3">
-          <div className="min-w-[260px] flex-1">
+          <div className="min-w-0 w-full sm:w-auto sm:min-w-[260px] flex-1">
             <Input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
@@ -426,7 +426,8 @@ export const DownloadsView = React.memo(() => {
             onChange={(val) => handleFormatChange(val as AudioFormat)}
             options={AUDIO_FORMAT_OPTIONS}
             ariaLabel="Formato de audio"
-            triggerClassName="h-9 px-3 text-sm min-w-[220px]"
+            className="w-full sm:w-auto"
+            triggerClassName="h-9 px-3 text-sm min-w-0 w-full sm:min-w-[220px]"
           />
 
           <Button type="submit" disabled={isSubmitting}>
