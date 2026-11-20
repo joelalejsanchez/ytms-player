@@ -219,30 +219,11 @@ export const LibraryView = React.memo(() => {
     const playableFiltered = filteredTracks.filter((t) => !t.is_missing);
     if (playableFiltered.length === 0) return;
 
-    const currentTrack = usePlayerStore.getState().currentTrack;
-    const isCurrentInFilter = Boolean(
-      currentTrack &&
-      playableFiltered.some((t) => t.youtube_id === currentTrack.youtube_id),
-    );
-
     const targetPlaylistId =
       selectedPlaylistId !== "all" ? Number(selectedPlaylistId) : null;
 
-    if (isCurrentInFilter) {
-      // La canción actual está en el filtro: no interrumpir la reproducción actual,
-      // solo actualizar la cola de reproducción según estándar Spotify
-      usePlayerStore
-        .getState()
-        .setQueuePreservingCurrent(playableFiltered, targetPlaylistId);
-      if (!usePlayerStore.getState().isPlaying) {
-        usePlayerStore.getState().setPlaying(true);
-      }
-    } else {
-      // La canción actual no existe en el filtro: reproducir la primera del filtro
-      const firstPlayable = playableFiltered[0];
-      playTrack(firstPlayable, playableFiltered, targetPlaylistId);
-    }
-  }, [filteredTracks, playTrack, selectedPlaylistId]);
+    usePlayerStore.getState().playPlaylist(playableFiltered, targetPlaylistId);
+  }, [filteredTracks, selectedPlaylistId]);
 
   // Lista virtualizada para alto rendimiento con grandes bibliotecas (docs/skills/optimization.md)
   const rowVirtualizer = useVirtualizer({

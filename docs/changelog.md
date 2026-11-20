@@ -6,6 +6,22 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.9.11] - 2026-11-20
+
+### Mejorado
+
+#### Sorteo Aleatorio Integral al Iniciar Reproducción en Modo Shuffle (`usePlayerStore` y `LibraryView`)
+- **Sorteo previo sin sesgos al arrancar listas completas**:
+  - Al reproducir una playlist completa (`playPlaylist`) o todo el catálogo de la biblioteca (`handlePlayAll`) con el modo aleatorio activo (`isShuffle: true`), se aplica el algoritmo Fisher-Yates de forma íntegra e imparcial sobre la totalidad de las pistas disponibles, eliminando el sesgo que forzaba siempre la primera pista física (`playable[0]`).
+- **Preservación canónica del orden original (`originalQueue`)**:
+  - La cola original se almacena intacta con el orden secuencial de la playlist o biblioteca, permitiendo que al desactivar el modo aleatorio (`toggleShuffle()`) la cola se restaure fielmente sin perder la pista actualmente en curso.
+- **Preservación estricta de la selección intencional (`playTrack`)**:
+  - Si el usuario selecciona explícitamente una canción individual dentro de la lista o tabla, se preserva dicha pista ganadora al frente en el índice 0 y se baraja aleatoriamente el resto de la cola detrás de ella.
+- **Soporte transversal unificado en `usePlayerStore.playPlaylist`**:
+  - Firma extendida a `playlistId?: number | null`, permitiendo a `LibraryView` reutilizar la misma lógica de integridad de cola y sincronización sin duplicación de código.
+
+---
+
 ## [1.9.10] - 2026-11-20
 
 ### Añadido

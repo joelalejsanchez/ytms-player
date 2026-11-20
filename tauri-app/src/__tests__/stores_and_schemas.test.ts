@@ -1688,6 +1688,64 @@ describe("Error Logs and Diagnostics Subsystem (useLogStore & logger)", () => {
       expect(usePlayerStore.getState().activePlaylistId).toBe(77);
       expect(usePlayerStore.getState().queue).toHaveLength(3);
     });
+
+    it("performs full Fisher-Yates random draw and preserves originalQueue when shuffle is active", () => {
+      usePlayerStore.setState({
+        currentTrack: null,
+        queue: [],
+        activePlaylistId: null,
+        isPlaying: false,
+        isShuffle: true,
+      });
+
+      // Simular random determinista para invertir orden: j siempre 0
+      const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+
+      usePlayerStore.getState().playPlaylist([track1, track2, track3], 88);
+
+      randomSpy.mockRestore();
+
+      const state = usePlayerStore.getState();
+      expect(state.isPlaying).toBe(true);
+      expect(state.activePlaylistId).toBe(88);
+      expect(state.currentIndex).toBe(0);
+      expect(state.queue).toHaveLength(3);
+      // currentTrack debe coincidir exactamente con queue[0]
+      expect(state.currentTrack?.youtube_id).toBe(state.queue[0].youtube_id);
+      // originalQueue debe retener el orden canónico intacto
+      expect(state.originalQueue.map((t) => t.youtube_id)).toEqual([
+        "yt_101",
+        "yt_102",
+        "yt_103",
+      ]);
+
+      // Al desactivar shuffle, debe restaurarse la cola canónica manteniendo la pista activa
+      state.toggleShuffle();
+      const unshifted = usePlayerStore.getState();
+      expect(unshifted.isShuffle).toBe(false);
+      expect(unshifted.queue.map((t) => t.youtube_id)).toEqual([
+        "yt_101",
+        "yt_102",
+        "yt_103",
+      ]);
+      expect(unshifted.queue[unshifted.currentIndex].youtube_id).toBe(
+        state.currentTrack?.youtube_id,
+      );
+    });
+
+    it("supports null playlistId from Library and emits contextual toast messages", () => {
+      // Lista vacía sin playlistId especificado
+      usePlayerStore.getState().playPlaylist([], null);
+      expect(useToastStore.getState().toasts[0].title).toBe("Sin canciones");
+      useToastStore.getState().clear();
+
+      // Reproducción exitosa con playlistId = null
+      usePlayerStore.getState().playPlaylist([track1, track2], null);
+      const state = usePlayerStore.getState();
+      expect(state.isPlaying).toBe(true);
+      expect(state.activePlaylistId).toBeNull();
+      expect(state.queue).toHaveLength(2);
+    });
   });
 
   describe("usePlayerControlTooltips dynamic tooltips and control states", () => {

@@ -24,7 +24,7 @@ export interface PlayerState {
 
   setActivePlaylistId: (playlistId: number | null) => void;
   playTrack: (track: Track, newQueue?: Track[], playlistId?: number | null) => void;
-  playPlaylist: (playlistTracks: Track[], playlistId: number) => void;
+  playPlaylist: (playlistTracks: Track[], playlistId?: number | null) => void;
   setQueuePreservingCurrent: (newQueue: Track[], playlistId?: number | null) => void;
   markTrackCorrupted: (youtubeId: string) => void;
   clearCorruptedTrack: (youtubeId: string) => void;
@@ -135,21 +135,27 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       corruptedTrackIds: state.corruptedTrackIds.filter((id) => id !== youtubeId),
     })),
 
-  playPlaylist: (playlistTracks, playlistId) => {
+  playPlaylist: (playlistTracks, playlistId = null) => {
     const playable = playlistTracks.filter((t) => !t.is_missing);
     if (playable.length === 0) {
       toast.info(
-        "Playlist sin canciones",
-        "Esta playlist no tiene canciones para reproducir.",
+        playlistId !== null && playlistId !== undefined
+          ? "Playlist sin canciones"
+          : "Sin canciones",
+        playlistId !== null && playlistId !== undefined
+          ? "Esta playlist no tiene canciones para reproducir."
+          : "No hay canciones reproducibles para iniciar la reproducción.",
       );
       return;
     }
 
-    const { currentTrack, queue, isPlaying, activePlaylistId } = get();
+    const { currentTrack, queue, isPlaying, activePlaylistId, isShuffle } = get();
+    const resolvedPlaylistId = playlistId !== undefined ? playlistId : null;
 
     // 1. Verificar si la cola actual ya contiene la totalidad de canciones de la playlist activa
     const isQueueComplete =
-      activePlaylistId === playlistId &&
+      resolvedPlaylistId !== null &&
+      activePlaylistId === resolvedPlaylistId &&
       queue.length === playable.length &&
       playable.every((pt) => queue.some((qt) => qt.youtube_id === pt.youtube_id));
 
@@ -164,7 +170,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
     if (currentTrackInPlaylist) {
       const prevQueueCount = queue.length;
-      get().setQueuePreservingCurrent(playlistTracks, playlistId);
+      get().setQueuePreservingCurrent(playlistTracks, resolvedPlaylistId);
       if (!isPlaying) {
         get().setPlaying(true);
       }
@@ -172,12 +178,33 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       if (addedCount > 0) {
         toast.info(
           "Cola sincronizada",
-          `${addedCount} ${addedCount === 1 ? "canción añadida" : "canciones añadidas"} de la playlist.`,
+          `${addedCount} ${addedCount === 1 ? "canción añadida" : "canciones añadidas"} ${resolvedPlaylistId !== null ? "de la playlist." : "a la cola."}`,
         );
       }
     } else {
-      // 3. Conmutación limpia desde la primera pista reproducible
-      get().playTrack(playable[0], playable, playlistId);
+      // 3. Conmutación limpia: si shuffle está activo, sorteo integral con Fisher-Yates
+      if (isShuffle) {
+        const shuffled = shuffleTracksWithFirst(playable);
+        const firstTrack = shuffled[0];
+        savePersistedPreferences({
+          currentTrack: firstTrack,
+          currentTime: 0,
+          activePlaylistId: resolvedPlaylistId,
+        });
+        set({
+          currentTrack: firstTrack,
+          activePlaylistId: resolvedPlaylistId,
+          isPlaying: true,
+          isLoadingTrack: true,
+          currentTime: 0,
+          duration: firstTrack.duration || 0,
+          queue: shuffled,
+          originalQueue: playable,
+          currentIndex: 0,
+        });
+      } else {
+        get().playTrack(playable[0], playable, resolvedPlaylistId);
+      }
     }
   },
 
