@@ -10,6 +10,16 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ### Añadido
 
+#### Nuevos Visualizadores Estáticos y Depuración Minimalista (`VisualizerRegistry` y `NowPlayingView`)
+- **Módulo de Portada Estática / Estuche Físico (`PhysicalCaseVisualizer`)**:
+  - Incorporación del módulo coleccionable `physical-case` inspirado en cajas Jewel Case de CD/Blu-ray y cartuchos: lomo izquierdo biselado, clips sujetadores de libreto, reflejo especular diagonal de acetato y sombra 3D profunda sin deformaciones dinámicas ni consumo de GPU.
+  - Componente de previsualización `PhysicalCasePreview` integrado en la configuración del espacio de trabajo.
+- **Módulo de Disco Analógico Estático (`StaticDiscVisualizer`)**:
+  - Incorporación del módulo `static-disc` con disco de acetato de alta fidelidad, surcos concéntricos reflexivos, reflejo cónico y etiqueta central en reposo, prescindiendo de la rotación continua para una presentación musical sobria y eficiente.
+  - Componente de previsualización `StaticDiscPreview` integrado en Ajustes.
+- **Depuración minimalista de textos y leyendas superfluas**:
+  - Eliminación de etiquetas y leyendas de texto secundarias distractoras en todos los visualizadores existentes (`VinylVisualizer`, `AmbientAuraVisualizer`, `CoverWavesVisualizer`, `SpectrumVisualizer`), tales como "33⅓ RPM", "Onda Resonante Activa", "Ondas de sonido reactivas" o indicadores de frecuencia, logrando una presentación artística limpia y directa centrada 100% en el arte musical.
+
 #### Reproducción Instantánea Mediante Doble Clic en Filas de Canciones (`TrackRow` y `PlaylistTrackRow`)
 - **Detonación de reproducción directa con doble clic**:
   - Incorporación del evento `onDoubleClick` en el contenedor de las filas de pista de la biblioteca (`TrackRow`) y de las playlists (`PlaylistTrackRow`), reproduciendo de inmediato la pista seleccionada y actualizando la cola de reproducción con la lista activa y su contexto.

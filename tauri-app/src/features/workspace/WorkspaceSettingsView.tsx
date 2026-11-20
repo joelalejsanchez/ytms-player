@@ -2,10 +2,12 @@ import {
   Activity,
   AlertCircle,
   AudioWaveform,
+  Box,
   Bug,
   Check,
   CheckCircle2,
   Cookie,
+  Disc,
   Disc3,
   Download,
   Edit2,
@@ -664,6 +666,22 @@ export const WorkspaceSettingsView = React.memo(() => {
                       )}
                       {viz.metadata.id === "cover-waves" && (
                         <AudioWaveform
+                          className={cn(
+                            "h-4 w-4 shrink-0",
+                            isSelected ? "text-primary" : "text-muted-foreground",
+                          )}
+                        />
+                      )}
+                      {viz.metadata.id === "physical-case" && (
+                        <Box
+                          className={cn(
+                            "h-4 w-4 shrink-0",
+                            isSelected ? "text-primary" : "text-muted-foreground",
+                          )}
+                        />
+                      )}
+                      {viz.metadata.id === "static-disc" && (
+                        <Disc
                           className={cn(
                             "h-4 w-4 shrink-0",
                             isSelected ? "text-primary" : "text-muted-foreground",

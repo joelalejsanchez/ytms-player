@@ -1,4 +1,4 @@
-import { Disc3, Music2 } from "lucide-react";
+import { Music2 } from "lucide-react";
 import React, { useMemo } from "react";
 import { toAssetUrl } from "@/lib/utils";
 import type { VisualizerProps } from "../types";
@@ -112,18 +112,6 @@ export const VinylVisualizer: React.FC<VisualizerProps> = React.memo(
               <div className="absolute bottom-0 left-1/2 h-1.5 w-1 -translate-x-1/2 rounded-full bg-amber-400" />
             </div>
           </div>
-        </div>
-
-        {/* Indicador de estado sutil */}
-        <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-          <Disc3
-            className={`h-4 w-4 text-primary transition-transform ${
-              isPlaying ? "animate-spin" : ""
-            }`}
-          />
-          <span className="font-mono text-[11px] uppercase tracking-wider">
-            {isPlaying ? "Reproduciendo a 33⅓ RPM" : "Pausado"}
-          </span>
         </div>
       </div>
     );

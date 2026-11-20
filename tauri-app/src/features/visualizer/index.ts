@@ -14,3 +14,11 @@ export {
   CoverWavesVisualizer,
   CoverWavesPreview,
 } from "./components/CoverWavesVisualizer";
+export {
+  PhysicalCaseVisualizer,
+  PhysicalCasePreview,
+} from "./components/PhysicalCaseVisualizer";
+export {
+  StaticDiscVisualizer,
+  StaticDiscPreview,
+} from "./components/StaticDiscVisualizer";

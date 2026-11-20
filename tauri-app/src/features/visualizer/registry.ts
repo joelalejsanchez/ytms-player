@@ -6,7 +6,15 @@ import {
   CoverWavesPreview,
   CoverWavesVisualizer,
 } from "./components/CoverWavesVisualizer";
+import {
+  PhysicalCasePreview,
+  PhysicalCaseVisualizer,
+} from "./components/PhysicalCaseVisualizer";
 import { SpectrumPreview, SpectrumVisualizer } from "./components/SpectrumVisualizer";
+import {
+  StaticDiscPreview,
+  StaticDiscVisualizer,
+} from "./components/StaticDiscVisualizer";
 import { VinylPreview, VinylVisualizer } from "./components/VinylVisualizer";
 import type { VisualizerModule } from "./types";
 
@@ -77,6 +85,36 @@ class VisualizerRegistry {
       },
       Component: CoverWavesVisualizer,
       PreviewComponent: CoverWavesPreview,
+    });
+
+    // 5. Estuche / Formato Físico (Coleccionable estático)
+    this.register({
+      metadata: {
+        id: "physical-case",
+        name: "Estuche / Formato Físico",
+        description:
+          "Presentación coleccionable estática inspirada en cajas de CD/Blu-ray con lomo biselado, clips y reflejo de acetato.",
+        author: "ytms-player Core",
+        version: "1.0.0",
+        tags: ["estático", "colección", "estuche", "minimalista"],
+      },
+      Component: PhysicalCaseVisualizer,
+      PreviewComponent: PhysicalCasePreview,
+    });
+
+    // 6. Disco Analógico Estático
+    this.register({
+      metadata: {
+        id: "static-disc",
+        name: "Disco Analógico Estático",
+        description:
+          "Disco clásico de vinilo con surcos de acetato y reflejos de luz, sin rotación continua para máxima sobriedad y rendimiento.",
+        author: "ytms-player Core",
+        version: "1.0.0",
+        tags: ["estático", "vinilo", "analógico", "clásico"],
+      },
+      Component: StaticDiscVisualizer,
+      PreviewComponent: StaticDiscPreview,
     });
   }
 

@@ -1,4 +1,4 @@
-import { AudioWaveform, Music2 } from "lucide-react";
+import { Music2 } from "lucide-react";
 import React, { useMemo } from "react";
 import { toAssetUrl } from "@/lib/utils";
 import { useAudioDynamics } from "../hooks/useAudioDynamics";
@@ -70,16 +70,6 @@ export const CoverWavesVisualizer: React.FC<VisualizerProps> = React.memo(
               </div>
             );
           })}
-        </div>
-
-        {/* Indicador de estado */}
-        <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground font-mono">
-          <AudioWaveform
-            className={`h-4 w-4 text-primary ${isPlaying ? "animate-pulse" : ""}`}
-          />
-          <span className="text-[11px] uppercase tracking-wider">
-            {isPlaying ? "Ondas de sonido reactivas" : "En pausa"}
-          </span>
         </div>
       </div>
     );

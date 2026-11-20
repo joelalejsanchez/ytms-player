@@ -520,7 +520,7 @@ describe("usePlayerStore - queue preservation and corrupted tracks", () => {
 });
 
 describe("Visualizer API and Registry", () => {
-  it("initializes with all 4 built-in visualizer modules", () => {
+  it("initializes with all 6 built-in visualizer modules", () => {
     const vinyl = getVisualizer("vinyl");
     expect(vinyl).toBeDefined();
     expect(vinyl?.metadata.id).toBe("vinyl");
@@ -538,7 +538,17 @@ describe("Visualizer API and Registry", () => {
     expect(coverWaves).toBeDefined();
     expect(coverWaves?.metadata.id).toBe("cover-waves");
 
-    expect(getAllVisualizers().length).toBe(4);
+    const physicalCase = getVisualizer("physical-case");
+    expect(physicalCase).toBeDefined();
+    expect(physicalCase?.metadata.id).toBe("physical-case");
+    expect(physicalCase?.metadata.name).toContain("Estuche");
+
+    const staticDisc = getVisualizer("static-disc");
+    expect(staticDisc).toBeDefined();
+    expect(staticDisc?.metadata.id).toBe("static-disc");
+    expect(staticDisc?.metadata.name).toContain("Estático");
+
+    expect(getAllVisualizers().length).toBe(6);
   });
 
   it("allows registering and unregistering custom visualizer modules (Export API)", () => {
