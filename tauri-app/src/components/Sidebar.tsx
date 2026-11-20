@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 import { AppLogo } from "@/components/AppLogo";
+import { APP_VERSION } from "@/config/version";
 import { CustomSelect, type SelectOption } from "@/components/ui/CustomSelect";
 import { Badge } from "@/components/ui/Primitives";
 import { cn } from "@/lib/utils";
@@ -205,7 +206,11 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
         <button
           type="button"
           onClick={toggleCollapsed}
-          title={isCollapsed ? "Expandir barra lateral" : "Contraer barra lateral"}
+          title={
+            isCollapsed
+              ? `Expandir barra lateral (v${APP_VERSION})`
+              : `Contraer barra lateral (v${APP_VERSION})`
+          }
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary bg-primary/15 text-primary shadow-xs transition hover:bg-primary/25 cursor-pointer"
         >
           <AppLogo className="h-5 w-5" />
@@ -216,7 +221,9 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
             <h1 className="text-sm font-bold tracking-tight text-foreground truncate">
               Your Tracks Music Server
             </h1>
-            <p className="text-[11px] text-muted-foreground truncate">YTMS Desktop</p>
+            <p className="text-[11px] text-muted-foreground truncate font-mono">
+              v{APP_VERSION}
+            </p>
           </div>
         )}
       </div>
@@ -371,6 +378,14 @@ export const Sidebar = React.memo(({ activeTab, onSelectTab }: SidebarProps) => 
             )}
           </button>
         </div>
+
+        {!isCollapsed && (
+          <div className="pt-2 text-center select-none">
+            <span className="font-mono text-[10px] text-muted-foreground/60">
+              ytms-player v{APP_VERSION}
+            </span>
+          </div>
+        )}
       </div>
     </aside>
   );

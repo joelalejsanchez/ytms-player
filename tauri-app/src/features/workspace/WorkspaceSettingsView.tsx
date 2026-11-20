@@ -29,6 +29,8 @@ import {
   Trash2,
 } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
+import { AppLogo } from "@/components/AppLogo";
+import { APP_INFO, APP_VERSION } from "@/config/version";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Badge, Button, Input, RadioButton } from "@/components/ui/Primitives";
@@ -467,6 +469,41 @@ export const WorkspaceSettingsView = React.memo(() => {
       )}
 
       {/* ============================================================== */}
+      {/* 0. TARJETA INFORMATIVA DEL SISTEMA Y VERSIÓN                     */}
+      {/* ============================================================== */}
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-r from-card via-card to-primary/5 p-5 shadow-2xs">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-primary shadow-xs">
+              <AppLogo className="h-6 w-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold tracking-tight text-foreground">
+                  {APP_INFO.name}
+                </h2>
+                <Badge tone="info" className="font-mono text-xs">
+                  v{APP_VERSION}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {APP_INFO.slug} • Autor: {APP_INFO.author}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone="default" className="text-2xs font-mono">
+              {APP_INFO.license}
+            </Badge>
+            <div className="hidden sm:flex items-center gap-1.5 text-2xs text-muted-foreground font-mono">
+              {APP_INFO.stack.join(" • ")}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ============================================================== */}
       {/* 1. SECCIÓN: PERSONALIZACIÓN (COLORES Y MODO)                   */}
       {/* ============================================================== */}
       <div className="space-y-5 rounded-xl border border-border bg-card p-5">
@@ -482,7 +519,7 @@ export const WorkspaceSettingsView = React.memo(() => {
               </p>
             </div>
           </div>
-          <Badge tone="info">v1.9.0</Badge>
+          <Badge tone="info" className="font-mono">v{APP_VERSION}</Badge>
         </div>
 
         {/* Subsección A: Colores (Cards organizadas en vertical, ancho constante, con RadioButton) */}

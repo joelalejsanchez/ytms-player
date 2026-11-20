@@ -43,19 +43,6 @@ Este documento registra las características, mejoras y extensiones que **no est
   - La sección de Personalización se ha tornado extensa al incorporar paletas cromáticas, modos de tema y selector de visualizadores.
   - Implementar componentes desplegables/colapsables (`Collapsible` o `Accordion`) exclusivamente para los 3 bloques de Personalización (Paleta de Colores, Modo de Tema y Visualizador predeterminado) para mantener compacta la interfaz.
 
-- [ ] **Consumo dinámico de versión desde `package.json` en UI (`WorkspaceSettingsView`):**
-  - Actualmente el badge de versión en la sección de Personalización (`WorkspaceSettingsView.tsx`) está escrito como un literal estático (ej. `v1.7.5`), lo que exige edición manual en cada release.
-  - Configurar la importación dinámica de la versión desde `package.json` en Vite o mediante la API de Tauri (`@tauri-apps/api/app`), asegurando que la interfaz siempre refleje la versión real del proyecto automáticamente sin riesgo de desincronización humana.
-
-- [ ] **Tarjeta superior de información de la aplicación (`WorkspaceSettingsView`):**
-  - Incorporar en la cabecera superior de la vista de Configuración una tarjeta informativa del sistema con:
-    - **Nombre oficial:** Your Tracks Music Server (`ytms-player`).
-    - **Versión del producto:** Badge dinámico sincronizado (ej. `v1.7.5`).
-    - **Autor(es) y contacto:** Joel Alejandro Sánchez Valdez.
-    - **Licencia:** GPL-3.0-or-later con enlace a términos de licencia.
-    - **Tecnologías y arquitectura:** Tauri v2, React 18, Vite, Rust, SQLite.
-    - **Enlaces rápidos:** Acceso directo a documentación local (`docs/`), repositorio y reporte de incidencias.
-
 - [ ] **Acción rápida para redescarga de Playlists vinculadas:**
   - Botón directo en la vista de playlist para aquellas que posean un `youtube_playlist_id`.
   - Redirecciona automáticamente a la vista de Descargas precargando el ID o enlace de la lista para facilitar la re-descarga y recuperación de audios corruptos o faltantes.

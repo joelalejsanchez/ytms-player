@@ -6,7 +6,7 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
-## [1.9.2] - 2026-11-20
+## [1.9.3] - 2026-11-20
 
 ### Añadido
 
@@ -19,6 +19,20 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
   - Componente de previsualización `StaticDiscPreview` integrado en Ajustes.
 - **Depuración minimalista de textos y leyendas superfluas**:
   - Eliminación de etiquetas y leyendas de texto secundarias distractoras en todos los visualizadores existentes (`VinylVisualizer`, `AmbientAuraVisualizer`, `CoverWavesVisualizer`, `SpectrumVisualizer`), tales como "33⅓ RPM", "Onda Resonante Activa", "Ondas de sonido reactivas" o indicadores de frecuencia, logrando una presentación artística limpia y directa centrada 100% en el arte musical.
+
+#### Consumo Dinámico de Versión e Información del Sistema (`Sidebar` y `WorkspaceSettingsView`)
+- **Inyección dinámica de versión desde `package.json`**:
+  - Inyección de `__APP_VERSION__` en tiempo de compilación mediante `vite.config.ts`, sincronizando automáticamente la versión de la aplicación sin literales estáticos ni riesgo de desfase.
+- **Tarjeta informativa del sistema (`WorkspaceSettingsView`)**:
+  - Cabecera en la vista de Configuración con el nombre oficial del sistema, versión activa `v1.9.3`, autor, licencia GPL-3.0 y stack tecnológico.
+- **Indicador visible en `Sidebar`**:
+  - Versión activa visible en la cabecera y pie de la barra lateral, permitiendo conocer la versión del cliente de escritorio desde cualquier vista.
+
+---
+
+## [1.9.2] - 2026-11-20
+
+### Añadido
 
 #### Reproducción Instantánea Mediante Doble Clic en Filas de Canciones (`TrackRow` y `PlaylistTrackRow`)
 - **Detonación de reproducción directa con doble clic**:
