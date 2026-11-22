@@ -12,7 +12,7 @@ Para mantener la calidad, estabilidad y coherencia de la base de código, solici
 
 ### 1.1 Enfoque en Features y Commits Atómicos
 
-- **Commits transversales pero cohesivos:** Un commit puede abarcar cambios en Backend (Go), Core nativo (Rust/Tauri) y Frontend (React/TS), siempre que todas las modificaciones correspondan a la **misma funcionalidad o solución específica (feature)**.
+- **Commits transversales pero cohesivos:** Un commit puede abarcar cambios en Backend (Go), Core nativo (Rust/Tauri) y Frontend (React/TS), siempre que todas las modificaciones correspondan a la **misma funcionalidad o solución específica (feature)**. Otros tipos de cambio (`docs`, `chore`, `style`, etc.) deben realizarse en commits individuales separados.
 - **Commits de una sola línea:** Los mensajes de commit deben ser breves, claros y estrictamente de **una sola línea** siguiendo el estándar [Conventional Commits](https://www.conventionalcommits.org/):
   ```bash
   feat(downloads): agregar selector switch para canciones individuales
@@ -21,6 +21,7 @@ Para mantener la calidad, estabilidad y coherencia de la base de código, solici
   style(frontend): normalizar espaciado con prettier
   docs(changelog): registrar novedades de la version 1.7.5
   ```
+- **Modularidad de release:** Los cambios funcionales se commitean primero; el commit de release (`chore(release): bump version to vX.Y.Z`) modifica únicamente los 6 manifiestos de versión.
 - **Prohibido mezclar versiones:** Jamás agrupes cambios pertenecientes a múltiples versiones o releases en un solo commit.
 - **Releases impulsadas por Backend:** Si un cambio en Go o Docker requiere una release, se gestiona como una etapa completa de release (con su bump de versión correspondiente), incluso si la interfaz de usuario no fue modificada.
 - **Staging explícito:** Evita `git add .` o `git add -A`. Añade explícitamente los archivos afectados (`git add ruta/archivo.ext` o mediante la herramienta de git de tu editor de código) para no incluir ficheros accidentales.
@@ -31,7 +32,7 @@ Cuando un cambio amerite incrementar la versión (Minor o Patch), debe sincroniz
 
 | #   | Archivo                               | Campo / Ubicación                                                                                       | Propósito                                            |
 | --- | ------------------------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| 1   | `tauri-app/package.json`              | `"version": "x.y.z"`                                                                                    | Manifiesto de frontend y fuente de verdad para la UI |
+| 1   | `tauri-app/package.json` (+ `package-lock.json`) | `npm --prefix tauri-app version <x.y.z> --no-git-tag-version`                                           | Manifiesto de frontend, lockfile y fuente de verdad UI |
 | 2   | `tauri-app/src-tauri/Cargo.toml`      | `version = "x.y.z"`                                                                                     | Manifiesto principal de Rust/Tauri                   |
 | 3   | `tauri-app/src-tauri/Cargo.lock`      | Sincronizado automáticamente con `cargo check`                                                          | Lockfile de dependencias del core nativo             |
 | 4   | `tauri-app/src-tauri/tauri.conf.json` | `"version": "x.y.z"`                                                                                    | Metadatos del empaquetador Tauri                     |
@@ -78,8 +79,9 @@ El rendimiento y el bajo consumo de recursos son prioridades arquitectónicas de
 Antes de abrir un Pull Request o proponer cambios, asegúrate de que todos los linters, formateadores y suites de pruebas pasen satisfactoriamente en tu entorno local:
 
 ```bash
-# Opción rápida con Just (recomendada):
-just check
+# Opción rápida recomendada (incluye fmt-check, lint, typecheck y test):
+just check   # Multiplataforma / Windows
+make check   # Linux
 
 # O verificaciones manuales por tecnología:
 
@@ -113,8 +115,8 @@ make -C go-microservice check   # gofmt, go vet y pruebas unitarias
    ```
 3. Desarrolla tus cambios respetando los principios de optimización y pruebas.
 4. Ejecuta `just check` o `make check` (Linux) para garantizar que todo compila y pasa sin errores.
-5. Realiza tus commits atómicos de una sola línea (firmándolos si tu entorno lo requiere):
+5. Realiza tus commits atómicos de una sola línea:
    ```bash
-   git commit -s -m "feat(modulo): descripcion concisa de la mejora"
+   git commit -m "feat(modulo): descripcion concisa de la mejora"
    ```
 6. Abre un **Pull Request** hacia la rama `main` explicando claramente el objetivo del cambio, las pruebas realizadas y los módulos afectados.
