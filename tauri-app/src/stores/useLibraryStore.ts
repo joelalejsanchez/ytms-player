@@ -56,6 +56,7 @@ export interface LibraryStoreState {
     fileExtension: string,
     title?: string,
   ) => Promise<void>;
+  importLocalFiles: (filePaths: string[]) => Promise<Track[]>;
   deleteOrphanFile: (youtubeId: string, fileExtension: string) => Promise<void>;
   toggleLike: (youtubeId: string, liked: boolean | null) => Promise<void>;
   deleteTrack: (youtubeId: string, deleteFiles: boolean) => Promise<void>;
@@ -273,6 +274,30 @@ export const useLibraryStore = create<LibraryStoreState>((set, get) => ({
         "No se pudo adoptar el archivo huérfano",
       );
       set({ isLoading: false, error: message });
+      throw err;
+    }
+  },
+
+  importLocalFiles: async (filePaths) => {
+    if (filePaths.length === 0) return [];
+    set({ isLoading: true, error: null });
+    try {
+      const imported = await tauriApi.importLocalFiles(filePaths);
+      await get().refreshTracks();
+      set({ isLoading: false });
+      toast.success(
+        "Canciones importadas",
+        `Se importaron ${imported.length} canción(es) local(es) a la biblioteca`,
+        3000,
+      );
+      return imported;
+    } catch (err) {
+      const message = extractErrorMessage(
+        err,
+        "No se pudieron importar los archivos locales",
+      );
+      set({ isLoading: false, error: message });
+      toast.error("Error al importar", message, 4000);
       throw err;
     }
   },

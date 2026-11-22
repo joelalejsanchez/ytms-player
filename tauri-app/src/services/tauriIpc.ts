@@ -59,6 +59,27 @@ export const tauriApi = {
     return typeof selected === "string" ? selected : null;
   },
 
+  async pickLocalAudioFiles(): Promise<string[]> {
+    if (!isTauriEnvironment()) {
+      return [];
+    }
+    const selected = await open({
+      directory: false,
+      multiple: true,
+      title: "Importar canciones locales",
+      filters: [
+        {
+          name: "Audio",
+          extensions: ["mp3", "m4a", "opus", "wav", "flac", "ogg", "aac", "webm"],
+        },
+      ],
+    });
+    if (Array.isArray(selected)) {
+      return selected;
+    }
+    return typeof selected === "string" ? [selected] : [];
+  },
+
   getAppSettings(): Promise<AppSettings> {
     return safeInvoke<AppSettings>("get_app_settings");
   },
@@ -245,6 +266,10 @@ export const tauriApi = {
       title: title || null,
       artist: artist || null,
     });
+  },
+
+  importLocalFiles(filePaths: string[]): Promise<Track[]> {
+    return safeInvoke<Track[]>("import_local_files", { filePaths });
   },
 
   deleteOrphanFile(youtubeId: string, fileExtension: string): Promise<void> {

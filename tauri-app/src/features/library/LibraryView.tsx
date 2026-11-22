@@ -1,6 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   ArrowUpDown,
+  FolderPlus,
   ListMusic,
   Loader2,
   Play,
@@ -17,6 +18,7 @@ import { Button, Input } from "@/components/ui/Primitives";
 import { MetadataSyncModal } from "@/features/library/MetadataSyncModal";
 import { TrackInfoModal } from "@/features/library/TrackInfoModal";
 import { TrackRow } from "@/features/library/TrackRow";
+import { tauriApi } from "@/services/tauriIpc";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import type { Track } from "@/types/models";
@@ -64,6 +66,8 @@ export const LibraryView = React.memo(() => {
   const removeTrackFromPlaylist = useLibraryStore((s) => s.removeTrackFromPlaylist);
   const verifyIntegrity = useLibraryStore((s) => s.verifyIntegrity);
   const syncLikes = useLibraryStore((s) => s.syncLikes);
+  const importLocalFiles = useLibraryStore((s) => s.importLocalFiles);
+  const [isImportingLocal, setIsImportingLocal] = useState(false);
 
   const currentTrackId = usePlayerStore((s) => s.currentTrack?.youtube_id);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
@@ -206,6 +210,18 @@ export const LibraryView = React.memo(() => {
     }
   }, [syncLikes]);
 
+  const handleImportLocalFiles = useCallback(async () => {
+    setIsImportingLocal(true);
+    try {
+      const files = await tauriApi.pickLocalAudioFiles();
+      if (files.length > 0) {
+        await importLocalFiles(files);
+      }
+    } finally {
+      setIsImportingLocal(false);
+    }
+  }, [importLocalFiles]);
+
   const handleTogglePlaylist = useCallback(
     async (playlistId: number, trackId: number, willAdd: boolean) => {
       if (willAdd) {
@@ -262,6 +278,16 @@ export const LibraryView = React.memo(() => {
           title="Opciones de biblioteca"
           triggerClassName="h-9 w-9 rounded-lg border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground shadow-xs shrink-0 flex items-center justify-center"
           items={[
+            {
+              label: isImportingLocal ? "Importando..." : "Importar archivos locales",
+              icon: isImportingLocal ? (
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              ) : (
+                <FolderPlus className="h-4 w-4 text-primary" />
+              ),
+              onClick: () => void handleImportLocalFiles(),
+              disabled: isLoading || isVerifying || isSyncingLikes || isImportingLocal,
+            },
             {
               label: "Actualizar información",
               icon: <Sparkles className="h-4 w-4 text-amber-500" />,

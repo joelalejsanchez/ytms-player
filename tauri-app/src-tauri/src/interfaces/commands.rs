@@ -600,7 +600,8 @@ pub async fn adopt_orphan_file(
     let root_path = ctx.root_path.clone();
 
     tokio::task::spawn_blocking(move || {
-        let (exists, size, _) = manager.track_file_status(&root_path, &youtube_id, &file_extension);
+        let (exists, size, file_path) =
+            manager.track_file_status(&root_path, &youtube_id, &file_extension);
 
         if !exists {
             return Err(DomainError::ValidationError(format!(
@@ -608,11 +609,12 @@ pub async fn adopt_orphan_file(
             )));
         }
 
-        let mut final_title = title
-            .filter(|t| !t.trim().is_empty())
-            .unwrap_or_else(|| youtube_id.clone());
-        let mut final_artist = artist
-            .filter(|a| !a.trim().is_empty())
+        let explicit_title = title.filter(|t| !t.trim().is_empty());
+        let explicit_artist = artist.filter(|a| !a.trim().is_empty());
+
+        let mut final_title = explicit_title.clone().unwrap_or_else(|| youtube_id.clone());
+        let mut final_artist = explicit_artist
+            .clone()
             .unwrap_or_else(|| "Local Audio".to_string());
         let mut final_duration = 0i64;
         let mut final_liked: Option<bool> = None;
@@ -652,6 +654,34 @@ pub async fn adopt_orphan_file(
                 .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_');
         let origin = if is_yt { "youtube" } else { "local" };
 
+        if final_duration == 0 || origin == "local" {
+            let file_meta =
+                crate::infrastructure::audio_metadata::extract_audio_metadata(&file_path);
+            if explicit_title.is_none() && final_title == youtube_id {
+                if let Some(t) = file_meta.title {
+                    final_title = t;
+                }
+            }
+            if explicit_artist.is_none() && final_artist == "Local Audio" {
+                if let Some(a) = file_meta.artist {
+                    final_artist = a;
+                }
+            }
+            if final_duration == 0 && file_meta.duration > 0 {
+                final_duration = file_meta.duration;
+            }
+        }
+
+        if origin == "local" {
+            let thumb_dest = root_path
+                .join("thumbnails")
+                .join(format!("{youtube_id}.jpg"));
+            let _ = crate::infrastructure::audio_metadata::extract_embedded_thumbnail(
+                &file_path,
+                &thumb_dest,
+            );
+        }
+
         let new_track = NewTrack {
             youtube_id: youtube_id.clone(),
             title: final_title,
@@ -673,18 +703,177 @@ pub async fn adopt_orphan_file(
     .map_err(|e| DomainError::MicroserviceError(format!("Adopt orphan task failed: {e}")))?
 }
 
-/// Consulta metadatos frescos desde YouTube y actualiza el título, artista y duración en SQLite en segundo plano.
+/// Importa archivos de audio locales del sistema al workspace activo extrayendo duración y metadatos.
+#[tauri::command]
+pub async fn import_local_files(
+    file_paths: Vec<String>,
+    state: State<'_, AppState>,
+) -> DomainResult<Vec<Track>> {
+    let ctx = state.active_workspace()?;
+    let manager = state.workspace_manager.clone();
+    let store = ctx.store.clone();
+    let root_path = ctx.root_path.clone();
+
+    tokio::task::spawn_blocking(move || {
+        use crate::infrastructure::audio_metadata::{
+            extract_audio_metadata, extract_embedded_thumbnail, is_supported_audio_extension,
+            resolve_unique_local_id, sanitize_local_track_id,
+        };
+
+        let tracks_dir = root_path.join("tracks");
+        let thumbs_dir = root_path.join("thumbnails");
+        std::fs::create_dir_all(&tracks_dir).map_err(|e| {
+            DomainError::FilesystemError(format!("Failed to ensure tracks dir: {e}"))
+        })?;
+        std::fs::create_dir_all(&thumbs_dir).map_err(|e| {
+            DomainError::FilesystemError(format!("Failed to ensure thumbnails dir: {e}"))
+        })?;
+
+        let mut imported = Vec::new();
+        for raw_path in file_paths {
+            let src_path = std::path::Path::new(raw_path.trim());
+            if !src_path.is_file() {
+                return Err(DomainError::ValidationError(format!(
+                    "Audio file does not exist: {raw_path}"
+                )));
+            }
+
+            let ext = src_path
+                .extension()
+                .and_then(|s| s.to_str())
+                .map(|s| s.trim().to_lowercase())
+                .filter(|s| is_supported_audio_extension(s))
+                .ok_or_else(|| {
+                    DomainError::ValidationError(format!(
+                        "Unsupported audio format for file: {raw_path}"
+                    ))
+                })?;
+
+            let stem = src_path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("local-track");
+            let base_id = sanitize_local_track_id(stem);
+            let local_id = resolve_unique_local_id(&tracks_dir, &base_id, &ext, |candidate| {
+                store
+                    .get_track_by_youtube_id(candidate)
+                    .ok()
+                    .flatten()
+                    .is_some()
+            });
+
+            let dest_path = tracks_dir.join(format!("{local_id}.{ext}"));
+            std::fs::copy(src_path, &dest_path).map_err(|e| {
+                DomainError::FilesystemError(format!("Failed to copy local audio file: {e}"))
+            })?;
+
+            let meta = extract_audio_metadata(&dest_path);
+            let thumb_dest = thumbs_dir.join(format!("{local_id}.jpg"));
+            let _ = extract_embedded_thumbnail(&dest_path, &thumb_dest);
+
+            let file_size = std::fs::metadata(&dest_path)
+                .map(|m| i64::try_from(m.len()).unwrap_or(0))
+                .unwrap_or(0);
+
+            let new_track = NewTrack {
+                youtube_id: local_id.clone(),
+                title: meta.title.unwrap_or_else(|| stem.trim().to_string()),
+                artist: meta.artist.unwrap_or_else(|| "Local Audio".to_string()),
+                duration: meta.duration,
+                published_at: None,
+                file_extension: ext,
+                thumbnail_path: manager.resolve_thumbnail_path(&root_path, &local_id),
+                synced: false,
+                liked: None,
+                is_missing: false,
+                file_size,
+                origin: "local".to_string(),
+            };
+
+            let track = track_usecases::register_or_update_track(
+                &root_path,
+                new_track,
+                &manager,
+                store.as_ref(),
+            )?;
+            imported.push(track);
+        }
+
+        Ok(imported)
+    })
+    .await
+    .map_err(|e| DomainError::MicroserviceError(format!("Import local files task failed: {e}")))?
+}
+
+/// Consulta metadatos frescos desde YouTube (o desde el archivo de audio si es local) y actualiza la pista en SQLite.
 #[tauri::command]
 pub async fn refresh_track_metadata(
     youtube_id: String,
     state: State<'_, AppState>,
 ) -> DomainResult<Track> {
     let ctx = state.active_workspace()?;
-    let client = state.microservice_client()?;
     let manager = state.workspace_manager.clone();
     let store = ctx.store.clone();
     let root_path = ctx.root_path.clone();
 
+    let existing = store
+        .get_track_by_youtube_id(&youtube_id)?
+        .ok_or_else(|| DomainError::TrackNotFound(youtube_id.clone()))?;
+
+    if existing.origin == "local" {
+        return tokio::task::spawn_blocking(move || {
+            use crate::infrastructure::audio_metadata::{
+                extract_audio_metadata, extract_embedded_thumbnail,
+            };
+
+            let (exists, size, file_path) = manager.track_file_status(
+                &root_path,
+                &existing.youtube_id,
+                &existing.file_extension,
+            );
+            if !exists {
+                return Err(DomainError::ValidationError(format!(
+                    "Local audio file {}.{} not found on disk",
+                    existing.youtube_id, existing.file_extension
+                )));
+            }
+
+            let meta = extract_audio_metadata(&file_path);
+            let thumb_dest = root_path
+                .join("thumbnails")
+                .join(format!("{}.jpg", existing.youtube_id));
+            let _ = extract_embedded_thumbnail(&file_path, &thumb_dest);
+
+            let updated = NewTrack {
+                youtube_id: existing.youtube_id.clone(),
+                title: meta.title.unwrap_or(existing.title),
+                artist: meta.artist.unwrap_or(existing.artist),
+                duration: if meta.duration > 0 {
+                    meta.duration
+                } else {
+                    existing.duration
+                },
+                published_at: existing.published_at,
+                file_extension: existing.file_extension,
+                thumbnail_path: manager
+                    .resolve_thumbnail_path(&root_path, &existing.youtube_id)
+                    .or(existing.thumbnail_path),
+                synced: existing.synced,
+                liked: existing.liked,
+                is_missing: false,
+                file_size: if size > 0 { size } else { existing.file_size },
+                origin: existing.origin,
+            };
+
+            track_usecases::register_or_update_track(&root_path, updated, &manager, store.as_ref())
+        })
+        .await
+        .map_err(|e| {
+            DomainError::MicroserviceError(format!("Refresh local metadata task failed: {e}"))
+        })?;
+    }
+
+    let client = state.microservice_client()?;
     tokio::task::spawn_blocking(move || {
         let preview = client.preview_url(
             &format!("https://www.youtube.com/watch?v={youtube_id}"),
@@ -694,16 +883,6 @@ pub async fn refresh_track_metadata(
         let item = preview.items.into_iter().next().ok_or_else(|| {
             DomainError::ValidationError(format!("No metadata found for {youtube_id} on YouTube"))
         })?;
-
-        let existing = store
-            .get_track_by_youtube_id(&youtube_id)?
-            .ok_or_else(|| DomainError::TrackNotFound(youtube_id.clone()))?;
-
-        if existing.origin == "local" {
-            return Err(DomainError::ValidationError(
-                "Cannot refresh metadata from YouTube for local track".to_string(),
-            ));
-        }
 
         let updated = NewTrack {
             youtube_id: existing.youtube_id,

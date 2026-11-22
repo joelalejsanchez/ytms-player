@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   DownloadCloud,
   FileAudio,
+  FolderPlus,
   Loader2,
   Music2,
   PlusCircle,
@@ -14,6 +15,7 @@ import { ActionMenu } from "@/components/ui/ActionMenu";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { Badge, Button } from "@/components/ui/Primitives";
 import { formatBytes, toAssetUrl } from "@/lib/utils";
+import { tauriApi } from "@/services/tauriIpc";
 import { useLibraryStore } from "@/stores/useLibraryStore";
 
 const RecoveryThumbnail = React.memo(
@@ -75,8 +77,10 @@ export const MissingFilesView = React.memo(() => {
   const verifyIntegrity = useLibraryStore((s) => s.verifyIntegrity);
   const recoverTrack = useLibraryStore((s) => s.recoverTrack);
   const adoptOrphanFile = useLibraryStore((s) => s.adoptOrphanFile);
+  const importLocalFiles = useLibraryStore((s) => s.importLocalFiles);
   const deleteOrphanFile = useLibraryStore((s) => s.deleteOrphanFile);
   const deleteTrack = useLibraryStore((s) => s.deleteTrack);
+  const [isImportingLocal, setIsImportingLocal] = useState(false);
 
   const handleScan = useCallback(async () => {
     setIsScanning(true);
@@ -123,6 +127,18 @@ export const MissingFilesView = React.memo(() => {
       await verifyIntegrity();
     }
   }, [orphanFiles, adoptOrphanFile, verifyIntegrity]);
+
+  const handleImportLocalFiles = useCallback(async () => {
+    setIsImportingLocal(true);
+    try {
+      const files = await tauriApi.pickLocalAudioFiles();
+      if (files.length > 0) {
+        await importLocalFiles(files);
+      }
+    } finally {
+      setIsImportingLocal(false);
+    }
+  }, [importLocalFiles]);
 
   const handleDeleteOrphan = useCallback(
     async (youtubeId: string, fileExtension: string) => {
@@ -300,6 +316,19 @@ export const MissingFilesView = React.memo(() => {
             </h3>
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={isImportingLocal || isLoading}
+              onClick={() => void handleImportLocalFiles()}
+            >
+              {isImportingLocal ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <FolderPlus className="h-3.5 w-3.5" />
+              )}
+              {isImportingLocal ? "Importando..." : "Importar desde el equipo"}
+            </Button>
             {orphanFiles.length > 0 && (
               <Button
                 variant="primary"

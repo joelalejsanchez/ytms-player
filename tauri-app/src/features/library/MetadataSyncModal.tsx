@@ -136,7 +136,8 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
                 Actualizar información de canciones
               </h3>
               <p className="text-xs text-muted-foreground">
-                Vuelve a consultar los títulos y artistas oficiales desde YouTube
+                Sincroniza título, artista y duración desde YouTube o desde el archivo
+                local
               </p>
             </div>
           </div>
@@ -155,8 +156,8 @@ export const MetadataSyncModal: React.FC<MetadataSyncModalProps> = ({
           {/* Mensajes informativos */}
           <div className="rounded-xl border border-border bg-muted/40 p-3.5 text-foreground">
             <p>
-              Consulta YouTube para actualizar los nombres, artistas y duración de las
-              canciones seleccionadas en tu biblioteca.
+              Actualiza los nombres, artistas y duración de las canciones seleccionadas
+              consultando YouTube o leyendo los metadatos del archivo de audio local.
             </p>
           </div>
 
