@@ -1,4 +1,4 @@
-.PHONY: help fmt fmt-check lint test check docker-up docker-down dev build build-bin release build-release build-appimage build-deb build-rpm
+.PHONY: help fmt fmt-check lint typecheck test check docker-up docker-down dev build build-bin release build-release build-appimage build-deb build-rpm
 
 ## help: Muestra los comandos disponibles en la raíz del monorepo
 help:
@@ -23,14 +23,18 @@ lint:
 	$(MAKE) -C tauri-app/src-tauri lint
 	cd tauri-app && npm run lint
 
+## typecheck: Verifica los tipos de TypeScript en el Frontend
+typecheck:
+	cd tauri-app && npm run typecheck
+
 ## test: Ejecuta pruebas unitarias en Go, Rust y Frontend
 test:
 	$(MAKE) -C go-microservice test
 	$(MAKE) -C tauri-app/src-tauri test
 	cd tauri-app && npm run test
 
-## check: Ejecuta fmt-check + lint + test en todo el monorepo
-check: fmt-check lint test
+## check: Ejecuta fmt-check + lint + typecheck + test en todo el monorepo
+check: fmt-check lint typecheck test
 
 ## docker-up: Levanta el microservicio Go en Docker Compose
 docker-up:
