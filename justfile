@@ -23,14 +23,18 @@ lint:
     just --justfile tauri-app/src-tauri/justfile lint
     cd tauri-app && npm run lint
 
+# Verifica los tipos de TypeScript en el Frontend
+typecheck:
+    cd tauri-app && npm run typecheck
+
 # Ejecuta pruebas unitarias en Go, Rust y Frontend
 test:
     just --justfile go-microservice/justfile test
     just --justfile tauri-app/src-tauri/justfile test
     cd tauri-app && npm run test
 
-# Ejecuta fmt-check + lint + test en todo el monorepo
-check: fmt-check lint test
+# Ejecuta fmt-check + lint + typecheck + test en todo el monorepo
+check: fmt-check lint typecheck test
 
 # Levanta el microservicio Go en Docker Compose
 docker-up:
