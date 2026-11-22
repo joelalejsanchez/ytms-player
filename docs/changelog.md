@@ -6,6 +6,23 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [1.11.0] - 2026-11-22
+
+### Añadido
+
+#### Importación Directa y Sincronización de Metadatos para Canciones Locales
+- **Extracción Automática de Metadatos y Carátula (`ffprobe` / `ffmpeg`)**:
+  - Lectura de duración, título, artista y extracción opcional de carátula incrustada para archivos de audio locales (`mp3`, `m4a`, `opus`, `wav`, `flac`, `ogg`, `aac`, `webm`) con fallback seguro si las herramientas no están presentes.
+- **Importación desde el Sistema**:
+  - Nuevo selector múltiple de archivos de audio locales accesible desde el menú de opciones de la biblioteca y desde la vista de recuperación de archivos, copiando las pistas al workspace activo con identificadores locales únicos sin colisiones.
+
+### Mejorado
+
+- **Adopción y Sincronización de Pistas Locales**:
+  - La adopción de archivos huérfanos y la acción de actualizar información (`refresh_track_metadata` / modal de actualización) ahora extraen duración, título, artista y carátula directamente desde el archivo en disco cuando la pista es de origen local, sin depender del microservicio de YouTube.
+
+---
+
 ## [1.10.1] - 2026-11-20
 
 ### Corregido
